@@ -15,7 +15,6 @@ build/
 Thumbs.db
 .env
 .env.*
-specs/
 logs/
 .github/
 .idea/
