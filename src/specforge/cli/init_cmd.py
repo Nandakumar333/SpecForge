@@ -17,12 +17,26 @@ from specforge.core.scaffold_writer import write_scaffold
 
 @click.command()
 @click.argument("name", required=False, default=None)
-@click.option("--here", is_flag=True, help="Scaffold into CWD instead of creating a subdirectory.")
-@click.option("--agent", type=click.Choice(AGENT_PRIORITY, case_sensitive=False), default=None, help="AI agent to configure.")
-@click.option("--stack", type=click.Choice(SUPPORTED_STACKS, case_sensitive=False), default=None, help="Technology stack.")
-@click.option("--force", is_flag=True, help="Allow scaffolding into an existing directory.")
-@click.option("--no-git", is_flag=True, help="Skip git initialization.")
-@click.option("--dry-run", is_flag=True, help="Preview file tree without writing.")
+@click.option(
+    "--here", is_flag=True,
+    help="Scaffold into CWD instead of creating a subdirectory.",
+)
+@click.option(
+    "--agent",
+    type=click.Choice(AGENT_PRIORITY, case_sensitive=False),
+    default=None, help="AI agent to configure.",
+)
+@click.option(
+    "--stack",
+    type=click.Choice(SUPPORTED_STACKS, case_sensitive=False),
+    default=None, help="Technology stack.",
+)
+@click.option(
+    "--force", is_flag=True,
+    help="Allow scaffolding into an existing directory.",
+)
+@click.option("--no-git", is_flag=True, help="Skip git init.")
+@click.option("--dry-run", is_flag=True, help="Preview without writing.")
 def init(
     name: str | None,
     here: bool,
@@ -66,7 +80,8 @@ def _validate_args(name: str | None, here: bool) -> None:
     """Validate mutual exclusion of NAME and --here."""
     if not name and not here:
         raise click.UsageError(
-            "Missing argument 'NAME'. Use --here to scaffold into the current directory."
+            "Missing argument 'NAME'. "
+            "Use --here to scaffold into the current directory."
         )
     if name and here:
         _fail(

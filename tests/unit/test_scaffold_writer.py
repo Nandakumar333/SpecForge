@@ -6,7 +6,9 @@ from specforge.core.project import ProjectConfig, ScaffoldFile, ScaffoldPlan
 from specforge.core.scaffold_writer import write_scaffold
 
 
-def _make_plan(tmp_path: Path, force: bool = False, dry_run: bool = False) -> ScaffoldPlan:
+def _make_plan(
+    tmp_path: Path, force: bool = False, dry_run: bool = False,
+) -> ScaffoldPlan:
     config_result = ProjectConfig.create(
         name="testproj", target_dir=tmp_path,
         force=force, dry_run=dry_run,

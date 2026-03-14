@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from specforge.core.project import ProjectConfig, ScaffoldPlan
+from specforge.core.project import ProjectConfig
 from specforge.core.scaffold_builder import build_scaffold_plan
 
 

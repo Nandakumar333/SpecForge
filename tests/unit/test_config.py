@@ -11,7 +11,7 @@ from specforge.core.config import (
 class TestAgentPriority:
     def test_priority_order(self) -> None:
         expected = ["claude", "copilot", "gemini", "cursor", "windsurf", "codex"]
-        assert AGENT_PRIORITY == expected
+        assert expected == AGENT_PRIORITY
 
     def test_priority_has_six_agents(self) -> None:
         assert len(AGENT_PRIORITY) == 6

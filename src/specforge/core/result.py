@@ -29,7 +29,7 @@ class Ok(Generic[T]):
     def bind(self, fn: Callable[[T], Result]) -> Result:
         return fn(self.value)
 
-    def unwrap_or(self, default: T) -> T:  # noqa: ARG002
+    def unwrap_or(self, default: T) -> T:
         return self.value
 
 
@@ -43,10 +43,10 @@ class Err(Generic[E]):
     def ok(self) -> bool:
         return False
 
-    def map(self, fn: Callable) -> Err[E]:  # noqa: ARG002
+    def map(self, fn: Callable) -> Err[E]:
         return self
 
-    def bind(self, fn: Callable) -> Err[E]:  # noqa: ARG002
+    def bind(self, fn: Callable) -> Err[E]:
         return self
 
     def unwrap_or(self, default: T) -> T:

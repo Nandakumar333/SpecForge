@@ -1,5 +1,6 @@
 line-length = 88
 target-version = "py311"
+src = ["src"]
 
 [lint]
 select = [
@@ -11,8 +12,5 @@ select = [
     "UP",   # pyupgrade
     "B",    # flake8-bugbear
     "SIM",  # flake8-simplify
-    "TCH",  # flake8-type-checking
     "RUF",  # ruff-specific
 ]
-
-src = ["src"]

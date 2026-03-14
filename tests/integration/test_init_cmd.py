@@ -87,19 +87,20 @@ class TestInitCommand:
         self, tmp_path: Path
     ) -> None:
         runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch("specforge.core.git_ops.shutil.which", return_value=None):
-                result = runner.invoke(cli, ["init", "myapp", "--no-git"])
-                # With --no-git it should succeed
-                assert result.exit_code == 0
+        with (
+            runner.isolated_filesystem(temp_dir=tmp_path),
+            patch("specforge.core.git_ops.shutil.which", return_value=None),
+        ):
+            result = runner.invoke(cli, ["init", "myapp", "--no-git"])
+            # With --no-git it should succeed
+            assert result.exit_code == 0
 
     def test_permission_denied_exits_1(self, tmp_path: Path) -> None:
         runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch(
-                "specforge.core.scaffold_writer.Path.mkdir",
-                side_effect=PermissionError("Access denied"),
-            ):
-                result = runner.invoke(cli, ["init", "myapp"])
-                assert result.exit_code == 1
-                assert "Permission denied" in result.output
+        with runner.isolated_filesystem(temp_dir=tmp_path), patch(
+            "specforge.core.scaffold_writer.Path.mkdir",
+            side_effect=PermissionError("Access denied"),
+        ):
+            result = runner.invoke(cli, ["init", "myapp"])
+            assert result.exit_code == 1
+            assert "Permission denied" in result.output

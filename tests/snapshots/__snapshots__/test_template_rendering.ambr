@@ -1,4 +1,54 @@
 # serializer version: 1
+# name: TestTemplateRendering.test_app_analyzer_prompt
+  '''
+  # App Analyzer — myapp
+  
+  You are the App Analyzer agent for **myapp**.
+  
+  ## Role
+  
+  Decompose an application description into discrete, implementable features.
+  
+  ## Instructions
+  
+  1. Read the provided application description
+  2. Identify independent feature boundaries
+  3. Output a numbered feature list with one-line descriptions
+  4. Suggest a priority order (P1 = foundational, P4 = nice-to-have)
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_code_reviewer_prompt
+  '''
+  # Code Reviewer — myapp
+  
+  You are the Code Reviewer agent for **myapp**.
+  
+  ## Role
+  
+  Review code changes for quality, correctness, and constitution compliance.
+  
+  ## Instructions
+  
+  1. Check function length (≤ 30 lines) and class length (≤ 200 lines)
+  2. Verify type hints on all signatures
+  3. Ensure Result[T] usage for recoverable errors
+  4. Validate test coverage
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
 # name: TestTemplateRendering.test_constitution_agnostic_stack
   '''
   # testproj Constitution
@@ -67,6 +117,127 @@
   
   '''
 # ---
+# name: TestTemplateRendering.test_contracts_template
+  '''
+  # Contracts Template — myapp
+  
+  **Feature**: `<feature-name>`
+  **Created**: 2026-03-14
+  
+  ## API Contract
+  
+  _Define the interface contract for this feature._
+  
+  ### Endpoint / Command
+  
+  ```
+  command [arguments] [options]
+  ```
+  
+  ### Arguments
+  
+  | Argument | Required | Description |
+  |----------|----------|-------------|
+  
+  ### Exit Codes
+  
+  | Code | Condition |
+  |------|-----------|
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_data_model_template
+  '''
+  # Data Model Template — myapp
+  
+  **Feature**: `<feature-name>`
+  **Created**: 2026-03-14
+  
+  ## Overview
+  
+  _All domain types for this feature._
+  
+  ## Core Types
+  
+  ### `TypeName`
+  
+  ```
+  field: type — description
+  ```
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_debugger_prompt
+  '''
+  # Debugger — myapp
+  
+  You are the Debugger agent for **myapp**.
+  
+  ## Role
+  
+  Investigate and resolve bugs using systematic debugging.
+  
+  ## Instructions
+  
+  1. Reproduce the issue with a minimal test case
+  2. Apply binary search to isolate the root cause
+  3. Propose a fix with regression test
+  4. Verify the fix doesn't break existing tests
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_decisions_template
+  '''
+  # myapp — Decision Log
+  
+  **Project**: myapp
+  **Created**: 2026-03-14
+  
+  Record key architectural and design decisions here.
+  
+  ## Template
+  
+  ### Decision [NUMBER] — [TITLE]
+  
+  - **Date**: YYYY-MM-DD
+  - **Status**: Proposed | Accepted | Deprecated
+  - **Context**: _Why was this decision needed?_
+  - **Decision**: _What was decided?_
+  - **Consequences**: _What changes as a result?_
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_feature_specifier_prompt
+  '''
+  # Feature Specifier — myapp
+  
+  You are the Feature Specifier agent for **myapp**.
+  
+  ## Role
+  
+  Transform a feature description into a complete specification document.
+  
+  ## Instructions
+  
+  1. Gather clarifications via targeted questions
+  2. Define user stories with acceptance scenarios
+  3. Enumerate functional requirements
+  4. Identify edge cases and constraints
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
 # name: TestTemplateRendering.test_gitignore_template
   '''
   # myapp — .gitignore
@@ -96,6 +267,217 @@
   Thumbs.db
   *.tmp
   *.swp
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_implementation_planner_prompt
+  '''
+  # Implementation Planner — myapp
+  
+  You are the Implementation Planner agent for **myapp**.
+  
+  ## Role
+  
+  Create a detailed implementation plan from a feature specification.
+  
+  ## Instructions
+  
+  1. Analyze the spec and research artifacts
+  2. Design the source code structure
+  3. Define data models and contracts
+  4. Validate against the constitution
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_plan_template
+  '''
+  # Implementation Plan Template — myapp
+  
+  **Branch**: `<branch-name>`
+  **Created**: 2026-03-14
+  **Spec**: `<path-to-spec.md>`
+  
+  ## Summary
+  
+  _High-level description of the implementation approach._
+  
+  ## Technical Context
+  
+  _Language, dependencies, testing, constraints._
+  
+  ## Constitution Check
+  
+  _Verify compliance with all constitution principles._
+  
+  ## Project Structure
+  
+  _Source tree for this feature._
+  
+  ## Complexity Tracking
+  
+  | Violation | Why Needed | Simpler Alternative Rejected Because |
+  |-----------|------------|--------------------------------------|
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_quickstart_template
+  '''
+  # Quickstart Template — myapp
+  
+  **Feature**: `<feature-name>`
+  **Created**: 2026-03-14
+  
+  ## Prerequisites
+  
+  _List required tools and versions._
+  
+  ## Installation
+  
+  _Installation steps._
+  
+  ## Usage
+  
+  _Common usage patterns._
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_research_template
+  '''
+  # Research Template — myapp
+  
+  **Feature**: `<feature-name>`
+  **Created**: 2026-03-14
+  
+  ## Research Questions
+  
+  1. _Question 1_
+     - **Finding**: ...
+     - **Decision**: ...
+  
+  ## Key Decisions
+  
+  | # | Question | Decision | Source |
+  |---|----------|----------|--------|
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_spec_template
+  '''
+  # Feature Specification Template — myapp
+  
+  **Feature Branch**: `<branch-name>`
+  **Created**: 2026-03-14
+  **Status**: Draft
+  
+  ## Clarifications
+  
+  _Record Q&A sessions here._
+  
+  ## User Scenarios & Testing
+  
+  ### User Story 1 - [Title] (Priority: P1)
+  
+  _Description of user scenario._
+  
+  **Acceptance Scenarios**:
+  
+  1. **Given** ..., **When** ..., **Then** ...
+  
+  ## Requirements
+  
+  ### Functional Requirements
+  
+  - **FR-001**: ...
+  
+  ### Constraints & Tradeoffs
+  
+  - **CT-001**: ...
+  
+  ## Success Criteria
+  
+  - **SC-001**: ...
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_task_decomposer_prompt
+  '''
+  # Task Decomposer — myapp
+  
+  You are the Task Decomposer agent for **myapp**.
+  
+  ## Role
+  
+  Break an implementation plan into ordered, dependency-aware tasks.
+  
+  ## Instructions
+  
+  1. Read the plan and data model
+  2. Generate TDD-ordered tasks (tests before implementation)
+  3. Mark parallel tasks with [P]
+  4. Assign conventional commit messages
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_tasks_template
+  '''
+  # Tasks Template — myapp
+  
+  **Input**: Design documents
+  **Prerequisites**: plan.md (required), spec.md (required)
+  
+  ## Format: `[ID] [P?] [Story] Description`
+  
+  - **[P]**: Can run in parallel
+  - **[Story]**: User story reference
+  
+  ## Phase 1: Setup
+  
+  - [ ] T001 ...
+  
+  ## Phase 2: Tests
+  
+  - [ ] T002 ...
+  
+  ## Phase 3: Implementation
+  
+  - [ ] T003 ...
+  
+  '''
+# ---
+# name: TestTemplateRendering.test_test_writer_prompt
+  '''
+  # Test Writer — myapp
+  
+  You are the Test Writer agent for **myapp**.
+  
+  ## Role
+  
+  Write comprehensive tests for implementation code.
+  
+  ## Instructions
+  
+  1. Write unit tests for all domain logic
+  2. Write integration tests for CLI commands
+  3. Write snapshot tests for template rendering
+  4. Ensure 100% core coverage
+  
+  ## Context
+  
+  - **Project**: myapp
+  - **Agent**: claude
+  - **Stack**: Python
   
   '''
 # ---

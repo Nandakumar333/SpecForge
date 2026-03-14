@@ -32,7 +32,7 @@ FEATURE_TEMPLATES = [
 
 def _build_context(config: ProjectConfig) -> dict[str, Any]:
     """Build the Jinja2 template context from a config."""
-    from datetime import date, timezone
+    from datetime import date
     return {
         "project_name": config.name,
         "agent": config.agent,

@@ -1,6 +1,6 @@
 """Unit tests for prerequisite checker."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from specforge.core.checker import check_prerequisites
 

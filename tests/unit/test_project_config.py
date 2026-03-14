@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from specforge.core.project import ProjectConfig
 
 
