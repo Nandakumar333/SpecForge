@@ -1,0 +1,422 @@
+
+SPECFORGE
+AI-Powered Spec-Driven Development Engine
+From One Prompt to Production-Ready Features
+
+────────────────
+
+Comprehensive Feature Specification & Roadmap
+Version 1.0 — March 2026
+Inspired by GitHub Spec Kit | Built for Enterprise AI Agents
+ 
+1. Executive Summary
+SpecForge is an AI-powered development engine that takes a single natural-language prompt and produces a fully decomposed, spec-driven, production-ready web application. It extends the philosophy of GitHub's Spec Kit — where specifications are the primary artifact — but adds automatic feature decomposition, per-feature sub-agent execution, and strict code quality enforcement through agent instruction prompts.
+
+THE CORE IDEA
+"Create a webapp for PersonalFinance" → SpecForge auto-decomposes this into 12+ features, generates spec/plan/research/datamodel/checklist/tasks for each, and implements each feature independently using sub-agents governed by strict architecture, backend, frontend, database, security, testing, and CI/CD prompt files.
+
+1.1 What Makes SpecForge Different from Spec Kit
+Automatic Feature Decomposition: Spec Kit requires manual feature definition. SpecForge takes a one-line app description and intelligently splits it into bounded features.
+Independent Sub-Agent Execution: Each feature runs as an isolated sub-agent with its own context, allowing parallel implementation without context pollution.
+Agent Instruction Prompts: Not just templates — SpecForge ships with opinionated, strict coding-standard prompt files (backend.prompts.md, frontend.prompts.md, etc.) that enforce SOLID principles, design patterns, function length limits, layer separation, and more.
+No Industry Standard Bias: SpecForge deliberately does NOT follow default industry conventions unless explicitly instructed. This prevents AI agents from making assumptions about architecture, patterns, or libraries.
+Edge Case First: The tool is designed to identify and fix edge cases before implementation, not after. Every spec phase includes edge-case analysis as a first-class artifact.
+ 
+2. System Architecture
+2.1 High-Level Flow
+The SpecForge pipeline transforms a single prompt into production code through a structured, multi-phase process:
+
+1	User Prompt	"Create a webapp for PersonalFinance"
+2	App Analyzer Agent	Understands domain, identifies bounded contexts, extracts features
+3	Feature Decomposer	Splits app into 10-15 independent feature modules
+4	Per-Feature Spec Pipeline	spec → research → datamodel → plan → checklist → tasks
+5	Sub-Agent Executor	Each feature implemented by isolated sub-agent with strict prompt governance
+6	Integration Orchestrator	Merges features, resolves cross-cutting concerns, runs integration tests
+7	Quality Gate	Automated test-fix loops, security scan, lint, build validation
+
+2.2 Directory Structure
+SpecForge generates the following structure for every project:
+
+project-root/
+├── .specforge/
+│   ├── constitution.md                    # Project-wide principles
+│   ├── memory/
+│   │   ├── constitution.md                # Governance rules
+│   │   └── decisions.md                   # Architecture Decision Records
+│   ├── prompts/                           # AGENT INSTRUCTION FILES
+│   │   ├── architecture.prompts.md        # System-wide architecture rules
+│   │   ├── backend.prompts.md             # Backend coding standards
+│   │   ├── frontend.prompts.md            # Frontend coding standards
+│   │   ├── database.prompts.md            # Database design rules
+│   │   ├── security.prompts.md            # Security requirements
+│   │   ├── testing.prompts.md             # Testing strategy & standards
+│   │   ├── cicd.prompts.md                # CI/CD pipeline rules
+│   │   └── api-design.prompts.md          # API contract rules
+│   ├── features/
+│   │   ├── 001-authentication/
+│   │   │   ├── spec.md
+│   │   │   ├── research.md
+│   │   │   ├── data-model.md
+│   │   │   ├── plan.md
+│   │   │   ├── checklist.md
+│   │   │   ├── tasks.md
+│   │   │   ├── edge-cases.md
+│   │   │   └── contracts/
+│   │   │       └── api-spec.json
+│   │   ├── 002-accounts-wallets/
+│   │   │   └── ... (same structure)
+│   │   └── ... (all features)
+│   ├── templates/
+│   │   ├── spec-template.md
+│   │   ├── plan-template.md
+│   │   ├── tasks-template.md
+│   │   ├── checklist-template.md
+│   │   ├── research-template.md
+│   │   ├── datamodel-template.md
+│   │   └── edge-cases-template.md
+│   └── scripts/
+│       ├── decompose.sh
+│       ├── generate-feature.sh
+│       └── run-sub-agent.sh
+├── src/                                   # Generated application code
+│   ├── backend/
+│   ├── frontend/
+│   └── shared/
+└── tests/
+ 
+3. Agent Instruction Prompt Files (The Heart of SpecForge)
+This is the critical differentiator. Every sub-agent that generates or implements code reads these prompt files as hard constraints. They are NOT suggestions — they are executable governance.
+
+3.1 backend.prompts.md — .NET Microservice Standards
+PURPOSE
+Every line of backend code generated by any sub-agent MUST comply with these instructions. Violations trigger automatic rejection and re-generation.
+
+Architecture Rules
+•	Microservice Pattern: Each bounded context = 1 microservice. No monoliths. Services communicate via async messaging (RabbitMQ/MassTransit) or gRPC for sync calls.
+•	Clean Architecture: Domain → Application → Infrastructure → Presentation. Dependencies point inward ONLY.
+•	CQRS Pattern: Command and Query segregation. Commands mutate state, Queries read state. Never mix.
+•	API Gateway: Ocelot or YARP gateway for routing. No direct client-to-microservice calls.
+
+Folder Structure Per Microservice
+ServiceName/
+├── ServiceName.Domain/          # Entities, Value Objects, Domain Events
+├── ServiceName.Application/     # Use Cases, DTOs, Interfaces, Validators
+│   ├── Commands/
+│   ├── Queries/
+│   ├── DTOs/
+│   ├── Interfaces/
+│   ├── Validators/              # FluentValidation
+│   └── Mappings/                # AutoMapper profiles
+├── ServiceName.Infrastructure/  # EF Core, Repos, External Services
+│   ├── Persistence/
+│   ├── Repositories/
+│   └── Services/
+├── ServiceName.API/             # Controllers, Middleware, DI
+│   ├── Controllers/
+│   ├── Middleware/
+│   └── Extensions/
+└── ServiceName.Tests/
+    ├── Unit/
+    ├── Integration/
+    └── Contract/
+
+SOLID Principles — Enforced, Not Suggested
+•	Single Responsibility: One class = one reason to change. Controllers ONLY route HTTP. Services ONLY contain business logic. Repositories ONLY handle data access.
+•	Open/Closed: Use strategy pattern for business rule variations. Never modify existing classes to add new behavior — extend via interfaces.
+•	Liskov Substitution: All implementations must be fully substitutable for their interfaces. No interface methods throwing NotImplementedException.
+•	Interface Segregation: No fat interfaces. IUserService should not have SendEmail(). Split into IUserService, IEmailService, INotificationService.
+•	Dependency Inversion: Controllers inject IService (not Service). Services inject IRepository (not Repository). NEVER use 'new' for dependencies.
+
+Hard Code Quality Rules
+•	Functions/methods: MAXIMUM 30 lines. If longer, extract helper methods.
+•	Classes: MAXIMUM 300 lines. If longer, split responsibilities.
+•	Controllers: ONLY call service layer through interfaces. No business logic. Max 5 actions per controller.
+•	Service layer: Must use FluentValidation for input validation. Must use AutoMapper/Mapster for DTO mapping. No direct EF Core calls — use repository pattern.
+•	Repository pattern: Generic IRepository<T> base + specific repositories for complex queries.
+•	Exception handling: Global exception middleware. No try-catch in controllers. Domain exceptions translate to HTTP status codes.
+•	Logging: Structured logging via Serilog. Every service method logs entry/exit at Debug level.
+•	No magic strings: All constants in dedicated Constants.cs or enum types.
+•	No primitive obsession: Use Value Objects for Email, Money, PhoneNumber, etc.
+•	Result pattern: Use Result<T> pattern instead of throwing exceptions for business logic failures.
+ 
+3.2 frontend.prompts.md — Frontend Standards
+•	Component architecture: Atomic Design (atoms → molecules → organisms → templates → pages).
+•	State management: Zustand or Redux Toolkit. No prop drilling beyond 2 levels.
+•	API layer: Dedicated api/ directory with typed client. All API calls go through a central httpClient wrapper.
+•	Components: MAXIMUM 150 lines. Extract custom hooks for logic. Presentational vs Container separation.
+•	CSS: Tailwind utility-first OR CSS Modules. No inline styles. No global CSS except resets.
+•	Forms: React Hook Form + Zod schema validation. Never manual validation.
+•	Error boundaries: Every route wrapped in ErrorBoundary. Fallback UI for every error state.
+•	Accessibility: WCAG 2.1 AA minimum. Every interactive element has aria labels. Keyboard navigation required.
+•	Testing: React Testing Library. Test behavior not implementation. Minimum 80% coverage for components.
+•	No any type: Strict TypeScript. All props typed. All API responses typed. Zero 'any' allowed.
+
+3.3 database.prompts.md — Database Standards
+•	Schema-first: All schema changes via EF Core migrations. No manual SQL in production.
+•	Naming: snake_case for PostgreSQL tables/columns. PascalCase for SQL Server.
+•	Indexes: Every foreign key indexed. Composite indexes for frequent query patterns. Covering indexes for read-heavy tables.
+•	Soft deletes: All entities use IsDeleted + DeletedAt. Never hard delete user data.
+•	Audit trail: CreatedAt, UpdatedAt, CreatedBy, UpdatedBy on every table.
+•	Connection pooling: NpgSql connection pooling enabled. Connection string in environment variables, never in code.
+•	Query performance: No N+1 queries. Use .Include() for eager loading or projection queries. Log slow queries (>100ms).
+•	Data seeding: Separate seeder per microservice. Test data in development only.
+
+3.4 security.prompts.md — Security Standards
+•	Authentication: JWT Bearer with refresh tokens. Access token: 15 min TTL. Refresh token: 7 day TTL, single use, stored hashed.
+•	Authorization: Policy-based authorization. No role checks in controllers. Use [Authorize(Policy = "...")].
+•	Input validation: Validate at API boundary (FluentValidation) AND domain layer. Never trust client input.
+•	SQL injection: ONLY parameterized queries via EF Core. No raw SQL concatenation. If raw SQL needed, use FromSqlInterpolated.
+•	XSS: Output encoding by default. CSP headers. No dangerouslySetInnerHTML without sanitization.
+•	CORS: Explicit origin whitelist. No wildcard (*) in production.
+•	Secrets: Azure Key Vault or AWS Secrets Manager. Never in appsettings.json. Never committed to git.
+•	Rate limiting: ASP.NET Rate Limiter middleware. Per-endpoint and per-user limits.
+•	HTTPS: Enforce HSTS. Redirect HTTP to HTTPS. Min TLS 1.2.
+•	Dependency scanning: Dependabot or Snyk. Block PRs with critical vulnerabilities.
+ 
+3.5 testing.prompts.md — Testing Standards
+•	Unit tests: xUnit + Moq/NSubstitute. One test class per production class. Arrange-Act-Assert pattern.
+•	Integration tests: WebApplicationFactory<Program>. Test full HTTP pipeline. Use Testcontainers for database.
+•	Contract tests: Pact.NET for consumer-driven contracts between microservices.
+•	Coverage: Minimum 80% line coverage. 100% for domain logic. Coverage gate blocks CI if below threshold.
+•	Naming: MethodName_StateUnderTest_ExpectedBehavior (e.g., CreateUser_ValidInput_ReturnsCreatedResult).
+•	No test interdependence: Each test fully isolated. No shared mutable state. Use fresh database per test class.
+•	Mutation testing: Stryker.NET for critical business logic. Mutation score > 70%.
+•	Performance tests: k6 or NBomber for load testing. Define SLOs upfront.
+
+3.6 cicd.prompts.md — CI/CD Standards
+•	Pipeline stages: Restore → Build → Test → Lint → Security Scan → Docker Build → Deploy to Staging → Integration Tests → Deploy to Prod.
+•	Docker: Multi-stage builds. Non-root user. Alpine-based images. Layer caching optimized.
+•	Infrastructure: Terraform/Pulumi for IaC. No manual cloud console changes.
+•	GitFlow: main (production), develop (staging), feature/* branches. PR required for all merges.
+•	Commit convention: Conventional Commits (feat:, fix:, chore:, docs:). Enforce via commitlint.
+•	Auto-rollback: Health check failure triggers automatic rollback to previous version.
+•	Secrets in pipeline: GitHub Actions secrets or Azure DevOps variable groups. Never echoed in logs.
+•	Artifact versioning: SemVer. Auto-incremented by CI. Docker tags match git tags.
+
+3.7 api-design.prompts.md — API Design Standards
+•	REST: Resource-oriented URLs. Plural nouns (/api/v1/users, not /api/v1/user). HTTP verbs for actions.
+•	Versioning: URL-based (v1, v2). Never break existing consumers.
+•	Response envelope: { data, errors, meta } structure. Consistent across all endpoints.
+•	Pagination: Cursor-based for large datasets. Offset-based for small. Always return totalCount and hasMore.
+•	Error format: RFC 7807 Problem Details. Include type, title, status, detail, instance.
+•	OpenAPI: Spec generated from code annotations. Swagger UI in development. Schema validation in CI.
+•	Idempotency: POST/PUT endpoints accept Idempotency-Key header. Store and deduplicate.
+•	HATEOAS: Include _links in responses for discoverability (optional but recommended for public APIs).
+ 
+4. Feature Decomposition — PersonalFinance Example
+When a user types "Create a webapp for PersonalFinance", the App Analyzer Agent decomposes it into the following bounded features:
+
+001	Authentication & User Management	User registration, login (email/OAuth), MFA, profile management, session handling, password reset, account deletion	P0 — Critical Path
+002	Accounts & Wallets	Bank accounts, credit cards, cash wallets, crypto wallets, net worth calculation, account linking, balance tracking	P0 — Critical Path
+003	Transactions	Income/expense tracking, categorization (auto + manual), recurring transactions, splits, attachments (receipts), search & filter	P0 — Critical Path
+004	Budgeting	Monthly/custom period budgets, category-level budgets, budget alerts, rollover rules, envelope budgeting, budget vs actual reports	P1 — High
+005	Investments	Portfolio tracking, stock/mutual fund/ETF, P&L calculation, dividend tracking, asset allocation, benchmark comparison	P1 — High
+006	Bills & Subscriptions	Recurring bill tracking, due date reminders, subscription detection from transactions, cancellation tracking, cost optimization suggestions	P1 — High
+007	Financial Goals	Goal creation (emergency fund, vacation, house), progress tracking, suggested monthly savings, goal-linked accounts, milestone celebrations	P2 — Medium
+008	Reports & Analytics	Spending trends, income vs expense, category breakdown, net worth over time, tax-ready reports, export (PDF/CSV), custom date ranges	P1 — High
+009	Alerts & Notifications	Budget exceeded, bill due, large transaction, low balance, goal milestones, weekly/monthly summaries, multi-channel (email, push, in-app)	P2 — Medium
+010	Data Import & Bank Integration	Plaid/Yodlee integration, CSV import, OFX/QFX import, transaction reconciliation, duplicate detection, import history	P1 — High
+011	AI Financial Advisor	Spending pattern analysis, savings recommendations, anomaly detection, cash flow forecasting, debt payoff optimization, natural language queries	P2 — Medium
+012	Admin & System Management	User management, system health dashboard, feature flags, audit logs, data export compliance (GDPR), rate limiting config	P1 — High
+ 
+5. Per-Feature Spec Pipeline
+Each of the 12 features above goes through an identical 7-phase pipeline. Here is what each phase produces, using Feature 001 (Authentication) as the reference example:
+
+5.1 spec.md — Feature Specification
+Defines WHAT and WHY. No tech stack. No implementation details.
+•	Feature overview and business justification
+•	User personas and their needs
+•	User stories with acceptance criteria (Given/When/Then format)
+•	Functional requirements (numbered, testable)
+•	Non-functional requirements (performance SLOs, availability targets)
+•	Out of scope (explicit exclusions to prevent scope creep)
+•	Assumptions and constraints
+•	Edge cases section (first-class, not afterthought)
+
+5.2 research.md — Technical Research
+Resolves all unknowns BEFORE planning begins.
+•	Technology options evaluated with pros/cons matrix
+•	Library version compatibility verification
+•	Third-party service evaluation (Plaid, Auth0, SendGrid, etc.)
+•	Performance benchmarks for chosen approach
+•	Security considerations specific to this feature
+•	Known limitations and workarounds
+•	Reference implementations and examples
+
+5.3 data-model.md — Data Model Design
+Complete entity design for this feature's bounded context.
+•	Entity definitions with all properties and types
+•	Relationships (one-to-many, many-to-many, aggregates)
+•	Value objects and their validation rules
+•	Index strategy for query performance
+•	Migration plan (if modifying existing schema)
+•	Seed data specification
+•	Data retention and archival rules
+
+5.4 plan.md — Technical Implementation Plan
+The HOW. References prompt files for coding standards.
+•	Architecture decisions for this feature
+•	Component breakdown (which classes, interfaces, services)
+•	API endpoint design with request/response schemas
+•	Frontend component tree
+•	Integration points with other features
+•	Performance strategy (caching, pagination, lazy loading)
+•	Constitution compliance check
+•	Reference to applicable prompt files (backend.prompts.md, etc.)
+
+5.5 checklist.md — Quality Checklist
+Validation gate — feature cannot move to implementation until all items pass.
+•	All user stories have acceptance criteria ✓/✗
+•	Data model reviewed for normalization ✓/✗
+•	API contracts defined and versioned ✓/✗
+•	Security requirements addressed ✓/✗
+•	Edge cases documented and handled ✓/✗
+•	Performance SLOs defined ✓/✗
+•	Cross-feature dependencies identified ✓/✗
+•	Prompt file compliance verified ✓/✗
+
+5.6 edge-cases.md — Edge Case Analysis (SpecForge Exclusive)
+This is the file that standard tools miss. SpecForge treats edge cases as a first-class spec artifact.
+•	Concurrency scenarios (two users updating same resource)
+•	Network failure handling (API timeout, partial writes)
+•	Data boundary conditions (empty lists, max values, special characters)
+•	State machine edge cases (what happens if user is mid-flow and session expires?)
+•	Integration failure scenarios (third-party API down, rate limited)
+•	Security edge cases (token replay, CSRF, concurrent sessions)
+•	UI edge cases (long text, missing data, slow connections, accessibility)
+•	Data migration edge cases (corrupt data, duplicates, encoding issues)
+
+5.7 tasks.md — Actionable Task Breakdown
+Implementation tasks ordered by dependency, with parallel execution markers.
+•	Tasks grouped by user story for independent delivery
+•	Each task has: ID, description, file paths, dependencies, estimated effort
+•	[P] markers for parallelizable tasks
+•	Test tasks BEFORE implementation tasks (TDD enforcement)
+•	Checkpoint after each user story for validation
+•	Commit convention enforced per task (feat: fix: etc.)
+ 
+6. Sub-Agent Execution Architecture
+Each feature is implemented by an isolated sub-agent. This prevents context window pollution and allows parallel development.
+
+6.1 Sub-Agent Context Loading
+When a sub-agent starts implementing Feature 003 (Transactions), it loads:
+•	constitution.md — Project-wide governance
+•	All applicable prompt files (backend.prompts.md, frontend.prompts.md, database.prompts.md, security.prompts.md, testing.prompts.md)
+•	Feature 003 spec.md, plan.md, data-model.md, tasks.md, edge-cases.md
+•	Shared contracts from features it depends on (e.g., Feature 001 auth contracts, Feature 002 account contracts)
+•	Nothing else — no other feature's implementation code
+
+6.2 Sub-Agent Execution Loop
+•	1. Load Context: Read all governance files + feature spec artifacts
+•	2. Validate Preconditions: Ensure dependent features' contracts are available
+•	3. Execute Tasks: Follow tasks.md in order, respecting [P] parallel markers
+•	4. Quality Check: After each task: lint, build, run unit tests
+•	5. Edge Case Verification: Cross-reference edge-cases.md after implementation
+•	6. Self-Review: Agent reviews own code against prompt file rules
+•	7. Auto-Fix Loop: If tests fail: analyze → fix → re-test (max 3 iterations)
+•	8. Commit & Report: Conventional commit per task. Status report to orchestrator
+
+6.3 Feature Dependency Graph
+Features are not randomly ordered. SpecForge builds a dependency DAG:
+
+Feature	Depends On	Phase
+001 Authentication	None (foundation)	Phase 1
+002 Accounts & Wallets	001	Phase 1
+003 Transactions	001, 002	Phase 2
+004 Budgeting	001, 002, 003	Phase 2
+005 Investments	001, 002	Phase 2
+006 Bills & Subscriptions	001, 002, 003	Phase 2
+007 Financial Goals	001, 002	Phase 3
+008 Reports & Analytics	001, 002, 003, 004, 005	Phase 3
+009 Alerts & Notifications	001 + any notifiable feature	Phase 3
+010 Data Import	001, 002, 003	Phase 2
+011 AI Advisor	001, 002, 003, 004, 005, 008	Phase 4
+012 Admin	001	Phase 1
+ 
+7. Development Roadmap
+The roadmap is split into phases for building SpecForge itself (the tool), not the target application it generates.
+
+Phase 1 — Foundation (Weeks 1-4)
+•	CLI Scaffold: specforge init <project> command with template download, agent detection, directory structure creation
+•	Constitution Generator: Interactive constitution.md creation with domain-aware defaults
+•	Prompt File Library: Ship all 7 prompt files (backend, frontend, database, security, testing, cicd, api-design) with .NET defaults and pluggable tech stacks
+•	Template Engine: All 7 per-feature templates (spec, research, datamodel, plan, checklist, edge-cases, tasks) with smart placeholders
+•	Feature Numbering & Branching: Auto-increment feature numbers, create git branches, directory scaffolding
+•	Basic Slash Commands: /specforge.constitution, /specforge.specify, /specforge.plan, /specforge.tasks, /specforge.implement
+
+Phase 2 — Intelligence Layer (Weeks 5-8)
+•	App Analyzer Agent: Takes one-line prompt, understands domain, identifies features using LLM reasoning
+•	Feature Decomposer: Splits app into bounded features with dependency graph. Uses domain patterns (finance, e-commerce, social, SaaS)
+•	Edge Case Analyzer: Auto-generates edge-cases.md by analyzing spec against known patterns (concurrency, network, data boundaries)
+•	Research Agent: Auto-resolves NEEDS CLARIFICATION items by searching docs, checking versions, evaluating libraries
+•	Clarification Engine: /specforge.clarify with structured Q&A that updates spec
+•	Analyze Command: /specforge.analyze for cross-artifact consistency checking
+
+Phase 3 — Sub-Agent Engine (Weeks 9-12)
+•	Sub-Agent Isolation: Each feature runs in isolated context. Prompt files + feature artifacts only. No cross-contamination.
+•	Parallel Execution: Features without dependencies run simultaneously. Task-level parallelism within features.
+•	Auto-Fix Loop: Test failure → analysis → code fix → re-test. Max 3 iterations before escalation.
+•	Quality Gate: Post-implementation validation: lint, build, test coverage, security scan, prompt compliance check.
+•	Cross-Feature Integration: Orchestrator merges features, resolves shared contracts, runs integration tests.
+•	Progress Dashboard: Real-time status of all features: specifying → planning → implementing → testing → complete.
+
+Phase 4 — Polish & Ecosystem (Weeks 13-16)
+•	Multi-Agent Support: Claude Code, Copilot, Gemini CLI, Cursor, Windsurf, Codex compatibility
+•	Tech Stack Plugins: Pluggable prompt files: .NET → Node.js → Python → Go → Java. Frontend: React → Vue → Svelte → Angular
+•	Brownfield Mode: Analyze existing codebase, generate specs from code, add features incrementally
+•	PR Workflow: Auto-create PRs per feature with spec summary, checklist status, test results
+•	Custom Prompt Authoring: UI/CLI for teams to write and validate their own prompt files
+•	VS Code Extension: Sidebar showing feature tree, spec status, one-click navigation to any artifact
+
+ 
+8. Edge Cases in SpecForge Itself
+You asked for edge cases to be fixed. Here are the known edge cases in the tool itself and how SpecForge handles them:
+
+Circular Feature Dependencies	Dependency graph validation at decomposition time. If A depends on B and B depends on A, the decomposer extracts the shared concern into a new feature (e.g., 000-shared-contracts).
+Context Window Overflow	Sub-agents load only their feature's artifacts + shared contracts. If a single feature's spec exceeds context limits, the system splits it into sub-features automatically.
+Ambiguous One-Line Prompt	If the App Analyzer cannot confidently decompose, it enters an interactive clarification loop asking 3-5 targeted questions before proceeding.
+Conflicting Prompt Rules	Prompt files have explicit precedence: security.prompts.md > architecture.prompts.md > backend.prompts.md. Conflicts resolved by highest-priority file.
+AI Hallucinating Libraries/APIs	Research phase MUST verify every library exists, check the version number, and confirm API compatibility. Unverified dependencies block planning.
+Feature Scope Creep During Implementation	Sub-agents are bound to tasks.md. Any generated code not traceable to a task ID is flagged and rejected.
+Test-Fix Loop Infinite Cycling	Maximum 3 fix iterations. After 3 failures, the task is escalated to the user with a diagnostic report.
+Cross-Feature Contract Breaking Changes	Shared contracts are versioned. A feature cannot modify a contract without bumping the version and updating all consumers.
+Prompt File Not Applicable to Tech Stack	If user specifies Python/Django but prompt files assume .NET, the system auto-adapts rules to the target stack (e.g., FluentValidation → Pydantic, EF Core → SQLAlchemy).
+Partial Implementation Recovery	Each task commit is atomic. If the agent crashes mid-feature, it resumes from the last committed task, not from scratch.
+ 
+9. CLI Commands Reference
+
+Command	Description	Example
+specforge init <project>	Scaffold project with .specforge/ directory, prompt files, templates, and agent config	specforge init PersonalFinance --agent claude --stack dotnet
+specforge decompose	Take the app description from constitution and auto-split into features	specforge decompose "Create a webapp for PersonalFinance"
+specforge specify <feature>	Generate spec.md for a specific feature	/specforge.specify 001-authentication
+specforge research <feature>	Generate research.md resolving all technical unknowns	/specforge.research 001-authentication
+specforge datamodel <feature>	Generate data-model.md with entities, relationships, indexes	/specforge.datamodel 001-authentication
+specforge plan <feature>	Generate plan.md with full implementation blueprint	/specforge.plan 001-authentication
+specforge checklist <feature>	Generate and validate checklist.md quality gate	/specforge.checklist 001-authentication
+specforge edgecases <feature>	Generate edge-cases.md with comprehensive edge case analysis	/specforge.edgecases 001-authentication
+specforge tasks <feature>	Generate tasks.md with ordered, parallelizable implementation tasks	/specforge.tasks 001-authentication
+specforge implement <feature>	Execute all tasks for a feature via sub-agent	/specforge.implement 001-authentication
+specforge implement --all	Execute all features respecting dependency graph	specforge implement --all --parallel
+specforge analyze	Cross-feature consistency and coverage analysis	/specforge.analyze
+specforge status	Show progress dashboard for all features	specforge status
+ 
+10. Summary — Why SpecForge
+
+One Prompt to Features: No manual feature identification. The AI decomposes your app idea into isolated, bounded features automatically.
+
+Spec-First, Not Code-First: Every feature has 7 artifacts (spec, research, datamodel, plan, checklist, edge-cases, tasks) BEFORE a single line of code is written.
+
+Strict Agent Governance: Prompt files are not guidelines — they are hard constraints. 30-line function limits, SOLID enforcement, security rules — all checked automatically.
+
+Edge Cases as First-Class Citizens: Every feature has a dedicated edge-cases.md. No more "we'll handle that later" — edge cases are identified and addressed during spec phase.
+
+Independent Sub-Agents: No context window pollution. Each feature is implemented in isolation with only its own spec + shared contracts.
+
+Automated Quality Loops: Tests fail? The agent fixes them. Lint errors? Auto-corrected. Security issues? Caught before merge. Maximum 3 retries before human escalation.
+
+Tech Stack Agnostic: Ship with .NET defaults, plug in Node.js/Python/Go/Java prompt files. Same process, different standards.
+
+No Industry Standard Bias: The AI does NOT assume REST, React, PostgreSQL, or any default. It follows YOUR prompt files and YOUR constitution.
+
+
+— End of Document —
