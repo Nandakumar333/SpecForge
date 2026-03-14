@@ -8,7 +8,11 @@
     },
     "chat.tools.terminal.autoApprove": {
         ".specify/scripts/bash/": true,
-        ".specify/scripts/powershell/": true
+        ".specify/scripts/powershell/": true,
+        "/^cd \"C:\\\\My code\\\\my\\\\SpecForge\"; uv run python -m pytest tests/unit/test_check\\.py tests/integration/test_check_cmd\\.py -v --tb=short 2>&1$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }
 
