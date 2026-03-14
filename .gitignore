@@ -1,0 +1,17 @@
+# Python project .gitignore
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.coverage
+.pytest_cache/
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+.env
+.env.*
