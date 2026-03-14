@@ -41,8 +41,3 @@ dev = [
     "ruff>=0.4",
     "syrupy>=4.0",
 ]
-
-[dependency-groups]
-dev = [
-    "syrupy>=5.1.0",
-]
