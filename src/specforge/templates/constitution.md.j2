@@ -1,0 +1,30 @@
+# {{ project_name }} Constitution
+
+**Project**: {{ project_name }}
+**Agent**: {{ agent }}
+**Stack**: {{ stack }}
+**Created**: {{ date }}
+
+## Core Principles
+
+### I. Spec-First Development
+
+No code is written until `spec.md`, `plan.md`, and `tasks.md` exist for the feature.
+
+### II. Architecture
+
+{{ project_name }} follows Clean Architecture.{% if stack != "agnostic" %} Stack: {{ stack_hint }}.{% endif %}
+
+### III. Code Quality
+
+- Strict type hints on every function signature
+- Functions ≤ 30 lines; classes ≤ 200 lines
+- 100% unit test coverage for core domain logic
+
+### IV. Testing
+
+Test files created before implementation files (TDD enforced).
+
+## Version
+
+**Version**: 1.0.0 | **Ratified**: {{ date }}
