@@ -17,6 +17,8 @@ Classification of template purpose.
 | `feature` | Per-feature document template |
 | `partial` | Reusable fragment (not directly renderable) |
 
+**Note**: Infrastructure templates (`decisions.md.j2`, `gitignore.j2`) are excluded from registry discovery. They are rendered via `render_raw()` by the scaffold pipeline and do not have a TemplateType assignment.
+
 ### TemplateSource (Enum)
 
 Where a template was discovered from.
@@ -54,6 +56,8 @@ Variable contract for a template type.
 - `CONSTITUTION_VARS`: `project_name: str`, `agent: str`, `stack: str`, `date: str`, `stack_hint: str`
 - `PROMPT_VARS`: `project_name: str`, `agent: str`, `stack: str`, `date: str`, `stack_hint: str`, `conventions: str` (optional), `patterns: str` (optional)
 - `FEATURE_VARS`: `project_name: str`, `feature_name: str` (optional), `date: str`, `stack: str` (optional), `stack_hint: str` (optional)
+
+**Note**: TemplateValidator is stateless (no constructor arguments, no shared state). It is used as a utility namespace — the TemplateRenderer calls its functions directly rather than receiving it via constructor injection. This is consistent with the constitution's constructor injection principle, which applies to stateful dependencies.
 
 ### ValidationIssue (Frozen Dataclass)
 

@@ -55,6 +55,7 @@ specs/002-template-rendering-engine/
 ```text
 src/specforge/
 ├── core/
+│   ├── template_models.py       # NEW — Template engine enums and dataclasses
 │   ├── template_registry.py     # NEW — Template discovery, catalog, resolution
 │   ├── template_renderer.py     # NEW — Jinja2 wrapper with filters, inheritance, header
 │   ├── template_validator.py    # NEW — Post-render validation (placeholders, structure)
@@ -63,7 +64,7 @@ src/specforge/
 │   ├── scaffold_builder.py      # MODIFIED — Use registry instead of hardcoded lists
 │   ├── scaffold_writer.py       # MODIFIED — Use renderer + validator pipeline
 │   ├── config.py                # MODIFIED — New template type constants, prompt/feature lists
-│   ├── project.py               # MODIFIED — New dataclasses for template metadata
+│   ├── project.py               # UNCHANGED
 │   └── result.py                # UNCHANGED
 ├── templates/
 │   ├── __init__.py              # UNCHANGED
@@ -102,6 +103,7 @@ src/specforge/
 
 tests/
 ├── unit/
+│   ├── test_template_models.py       # NEW
 │   ├── test_template_registry.py    # NEW
 │   ├── test_template_renderer.py    # NEW
 │   ├── test_template_validator.py   # NEW

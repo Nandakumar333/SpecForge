@@ -49,7 +49,9 @@ TemplateRenderer(registry: TemplateRegistry)
 
 ```text
 TemplateValidator()
-  - Stateless. No constructor arguments.
+  - Stateless utility namespace. No constructor arguments, no shared state.
+  - The TemplateRenderer calls validator functions directly (not via constructor injection).
+  - This is consistent with constructor injection for stateful dependencies — stateless utilities are exempt.
 
   .validate(content: str, template_name: str = "") -> ValidationReport
     - Checks: unresolved placeholders, unclosed code blocks, heading hierarchy, orphaned lists.
