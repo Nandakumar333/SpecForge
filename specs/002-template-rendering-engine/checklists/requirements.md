@@ -32,6 +32,11 @@
 ## Notes
 
 - All items passed on first validation iteration (2026-03-14)
-- Implementation technology references (Jinja2, .md.j2) appear only in the **Input** field which quotes the user's original description verbatim — the spec body itself is technology-agnostic
-- The `{{ project_name }}` on line 83 is an illustrative example of what an unresolved placeholder looks like, not an actual unresolved placeholder
-- Template catalog migration from Feature 001 names to Feature 002 names is documented in the Assumptions section
+- Clarification session (2026-03-14) resolved 5 open design questions:
+  1. Template inheritance → extends/block pattern
+  2. Output validation scope → placeholders + basic structure (no full linting)
+  3. Stack variant disk layout → subdirectories per template
+  4. Template includes/partials → supported via `partials/` subdirectory
+  5. Generation header → HTML comment on every rendered file
+- FR count increased from 20 to 22 after clarifications (added FR-005 includes, FR-006 header)
+- Implementation technology references appear only in the Input field (user's raw description) — spec body remains technology-agnostic
