@@ -33,3 +33,16 @@ packages = ["src/specforge"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "syrupy>=4.0",
+]
+
+[dependency-groups]
+dev = [
+    "syrupy>=5.1.0",
+]

@@ -71,7 +71,7 @@ uv run pytest --snapshot-update
 
 ## Recent Changes
 
-- **002-cli-init-scaffold** (2026-03-14): Core CLI scaffold — `init`, `check`, `decompose` commands; `Result[T]` pattern; agent auto-detection; Jinja2 template system; GitPython init + commit; `--dry-run` support
+- **001-cli-init-scaffold** (2026-03-14): Core CLI scaffold — `init`, `check`, `decompose` commands; `Result[T]` pattern; agent auto-detection; Jinja2 template system; GitPython init + commit; `--dry-run` support
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

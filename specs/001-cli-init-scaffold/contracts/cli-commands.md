@@ -1,6 +1,6 @@
 # CLI Command Contract: SpecForge
 
-**Feature**: `002-cli-init-scaffold` | **Date**: 2026-03-14
+**Feature**: `001-cli-init-scaffold` | **Date**: 2026-03-14
 
 This document is the authoritative contract for all CLI commands exposed in this feature. Each command's flags, arguments, exit codes, and output format are binding for both implementation and tests.
 

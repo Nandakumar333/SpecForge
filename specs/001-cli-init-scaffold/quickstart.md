@@ -1,6 +1,6 @@
 # Quickstart: SpecForge CLI Init & Scaffold
 
-**Feature**: `002-cli-init-scaffold` | **Date**: 2026-03-14
+**Feature**: `001-cli-init-scaffold` | **Date**: 2026-03-14
 
 This document describes how to install SpecForge, scaffold a new project, and verify your setup. It is the reference for the "zero to working project" path described in SC-001 and SC-002.
 

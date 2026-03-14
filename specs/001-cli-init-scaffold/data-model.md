@@ -1,6 +1,6 @@
 # Data Model: SpecForge CLI Init & Scaffold
 
-**Feature**: `002-cli-init-scaffold` | **Date**: 2026-03-14
+**Feature**: `001-cli-init-scaffold` | **Date**: 2026-03-14
 
 ---
 
@@ -24,7 +24,7 @@ AGENT_PRIORITY: list[AgentName] = [
 # Executable names to probe via shutil.which()
 AGENT_EXECUTABLES: dict[AgentName, list[str]] = {
     "claude":   ["claude"],
-    "copilot":  ["gh-copilot", "copilot"],
+    "copilot":  ["copilot"],
     "gemini":   ["gemini"],
     "cursor":   ["cursor"],
     "windsurf": ["windsurf"],
@@ -32,7 +32,7 @@ AGENT_EXECUTABLES: dict[AgentName, list[str]] = {
 }
 ```
 
-**Note on agent executables**: `claude` maps to `claude` (Anthropic CLI); `copilot` probes `gh-copilot` first then `copilot`; others map directly. Confirm actual binary names in research.md §AgentDetection before implementation.
+**Note on agent executables**: `claude` maps to `claude` (Anthropic CLI); `copilot` maps to the standalone `copilot` GA binary (Feb 2026 — the deprecated `gh-copilot` extension is retired); others map directly. See research.md §AgentDetection.
 
 ### `StackName`
 ```python
