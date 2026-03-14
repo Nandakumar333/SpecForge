@@ -15,3 +15,11 @@ build/
 Thumbs.db
 .env
 .env.*
+specs/
+logs/
+.github/
+.idea/
+.vscode/
+.claude/
+.claude_cache/
+CLAUDE.md
