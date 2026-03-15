@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from specforge.core.config import GOVERNANCE_DOMAINS, PRECEDENCE_ORDER
 from specforge.core.prompt_models import (
-    ConflictEntry,
     ConflictReport,
     PromptFile,
     PromptFileMeta,
@@ -181,6 +178,41 @@ class TestPromptValidatorCrossPriorityConflict:
         )
         assert conflict.winning_domain == "architecture"
         assert conflict.winning_value == "50"
+        assert not conflict.is_ambiguous
+
+    def test_backend_wins_when_listed_before_security_in_conflict(self) -> None:
+        """When domain_b has higher precedence than domain_a, domain_b wins (prec_b < prec_a)."""
+        from specforge.core.prompt_validator import PromptValidator
+
+        # domain_a = backend (prec 3), domain_b = security (prec 1)
+        # In the index, backend is listed first (domain_a), security second (domain_b)
+        files = {
+            "backend": _make_prompt_file(
+                "backend", 3,
+                rules=(_make_rule("BACK-001", thresholds=(
+                    PromptThreshold("min_password_length", "8"),
+                )),)
+            ),
+            "security": _make_prompt_file(
+                "security", 1,
+                rules=(_make_rule("SEC-001", thresholds=(
+                    PromptThreshold("min_password_length", "16"),
+                )),)
+            ),
+        }
+        files.update({
+            d: _make_prompt_file(d, 3, rules=())
+            for d in GOVERNANCE_DOMAINS if d not in files
+        })
+        prompt_set = _make_prompt_set(files)
+        validator = PromptValidator()
+        report = validator.detect_conflicts(prompt_set)
+
+        conflict = next(
+            c for c in report.conflicts if c.threshold_key == "min_password_length"
+        )
+        assert conflict.winning_domain == "security"
+        assert conflict.winning_value == "16"
         assert not conflict.is_ambiguous
 
     def test_security_wins_over_architecture_for_shared_threshold(self) -> None:
@@ -380,6 +412,6 @@ class TestPromptValidatorAllConflictsReported:
         validator = PromptValidator()
         report = validator.detect_conflicts(prompt_set)
 
-        # 2 shared keys × 1 pair = 2 conflicts
+        # 2 shared keys x 1 pair = 2 conflicts
         assert len(report.conflicts) == 2
         assert report.has_conflicts == (len(report.conflicts) > 0)

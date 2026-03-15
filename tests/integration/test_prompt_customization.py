@@ -103,9 +103,6 @@ class TestForcePreservesCustomizedFiles:
             original_backend = backend_path.read_text(encoding="utf-8")
             backend_path.write_text(original_backend + "# custom\n", encoding="utf-8")
 
-            # Track architecture (not customized) — record its mtime
-            arch_path = project_dir / ".specforge" / "prompts" / "architecture.prompts.md"
-
             # Step: Run --force
             result2 = runner.invoke(cli, ["init", "myapp", "--force", "--stack", "dotnet", "--no-git"])
             assert result2.exit_code == 0, result2.output

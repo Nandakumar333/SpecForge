@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from specforge.core.config import GOVERNANCE_DOMAINS, PRECEDENCE_ORDER
+from specforge.core.config import GOVERNANCE_DOMAINS
 
 
 def make_governance_fixtures(
@@ -28,7 +28,7 @@ def make_governance_fixtures(
     prompts_dir.mkdir(parents=True, exist_ok=True)
 
     # Domain precedence values matching PRECEDENCE_ORDER
-    _PRECEDENCE_MAP: dict[str, int] = {
+    precedence_map: dict[str, int] = {
         "security": 1,
         "architecture": 2,
         "backend": 3,
@@ -39,17 +39,15 @@ def make_governance_fixtures(
     }
 
     # Agnostic domains always use flat filename
-    _AGNOSTIC_DOMAINS = frozenset({"architecture", "security"})
+    agnostic_domains = frozenset({"architecture", "security"})
 
     for domain in domains:
-        if domain in _AGNOSTIC_DOMAINS:
-            filename = f"{domain}.prompts.md"
-        elif stack == "agnostic":
+        if domain in agnostic_domains or stack == "agnostic":
             filename = f"{domain}.prompts.md"
         else:
             filename = f"{domain}.{stack}.prompts.md"
 
-        precedence = _PRECEDENCE_MAP.get(domain, 3)
+        precedence = precedence_map.get(domain, 3)
         # Use domain-namespaced rule ID prefix
         prefix = domain[:4].upper().rstrip("-")
         rule_id = f"{prefix}-001"
@@ -68,7 +66,7 @@ checksum: abc123def456
 
 ## Precedence
 This file occupies position {precedence} in the conflict-resolution hierarchy:
-`security (1) > architecture (2) > backend/frontend/database (3) > testing (4) > cicd (5)`
+`security (1) > architecture (2) > backend/frontend/db (3) > testing (4) > cicd (5)`
 
 When this file conflicts with a higher-precedence file, the higher-precedence
 value applies. When this file conflicts with an equal-priority file, the conflict

@@ -35,7 +35,7 @@ class PromptLoader:
     # ── Public API ──────────────────────────────────────────────────────
 
     def load_for_feature(self, feature_id: str) -> Result[PromptSet, str]:
-        """Full pipeline: read config → resolve 7 paths → parse each → assemble PromptSet."""
+        """Load all governance files: read config, resolve paths, parse, assemble."""
         meta_result = self._read_project_meta()
         if not meta_result.ok:
             return Err(meta_result.error)
@@ -50,12 +50,12 @@ class PromptLoader:
         for domain in GOVERNANCE_DOMAINS:
             path = self._resolve_file_path(domain, stack)
             if path is None:
-                if domain in AGNOSTIC_GOVERNANCE_DOMAINS:
-                    expected = GOVERNANCE_AGNOSTIC_FILE_PATTERN.format(domain=domain)
-                elif stack == "agnostic":
+                if domain in AGNOSTIC_GOVERNANCE_DOMAINS or stack == "agnostic":
                     expected = GOVERNANCE_AGNOSTIC_FILE_PATTERN.format(domain=domain)
                 else:
-                    expected = GOVERNANCE_FILE_PATTERN.format(domain=domain, stack=stack)
+                    expected = GOVERNANCE_FILE_PATTERN.format(
+                        domain=domain, stack=stack
+                    )
                 missing.append(
                     f"  {domain}: {self._prompts_dir / expected}"
                 )

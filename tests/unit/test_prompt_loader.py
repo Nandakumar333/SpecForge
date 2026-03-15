@@ -6,11 +6,8 @@ import json
 import time
 from pathlib import Path
 
-import pytest
-
 from specforge.core.config import GOVERNANCE_DOMAINS, PRECEDENCE_ORDER
 from specforge.core.prompt_models import PromptFile, PromptSet
-
 from tests.unit.conftest import make_governance_fixtures
 
 

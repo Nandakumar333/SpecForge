@@ -11,7 +11,10 @@ from specforge.core.agent_detector import detect_agent
 from specforge.core.config import AGENT_PRIORITY, SUPPORTED_STACKS
 from specforge.core.git_ops import init_repo, is_git_available
 from specforge.core.project import ProjectConfig
-from specforge.core.scaffold_builder import build_scaffold_plan, generate_governance_files
+from specforge.core.scaffold_builder import (
+    build_scaffold_plan,
+    generate_governance_files,
+)
 from specforge.core.scaffold_writer import write_scaffold
 from specforge.core.stack_detector import StackDetector
 

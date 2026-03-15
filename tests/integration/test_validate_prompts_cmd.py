@@ -89,7 +89,7 @@ def _write_all_governance_files(
     """Write all 7 governance files, with optional threshold overrides."""
     overrides = overrides or {}
     for domain in GOVERNANCE_DOMAINS:
-        thresh = overrides.get(domain, f"threshold: max_lines=100")
+        thresh = overrides.get(domain, "threshold: max_lines=100")
         _write_governance_file(project_dir, domain, stack, thresholds_line=thresh)
 
 

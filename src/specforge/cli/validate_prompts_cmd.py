@@ -45,7 +45,9 @@ def validate_prompts(project: str) -> None:
     load_result = loader.load_for_feature("validate")
 
     if not load_result.ok:
-        _console.print(f"[red]Error loading governance files:[/red] {load_result.error}")
+        _console.print(
+            f"[red]Error loading governance files:[/red] {load_result.error}"
+        )
         sys.exit(2)
 
     prompt_set = load_result.value
@@ -53,7 +55,9 @@ def validate_prompts(project: str) -> None:
     report = validator.detect_conflicts(prompt_set)
 
     if not report.has_conflicts:
-        _console.print("[green]No conflicts detected[/green] in governance prompt files.")
+        _console.print(
+            "[green]No conflicts detected[/green] in governance prompt files."
+        )
         sys.exit(0)
 
     _console.print(

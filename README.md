@@ -127,12 +127,12 @@ uvx --from git+https://github.com/your-org/specforge.git specforge init <PROJECT
 
 ### 2. Establish project principles
 
-Launch your AI assistant in the project directory. The `/speckit.*` commands are available after initialization.
+Launch your AI assistant in the project directory. The `/specforge.*` commands are available after initialization.
 
-Use **`/speckit.constitution`** to define the governance rules that every sub-agent will follow:
+Use **`/specforge.constitution`** to define the governance rules that every sub-agent will follow:
 
 ```
-/speckit.constitution Create principles for a .NET microservices backend with Clean Architecture.
+/specforge.constitution Create principles for a .NET microservices backend with Clean Architecture.
 Functions must not exceed 30 lines. SOLID principles enforced. Result<T> pattern for all error handling.
 No magic strings. 100% unit test coverage for domain logic.
 ```
@@ -156,7 +156,7 @@ SpecForge identifies 10–15 independent features, builds a dependency graph, an
 For each feature, run the full 7-phase pipeline:
 
 ```
-/speckit.specify  →  /speckit.clarify  →  /speckit.plan  →  /speckit.tasks  →  /speckit.implement
+/specforge.specify  →  /specforge.clarify  →  /specforge.plan  →  /specforge.tasks  →  /specforge.implement
 ```
 
 Or let SpecForge orchestrate the entire pipeline automatically:
@@ -327,19 +327,19 @@ After running `specforge init`, your AI agent has access to these slash commands
 
 | Command | Description |
 |---------|-------------|
-| `/speckit.constitution` | Create or update project governing principles — the foundational governance for all sub-agents |
-| `/speckit.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs |
-| `/speckit.clarify` | Identify and resolve underspecified areas before planning (recommended before `/speckit.plan`) |
-| `/speckit.plan` | Generate `plan.md` — technical blueprint with architecture decisions and constitution gate |
-| `/speckit.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list |
-| `/speckit.implement` | Execute all tasks for a feature via isolated sub-agent |
+| `/specforge.constitution` | Create or update project governing principles — the foundational governance for all sub-agents |
+| `/specforge.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs |
+| `/specforge.clarify` | Identify and resolve underspecified areas before planning (recommended before `/specforge.plan`) |
+| `/specforge.plan` | Generate `plan.md` — technical blueprint with architecture decisions and constitution gate |
+| `/specforge.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list |
+| `/specforge.implement` | Execute all tasks for a feature via isolated sub-agent |
 
 ### Quality & Validation Commands
 
 | Command | Description |
 |---------|-------------|
-| `/speckit.analyze` | Cross-artifact consistency and coverage analysis — run after `/speckit.tasks`, before `/speckit.implement` |
-| `/speckit.checklist` | Generate quality checklists that validate requirements completeness, clarity, and consistency |
+| `/specforge.analyze` | Cross-artifact consistency and coverage analysis — run after `/specforge.tasks`, before `/specforge.implement` |
+| `/specforge.checklist` | Generate quality checklists that validate requirements completeness, clarity, and consistency |
 
 ---
 
@@ -466,10 +466,10 @@ specforge init PersonalFinance --dry-run
 
 ### STEP 1: Establish project principles
 
-Open your AI coding agent in the project directory and run `/speckit.constitution`:
+Open your AI coding agent in the project directory and run `/specforge.constitution`:
 
 ```
-/speckit.constitution Create principles for a .NET microservices platform. Clean Architecture with Domain/Application/Infrastructure/API layers. CQRS for all commands and queries. Functions ≤30 lines, classes ≤300 lines. Result<T> for all business logic errors — no exceptions for control flow. 80% minimum test coverage, 100% for domain layer.
+/specforge.constitution Create principles for a .NET microservices platform. Clean Architecture with Domain/Application/Infrastructure/API layers. CQRS for all commands and queries. Functions ≤30 lines, classes ≤300 lines. Result<T> for all business logic errors — no exceptions for control flow. 80% minimum test coverage, 100% for domain layer.
 ```
 
 This creates `.specforge/memory/constitution.md` — the document that gates every planning, implementation, and review step.
@@ -494,37 +494,37 @@ For each feature, work through the 7-phase pipeline:
 
 **Specify:**
 ```
-/speckit.specify 001-authentication
+/specforge.specify 001-authentication
 ```
 Produces `spec.md` with user stories (Given/When/Then), functional requirements, NFR SLOs, and edge case stubs.
 
 **Clarify:**
 ```
-/speckit.clarify
+/specforge.clarify
 ```
 Resolves underspecified areas through structured Q&A — answers recorded directly in the spec.
 
 **Plan:**
 ```
-/speckit.plan The backend uses ASP.NET Core 8 with PostgreSQL via EF Core. JWT authentication with refresh tokens.
+/specforge.plan The backend uses ASP.NET Core 8 with PostgreSQL via EF Core. JWT authentication with refresh tokens.
 ```
 Produces `plan.md`, `research.md`, `data-model.md`, `contracts/api-spec.json`, and `quickstart.md`.
 
 **Validate:**
 ```
-/speckit.checklist 001-authentication
+/specforge.checklist 001-authentication
 ```
 Generates and runs the quality gate. All items must pass before tasks are generated.
 
 **Generate tasks:**
 ```
-/speckit.tasks
+/specforge.tasks
 ```
 Produces `tasks.md` with TDD-ordered tasks, `[P]` parallel markers, exact file paths, and conventional commit labels per task.
 
 **Implement:**
 ```
-/speckit.implement
+/specforge.implement
 ```
 The sub-agent loads constitution + applicable prompt files + this feature's spec artifacts — nothing else. It executes tasks in order, runs tests after each task, and auto-fixes failures (max 3 iterations).
 

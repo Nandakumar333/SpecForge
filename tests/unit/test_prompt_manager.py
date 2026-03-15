@@ -119,7 +119,6 @@ class TestPromptFileManagerGenerate:
         result = mgr.generate(project_name="myapp", stack="dotnet")
         assert result.ok
 
-        prompts_dir = tmp_path / ".specforge" / "prompts"
         written_stems = {p.stem for p in result.value}
         for domain in GOVERNANCE_DOMAINS:
             # At least one file for each domain

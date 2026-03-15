@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from specforge.core.stack_detector import StackDetector
 
 

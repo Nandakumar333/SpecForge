@@ -17,7 +17,6 @@ from specforge.core.config import (
     SPECFORGE_CONFIG_FILE,
     STACK_HINTS,
 )
-from specforge.core.prompt_models import ProjectMeta
 from specforge.core.result import Err, Ok, Result
 from specforge.core.template_models import TemplateType
 from specforge.core.template_registry import TemplateRegistry
@@ -73,7 +72,10 @@ class PromptFileManager:
             stack=stack if domain not in AGNOSTIC_GOVERNANCE_DOMAINS else "agnostic",
         )
         if not render_result.ok:
-            return Err(f"Failed to render governance template for '{domain}': {render_result.error}")
+            return Err(
+                f"Failed to render governance template for '{domain}': "
+                f"{render_result.error}"
+            )
 
         rendered = render_result.value
 
@@ -136,7 +138,10 @@ class PromptFileManager:
         # Re-render with empty checksum (same as at generation time)
         context = self._build_context(domain, project_name, stack)
         context["checksum"] = ""
-        render_stack = stack if domain not in AGNOSTIC_GOVERNANCE_DOMAINS else "agnostic"
+        if domain not in AGNOSTIC_GOVERNANCE_DOMAINS:
+            render_stack = stack
+        else:
+            render_stack = "agnostic"
         render_result = self._renderer.render(
             domain,
             TemplateType.governance,
@@ -144,7 +149,9 @@ class PromptFileManager:
             stack=render_stack,
         )
         if not render_result.ok:
-            return Err(f"Cannot re-render template for comparison: {render_result.error}")
+            return Err(
+                f"Cannot re-render template for comparison: {render_result.error}"
+            )
 
         fresh_rendered = render_result.value
 

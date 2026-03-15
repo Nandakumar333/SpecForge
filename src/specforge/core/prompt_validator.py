@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from specforge.core.config import EQUAL_PRIORITY_DOMAINS
 from specforge.core.prompt_models import (
     ConflictEntry,
     ConflictReport,
@@ -17,7 +16,7 @@ class PromptValidator:
     """Detects cross-file threshold conflicts in a PromptSet."""
 
     def detect_conflicts(self, prompt_set: PromptSet) -> ConflictReport:
-        """Scan all prompt files for threshold conflicts, returning a full ConflictReport."""
+        """Scan all prompt files for threshold conflicts, returning a ConflictReport."""
         index = self._build_threshold_index(prompt_set)
         conflicts = self._find_conflicts(index, prompt_set)
         return ConflictReport(
@@ -130,12 +129,13 @@ class PromptValidator:
             return (
                 f"AMBIGUOUS: '{domain_a}' sets {key}={thresh_a.value} and "
                 f"'{domain_b}' sets {key}={thresh_b.value} at equal precedence. "
-                f"Manually reconcile: edit one of the governance files to agree on a value, "
-                f"or remove the threshold from the less-authoritative file."
+                "Manually reconcile: edit one governance file to agree on a value "
+                "or remove the threshold from the less-authoritative file."
             )
         loser = domain_b if winning_domain == domain_a else domain_a
         winner_val = thresh_a.value if winning_domain == domain_a else thresh_b.value
         return (
             f"Use '{winning_domain}' value ({key}={winner_val}, higher precedence). "
-            f"Update '{loser}' governance file to align, or remove the threshold to avoid confusion."
+            f"Update '{loser}' governance file to align, "
+            "or remove the threshold to avoid confusion."
         )
