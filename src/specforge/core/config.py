@@ -11,16 +11,23 @@ AgentName = Literal[
     "claude", "copilot", "gemini", "cursor", "windsurf", "codex", "agnostic"
 ]
 
-StackName = Literal[
-    "dotnet", "nodejs", "python", "go", "java", "agnostic"
-]
+StackName = Literal["dotnet", "nodejs", "python", "go", "java", "agnostic"]
 
 AGENT_PRIORITY: list[str] = [
-    "claude", "copilot", "gemini", "cursor", "windsurf", "codex",
+    "claude",
+    "copilot",
+    "gemini",
+    "cursor",
+    "windsurf",
+    "codex",
 ]
 
 SUPPORTED_STACKS: list[str] = [
-    "dotnet", "nodejs", "python", "go", "java",
+    "dotnet",
+    "nodejs",
+    "python",
+    "go",
+    "java",
 ]
 
 AGENT_EXECUTABLES: dict[str, list[str]] = {

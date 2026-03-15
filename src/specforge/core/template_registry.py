@@ -60,9 +60,7 @@ class TemplateRegistry:
         3. Built-in variant (stack-specific)
         4. Built-in generic
         """
-        resolution_chain = self._build_resolution_chain(
-            name, template_type, stack
-        )
+        resolution_chain = self._build_resolution_chain(name, template_type, stack)
         for key in resolution_chain:
             if key in self._catalog:
                 info = self._catalog[key]
@@ -74,19 +72,11 @@ class TemplateRegistry:
             f"Check template directories for {name}.md.j2"
         )
 
-    def list(
-        self, template_type: TemplateType | None = None
-    ) -> list[TemplateInfo]:
+    def list(self, template_type: TemplateType | None = None) -> list[TemplateInfo]:
         """Return all known templates, optionally filtered by type."""
-        entries = [
-            info
-            for info in self._catalog.values()
-            if not info.is_base
-        ]
+        entries = [info for info in self._catalog.values() if not info.is_base]
         if template_type is not None:
-            entries = [
-                e for e in entries if e.template_type == template_type
-            ]
+            entries = [e for e in entries if e.template_type == template_type]
         return sorted(entries, key=lambda e: (e.template_type.value, e.logical_name))
 
     def has(self, name: str, template_type: TemplateType) -> bool:
@@ -106,25 +96,13 @@ class TemplateRegistry:
         """Build the 4-step resolution chain."""
         chain: list[tuple[str, TemplateType, str | None, TemplateSource]] = []
         if stack and stack != "agnostic":
-            chain.append(
-                (name, template_type, stack, TemplateSource.user_override)
-            )
-            chain.append(
-                (name, template_type, None, TemplateSource.user_override)
-            )
-            chain.append(
-                (name, template_type, stack, TemplateSource.built_in)
-            )
-            chain.append(
-                (name, template_type, None, TemplateSource.built_in)
-            )
+            chain.append((name, template_type, stack, TemplateSource.user_override))
+            chain.append((name, template_type, None, TemplateSource.user_override))
+            chain.append((name, template_type, stack, TemplateSource.built_in))
+            chain.append((name, template_type, None, TemplateSource.built_in))
         else:
-            chain.append(
-                (name, template_type, None, TemplateSource.user_override)
-            )
-            chain.append(
-                (name, template_type, None, TemplateSource.built_in)
-            )
+            chain.append((name, template_type, None, TemplateSource.user_override))
+            chain.append((name, template_type, None, TemplateSource.built_in))
         return chain
 
     def _discover_built_in(self) -> int:
@@ -151,9 +129,7 @@ class TemplateRegistry:
         for subdir_name, ttype in _TYPE_MAP.items():
             subdir = user_dir / subdir_name
             if subdir.is_dir():
-                count += self._scan_user_directory(
-                    subdir, ttype, subdir_name
-                )
+                count += self._scan_user_directory(subdir, ttype, subdir_name)
         return count
 
     def _scan_top_level(
@@ -197,9 +173,7 @@ class TemplateRegistry:
             name = item.name if hasattr(item, "name") else str(item)
             if not name.endswith(".md.j2"):
                 continue
-            info = self._parse_template_file(
-                name, template_type, source, path_prefix
-            )
+            info = self._parse_template_file(name, template_type, source, path_prefix)
             if info is not None:
                 self._catalog[info.identity] = info
                 count += 1

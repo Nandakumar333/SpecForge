@@ -121,89 +121,67 @@ class TestNewTemplateSnapshots:
 
     def test_base_constitution(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "constitution", TemplateType.constitution, _CTX
-        )
+        result = renderer.render("constitution", TemplateType.constitution, _CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_backend_prompt(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "backend", TemplateType.prompt, _CTX
-        )
+        result = renderer.render("backend", TemplateType.prompt, _CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_frontend_prompt(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "frontend", TemplateType.prompt, _CTX
-        )
+        result = renderer.render("frontend", TemplateType.prompt, _CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_testing_prompt(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "testing", TemplateType.prompt, _CTX
-        )
+        result = renderer.render("testing", TemplateType.prompt, _CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_spec(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "spec", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("spec", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_research(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "research", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("research", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_datamodel(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "datamodel", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("datamodel", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_plan(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "plan", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("plan", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_checklist(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "checklist", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("checklist", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_edge_cases(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "edge-cases", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("edge-cases", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
     def test_feature_tasks(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "tasks", TemplateType.feature, _FEATURE_CTX
-        )
+        result = renderer.render("tasks", TemplateType.feature, _FEATURE_CTX)
         assert result.ok
         assert result.value == snapshot
 
@@ -213,40 +191,28 @@ class TestStackVariantSnapshots:
 
     def test_backend_dotnet(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "backend", TemplateType.prompt, _CTX, stack="dotnet"
-        )
+        result = renderer.render("backend", TemplateType.prompt, _CTX, stack="dotnet")
         assert result.ok
         assert result.value == snapshot
 
     def test_backend_nodejs(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "backend", TemplateType.prompt, _CTX, stack="nodejs"
-        )
+        result = renderer.render("backend", TemplateType.prompt, _CTX, stack="nodejs")
         assert result.ok
         assert result.value == snapshot
 
     def test_backend_python(self, snapshot: object) -> None:
         renderer = _make_renderer()
-        result = renderer.render(
-            "backend", TemplateType.prompt, _CTX, stack="python"
-        )
+        result = renderer.render("backend", TemplateType.prompt, _CTX, stack="python")
         assert result.ok
         assert result.value == snapshot
 
     def test_variants_differ(self) -> None:
         """Stack variants must produce different content."""
         renderer = _make_renderer()
-        dotnet = renderer.render(
-            "backend", TemplateType.prompt, _CTX, stack="dotnet"
-        )
-        nodejs = renderer.render(
-            "backend", TemplateType.prompt, _CTX, stack="nodejs"
-        )
-        generic = renderer.render(
-            "backend", TemplateType.prompt, _CTX
-        )
+        dotnet = renderer.render("backend", TemplateType.prompt, _CTX, stack="dotnet")
+        nodejs = renderer.render("backend", TemplateType.prompt, _CTX, stack="nodejs")
+        generic = renderer.render("backend", TemplateType.prompt, _CTX)
         assert dotnet.value != nodejs.value
         assert dotnet.value != generic.value
         assert nodejs.value != generic.value
@@ -268,9 +234,7 @@ class TestUserOverrideSnapshots:
         registry = TemplateRegistry(tmp_path)
         registry.discover()
         renderer = TemplateRenderer(registry)
-        result = renderer.render(
-            "constitution", TemplateType.constitution, _CTX
-        )
+        result = renderer.render("constitution", TemplateType.constitution, _CTX)
         assert result.ok
         assert result.value == snapshot
         # Verify it differs from built-in

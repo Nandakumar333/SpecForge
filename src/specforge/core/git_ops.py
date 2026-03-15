@@ -18,6 +18,7 @@ def is_inside_existing_repo(path: Path) -> bool:
     """Check if a path is inside an existing git repository."""
     try:
         from git import InvalidGitRepositoryError, Repo
+
         Repo(path, search_parent_directories=True)
         return True
     except (InvalidGitRepositoryError, Exception):
@@ -28,6 +29,7 @@ def init_repo(target_dir: Path) -> Result:
     """Initialize a git repo, stage all files, and commit."""
     try:
         from git import Repo
+
         existing = is_inside_existing_repo(target_dir)
         if existing:
             repo = Repo(target_dir, search_parent_directories=True)

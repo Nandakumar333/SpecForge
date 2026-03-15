@@ -63,9 +63,7 @@ def _check_placeholders(
             continue
         for match in _PLACEHOLDER_RE.finditer(line):
             name_match = _DOUBLE_BRACE_RE.match(match.group())
-            placeholder_name = (
-                name_match.group(1) if name_match else None
-            )
+            placeholder_name = name_match.group(1) if name_match else None
             issues.append(
                 ValidationIssue(
                     line=line_num,

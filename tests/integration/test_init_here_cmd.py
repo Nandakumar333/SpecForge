@@ -26,7 +26,8 @@ class TestInitHereCommand:
             assert existing.read_text() == "important data"
 
     def test_here_existing_specforge_without_force_exits_1(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:
@@ -36,7 +37,8 @@ class TestInitHereCommand:
             assert "already exists" in result.output
 
     def test_here_force_adds_missing_preserves_existing(
-        self, tmp_path: Path,
+        self,
+        tmp_path: Path,
     ) -> None:
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path) as td:

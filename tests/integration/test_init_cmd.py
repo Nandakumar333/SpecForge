@@ -83,9 +83,7 @@ class TestInitCommand:
             assert result.exit_code == 0, result.output
             assert not (Path("myapp") / ".git").exists()
 
-    def test_git_not_installed_without_no_git_exits_1(
-        self, tmp_path: Path
-    ) -> None:
+    def test_git_not_installed_without_no_git_exits_1(self, tmp_path: Path) -> None:
         runner = CliRunner()
         with (
             runner.isolated_filesystem(temp_dir=tmp_path),
@@ -97,9 +95,12 @@ class TestInitCommand:
 
     def test_permission_denied_exits_1(self, tmp_path: Path) -> None:
         runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path), patch(
-            "specforge.core.scaffold_writer.Path.mkdir",
-            side_effect=PermissionError("Access denied"),
+        with (
+            runner.isolated_filesystem(temp_dir=tmp_path),
+            patch(
+                "specforge.core.scaffold_writer.Path.mkdir",
+                side_effect=PermissionError("Access denied"),
+            ),
         ):
             result = runner.invoke(cli, ["init", "myapp"])
             assert result.exit_code == 1

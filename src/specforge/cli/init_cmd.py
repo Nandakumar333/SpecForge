@@ -18,21 +18,25 @@ from specforge.core.scaffold_writer import write_scaffold
 @click.command()
 @click.argument("name", required=False, default=None)
 @click.option(
-    "--here", is_flag=True,
+    "--here",
+    is_flag=True,
     help="Scaffold into CWD instead of creating a subdirectory.",
 )
 @click.option(
     "--agent",
     type=click.Choice(AGENT_PRIORITY, case_sensitive=False),
-    default=None, help="AI agent to configure.",
+    default=None,
+    help="AI agent to configure.",
 )
 @click.option(
     "--stack",
     type=click.Choice(SUPPORTED_STACKS, case_sensitive=False),
-    default=None, help="Technology stack.",
+    default=None,
+    help="Technology stack.",
 )
 @click.option(
-    "--force", is_flag=True,
+    "--force",
+    is_flag=True,
     help="Allow scaffolding into an existing directory.",
 )
 @click.option("--no-git", is_flag=True, help="Skip git init.")
@@ -53,9 +57,14 @@ def init(
     detection = detect_agent(explicit=agent)
     resolved_stack = stack or "agnostic"
     config_result = ProjectConfig.create(
-        name=name or "", target_dir=target_dir, here=here,
-        agent=detection.agent, stack=resolved_stack,
-        no_git=no_git, force=force, dry_run=dry_run,
+        name=name or "",
+        target_dir=target_dir,
+        here=here,
+        agent=detection.agent,
+        stack=resolved_stack,
+        no_git=no_git,
+        force=force,
+        dry_run=dry_run,
     )
     if not config_result.ok:
         _fail(config_result.error)
@@ -98,8 +107,11 @@ def _resolve_target(name: str | None, here: bool) -> Path:
 
 
 def _check_existing(
-    target_dir: Path, name: str | None, here: bool,
-    force: bool, dry_run: bool,
+    target_dir: Path,
+    name: str | None,
+    here: bool,
+    force: bool,
+    dry_run: bool,
 ) -> None:
     """Check for existing directory conflicts."""
     if dry_run:
@@ -107,10 +119,7 @@ def _check_existing(
     if here:
         specforge_dir = target_dir / ".specforge"
         if specforge_dir.exists() and not force:
-            _fail(
-                ".specforge/ already exists. "
-                "Use --force to add missing files."
-            )
+            _fail(".specforge/ already exists. Use --force to add missing files.")
     elif target_dir.exists() and not force:
         _fail(
             f"Directory '{name}' already exists.\n"
@@ -135,6 +144,7 @@ def _handle_git(config: ProjectConfig, result: object) -> None:
 def _print_dry_run(plan: object) -> None:
     """Print the dry-run tree preview."""
     from specforge.cli.output import console, render_dry_run_tree
+
     tree = render_dry_run_tree(plan)
     console.print("\n[bold yellow][DRY RUN][/bold yellow] Would create:")
     console.print(tree)
@@ -144,6 +154,7 @@ def _print_dry_run(plan: object) -> None:
 def _print_summary(result: object) -> None:
     """Print the Rich summary."""
     from specforge.cli.output import render_summary
+
     render_summary(result)
 
 

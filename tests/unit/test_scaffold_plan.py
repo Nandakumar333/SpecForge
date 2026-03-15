@@ -44,7 +44,8 @@ class TestBuildScaffoldPlan:
         config = self._make_config()
         plan = build_scaffold_plan(config).value
         prompt_files = [
-            f for f in plan.files
+            f
+            for f in plan.files
             if str(f.relative_path).startswith(str(Path(".specforge/prompts")))
         ]
         assert len(prompt_files) == 7
@@ -53,7 +54,8 @@ class TestBuildScaffoldPlan:
         config = self._make_config()
         plan = build_scaffold_plan(config).value
         feature_files = [
-            f for f in plan.files
+            f
+            for f in plan.files
             if str(f.relative_path).startswith(
                 str(Path(".specforge/templates/features"))
             )

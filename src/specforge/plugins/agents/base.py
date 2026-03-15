@@ -20,7 +20,9 @@ class AgentPlugin(ABC):
 
     @abstractmethod
     def generate_config(
-        self, target_dir: Path, context: dict[str, Any],
+        self,
+        target_dir: Path,
+        context: dict[str, Any],
     ) -> list[Path]:
         """Generate agent-specific config files. Return written paths."""
 

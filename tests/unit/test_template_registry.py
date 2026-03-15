@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from specforge.core.template_models import TemplateSource, TemplateType
 from specforge.core.template_registry import TemplateRegistry
 
@@ -23,8 +21,13 @@ class TestBuiltInDiscovery:
         prompts = registry.list(TemplateType.prompt)
         names = {t.logical_name for t in prompts if t.stack is None}
         expected = {
-            "backend", "frontend", "database", "security",
-            "testing", "cicd", "api-design",
+            "backend",
+            "frontend",
+            "database",
+            "security",
+            "testing",
+            "cicd",
+            "api-design",
         }
         assert expected == names
 
@@ -34,8 +37,13 @@ class TestBuiltInDiscovery:
         features = registry.list(TemplateType.feature)
         names = {t.logical_name for t in features}
         expected = {
-            "spec", "research", "datamodel", "plan",
-            "checklist", "edge-cases", "tasks",
+            "spec",
+            "research",
+            "datamodel",
+            "plan",
+            "checklist",
+            "edge-cases",
+            "tasks",
         }
         assert expected == names
 
@@ -64,9 +72,7 @@ class TestBuiltInDiscovery:
 
 
 class TestUserOverrides:
-    def test_user_override_wins_over_built_in(
-        self, tmp_path: Path
-    ) -> None:
+    def test_user_override_wins_over_built_in(self, tmp_path: Path) -> None:
         user_dir = tmp_path / ".specforge" / "templates"
         user_dir.mkdir(parents=True)
         custom = user_dir / "constitution.md.j2"
@@ -113,18 +119,14 @@ class TestStackVariantResolution:
     def test_dotnet_variant_returned(self) -> None:
         registry = TemplateRegistry()
         registry.discover()
-        result = registry.get(
-            "backend", TemplateType.prompt, stack="dotnet"
-        )
+        result = registry.get("backend", TemplateType.prompt, stack="dotnet")
         assert result.ok
         assert result.value.stack == "dotnet"
 
     def test_unknown_stack_falls_back_to_generic(self) -> None:
         registry = TemplateRegistry()
         registry.discover()
-        result = registry.get(
-            "backend", TemplateType.prompt, stack="ruby"
-        )
+        result = registry.get("backend", TemplateType.prompt, stack="ruby")
         assert result.ok
         assert result.value.stack is None
 
@@ -136,9 +138,7 @@ class TestStackVariantResolution:
 
         registry = TemplateRegistry(tmp_path)
         registry.discover()
-        result = registry.get(
-            "backend", TemplateType.prompt, stack="dotnet"
-        )
+        result = registry.get("backend", TemplateType.prompt, stack="dotnet")
         assert result.ok
         assert result.value.source == TemplateSource.user_override
         assert result.value.stack == "dotnet"

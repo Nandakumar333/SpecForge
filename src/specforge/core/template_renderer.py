@@ -5,10 +5,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from jinja2 import BaseLoader, ChoiceLoader, Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import (
+    BaseLoader,
+    ChoiceLoader,
+    Environment,
+    FileSystemLoader,
+    TemplateNotFound,
+)
 
 from specforge.core.config import (
-    GENERATION_HEADER,
     get_constitution_vars,
     get_feature_vars,
     get_prompt_vars,
@@ -124,9 +129,7 @@ class TemplateRenderer:
                 )
             context = ctx_result.value
 
-        resolve_result = self._registry.get(
-            template_name, template_type, stack
-        )
+        resolve_result = self._registry.get(template_name, template_type, stack)
         if not resolve_result.ok:
             return Err(resolve_result.error)
 
@@ -163,14 +166,8 @@ class TemplateRenderer:
     def _create_environment(self) -> Environment:
         """Build a Jinja2 Environment with custom loaders and filters."""
         loaders: list[BaseLoader] = []
-        if (
-            self._registry._project_root is not None  # noqa: SLF001
-        ):
-            user_dir = (
-                self._registry._project_root  # noqa: SLF001
-                / ".specforge"
-                / "templates"
-            )
+        if self._registry._project_root is not None:
+            user_dir = self._registry._project_root / ".specforge" / "templates"
             if user_dir.is_dir():
                 loaders.append(FileSystemLoader(str(user_dir)))
         loaders.append(_PackageLoader())
