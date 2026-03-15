@@ -18,7 +18,3 @@ Thumbs.db
 logs/
 .github/
 .idea/
-.vscode/
-.claude/
-.claude_cache/
-CLAUDE.md

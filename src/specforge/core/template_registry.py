@@ -24,6 +24,7 @@ _TYPE_MAP: dict[str, TemplateType] = {
     "prompts": TemplateType.prompt,
     "features": TemplateType.feature,
     "partials": TemplateType.partial,
+    "governance": TemplateType.governance,
 }
 
 

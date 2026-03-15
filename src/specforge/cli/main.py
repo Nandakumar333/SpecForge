@@ -19,7 +19,9 @@ def cli(ctx: click.Context) -> None:
 from specforge.cli.check_cmd import check  # noqa: E402
 from specforge.cli.decompose_cmd import decompose  # noqa: E402
 from specforge.cli.init_cmd import init  # noqa: E402
+from specforge.cli.validate_prompts_cmd import validate_prompts  # noqa: E402
 
 cli.add_command(init)
 cli.add_command(check)
 cli.add_command(decompose)
+cli.add_command(validate_prompts)

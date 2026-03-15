@@ -11,8 +11,12 @@ from specforge.core.agent_detector import detect_agent
 from specforge.core.config import AGENT_PRIORITY, SUPPORTED_STACKS
 from specforge.core.git_ops import init_repo, is_git_available
 from specforge.core.project import ProjectConfig
-from specforge.core.scaffold_builder import build_scaffold_plan
+from specforge.core.scaffold_builder import (
+    build_scaffold_plan,
+    generate_governance_files,
+)
 from specforge.core.scaffold_writer import write_scaffold
+from specforge.core.stack_detector import StackDetector
 
 
 @click.command()
@@ -55,7 +59,7 @@ def init(
     target_dir = _resolve_target(name, here)
     _check_existing(target_dir, name, here, force, dry_run)
     detection = detect_agent(explicit=agent)
-    resolved_stack = stack or "agnostic"
+    resolved_stack = stack or StackDetector.detect(target_dir)
     config_result = ProjectConfig.create(
         name=name or "",
         target_dir=target_dir,
@@ -81,6 +85,12 @@ def init(
         _fail(write_result.error)
     scaffold_result = write_result.value
     scaffold_result.agent_source = detection.source
+
+    # Generate governance prompt files after scaffold directories exist
+    gov_result = generate_governance_files(config)
+    if not gov_result.ok:
+        _fail(gov_result.error)
+
     _handle_git(config, scaffold_result)
     _print_summary(scaffold_result)
 

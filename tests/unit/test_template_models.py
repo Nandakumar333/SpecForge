@@ -30,6 +30,7 @@ class TestTemplateType:
             TemplateType.prompt,
             TemplateType.feature,
             TemplateType.partial,
+            TemplateType.governance,
         }
 
     def test_values_match_names(self) -> None:

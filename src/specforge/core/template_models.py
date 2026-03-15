@@ -14,6 +14,7 @@ class TemplateType(Enum):
     prompt = "prompt"
     feature = "feature"
     partial = "partial"
+    governance = "governance"
 
 
 class TemplateSource(Enum):
