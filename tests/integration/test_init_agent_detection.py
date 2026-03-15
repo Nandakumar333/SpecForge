@@ -26,7 +26,8 @@ class TestInitAgentDetection:
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             with patch(
-                "specforge.core.agent_detector.shutil.which", return_value=None,
+                "specforge.core.agent_detector.shutil.which",
+                return_value=None,
             ):
                 result = runner.invoke(cli, ["init", "myapp", "--no-git"])
             assert result.exit_code == 0, result.output

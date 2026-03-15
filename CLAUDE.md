@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-03-14
 
 ## Active Technologies
+- Python 3.11+ + Jinja2 3.x (rendering engine), Click 8.x (existing CLI), Rich 13.x (existing output) (002-template-rendering-engine)
+- File system — `.md.j2` template files in package + user project directory (002-template-rendering-engine)
 
 - **Language**: Python 3.11+
 - **CLI Framework**: Click 8.x — command groups, `@click.pass_context`, `CliRunner` for tests
@@ -70,6 +72,7 @@ uv run pytest --snapshot-update
 - Dependency flow: `cli` → `core` → stdlib only; `plugins` → `core`; never reverse
 
 ## Recent Changes
+- 002-template-rendering-engine: Added Python 3.11+ + Jinja2 3.x (rendering engine), Click 8.x (existing CLI), Rich 13.x (existing output)
 
 - **001-cli-init-scaffold** (2026-03-14): Core CLI scaffold — `init`, `check`, `decompose` commands; `Result[T]` pattern; agent auto-detection; Jinja2 template system; GitPython init + commit; `--dry-run` support
 

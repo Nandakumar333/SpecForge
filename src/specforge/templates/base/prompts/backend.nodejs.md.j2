@@ -1,0 +1,25 @@
+{% extends "base/prompts/backend.md.j2" %}
+{% block tech_context %}
+- **Runtime**: Node.js 20+ / TypeScript
+- **ORM**: Prisma / TypeORM
+- **Testing**: Jest / Vitest
+{% endblock %}
+{% block conventions %}
+- ESLint + Prettier for code formatting
+- Strict TypeScript (`strict: true` in tsconfig)
+- `async/await` over callbacks or raw promises
+- Barrel exports for module boundaries
+- Environment validation with `zod` or `joi`
+{% endblock %}
+{% block patterns %}
+- Express or Fastify with middleware composition
+- Repository pattern with Prisma client injection
+- Zod schemas for runtime validation
+- Winston or Pino for structured logging
+{% endblock %}
+{% block testing_guidance %}
+- Jest or Vitest with `describe/it` structure
+- Supertest for HTTP endpoint integration tests
+- `testcontainers` for database integration tests
+- MSW (Mock Service Worker) for external API mocking
+{% endblock %}

@@ -1,40 +1,39 @@
-"""Jinja2 template loader using importlib.resources."""
+"""Jinja2 template loader using importlib.resources.
+
+Deprecated: Use template_renderer.py. Will be removed in Feature 003.
+This module is preserved as a backward-compatible wrapper for existing callers.
+"""
 
 from __future__ import annotations
 
-from importlib.resources import files
+from specforge.core.template_registry import TemplateRegistry
+from specforge.core.template_renderer import TemplateRenderer
 
-from jinja2 import BaseLoader, Environment, TemplateNotFound
-
-
-class _PackageLoader(BaseLoader):
-    """Load templates from the specforge.templates package."""
-
-    def get_source(
-        self,
-        environment: Environment,
-        template: str,
-    ) -> tuple[str, str | None, None]:
-        parts = template.split("/")
-        resource = files("specforge.templates")
-        for part in parts:
-            resource = resource.joinpath(part)
-        try:
-            source = resource.read_text(encoding="utf-8")
-        except (FileNotFoundError, TypeError) as exc:
-            raise TemplateNotFound(template) from exc
-        return source, template, None
+_renderer: TemplateRenderer | None = None
 
 
-_env = Environment(
-    loader=_PackageLoader(),
-    keep_trailing_newline=True,
-    trim_blocks=True,
-    lstrip_blocks=True,
-)
+def _get_renderer() -> TemplateRenderer:
+    """Lazy-init a module-level renderer."""
+    global _renderer
+    if _renderer is None:
+        registry = TemplateRegistry()
+        registry.discover()
+        _renderer = TemplateRenderer(registry)
+    return _renderer
 
 
 def render_template(template_name: str, **context: object) -> str:
-    """Render a Jinja2 template from the specforge.templates package."""
-    tmpl = _env.get_template(template_name)
-    return tmpl.render(**context)
+    """Render a Jinja2 template from the specforge.templates package.
+
+    Deprecated: Use TemplateRenderer.render() or render_raw() instead.
+    """
+    renderer = _get_renderer()
+    result = renderer.render_raw(template_name, dict(context))
+    if result.ok:
+        return result.value
+    # Fallback: try with base/ prefix for old-style callers
+    result = renderer.render_raw(f"base/{template_name}", dict(context))
+    if result.ok:
+        return result.value
+    msg = f"Template not found: {template_name}"
+    raise FileNotFoundError(msg)

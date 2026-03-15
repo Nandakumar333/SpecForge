@@ -1,0 +1,34 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Define all data entities, their fields, and relationships. #}
+{# Use frozen dataclasses or equivalent immutable models. #}
+{# Document validation rules and constraints per field. #}
+
+# Data Model — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Entities
+
+### EntityName (Frozen Dataclass)
+
+_Description of the entity._
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `str` | Unique identifier |
+
+## Relationships
+
+```text
+EntityA
+  ├── has_many → EntityB[]
+  └── belongs_to → EntityC
+```
+
+## State Transitions
+
+```text
+[Initial] → action() → [NextState]
+```

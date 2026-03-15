@@ -1,0 +1,41 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: This is the specification template for a feature. #}
+{# Fill in each section with detailed requirements. #}
+{# Remove placeholder text before finalizing. #}
+
+# Feature Specification — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+**Status**: Draft
+
+## Clarifications
+
+_Record Q&A sessions and design decisions here._
+
+## User Scenarios & Testing
+
+### User Story 1 - [Title] (Priority: P1)
+
+_Description of user scenario._
+
+**Acceptance Scenarios**:
+
+1. **Given** ..., **When** ..., **Then** ...
+
+## Requirements
+
+### Functional Requirements
+
+- **FR-001**: _Describe the requirement._
+
+### Constraints & Tradeoffs
+
+- **CT-001**: _Describe the constraint._
+
+{% include "base/partials/out-of-scope.md.j2" %}
+
+## Success Criteria
+
+- **SC-001**: _Define measurable success criteria._

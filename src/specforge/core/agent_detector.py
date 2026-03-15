@@ -16,12 +16,16 @@ def detect_agent(explicit: str | None = None) -> DetectionResult:
     """
     if explicit:
         return DetectionResult(
-            agent=explicit, source="explicit", executable=None,
+            agent=explicit,
+            source="explicit",
+            executable=None,
         )
     for agent in AGENT_PRIORITY:
         for exe in AGENT_EXECUTABLES.get(agent, []):
             if shutil.which(exe):
                 return DetectionResult(
-                    agent=agent, source="auto-detected", executable=exe,
+                    agent=agent,
+                    source="auto-detected",
+                    executable=exe,
                 )
     return DetectionResult(agent="agnostic", source="agnostic")

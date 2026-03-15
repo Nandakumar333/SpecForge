@@ -1,0 +1,31 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Document edge cases that could cause failures. #}
+{# For each case, describe the trigger, expected behavior, and test approach. #}
+{# Prioritize cases most likely to occur in production. #}
+
+# Edge Cases — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Edge Cases
+
+### EC-001: [Title]
+
+- **Trigger**: _What causes this edge case?_
+- **Expected Behavior**: _How should the system respond?_
+- **Test Approach**: _How to verify correct behavior._
+- **Priority**: High / Medium / Low
+
+### EC-002: [Title]
+
+- **Trigger**: _What causes this edge case?_
+- **Expected Behavior**: _How should the system respond?_
+- **Test Approach**: _How to verify correct behavior._
+- **Priority**: High / Medium / Low
+
+## Boundary Conditions
+
+- _List inputs at the boundaries of valid ranges._
+- _Include empty inputs, maximum sizes, and special characters._

@@ -6,7 +6,8 @@ from pathlib import Path
 
 from specforge.core.project import ScaffoldPlan, ScaffoldResult
 from specforge.core.result import Err, Ok, Result
-from specforge.core.template_loader import render_template
+from specforge.core.template_registry import TemplateRegistry
+from specforge.core.template_renderer import TemplateRenderer
 
 
 def write_scaffold(plan: ScaffoldPlan) -> Result:
@@ -18,15 +19,22 @@ def write_scaffold(plan: ScaffoldPlan) -> Result:
         return Ok(result)
 
     try:
+        renderer = _create_renderer()
         _create_directories(target, plan)
-        _write_files(target, plan, result)
+        _write_files(target, plan, result, renderer)
     except PermissionError as exc:
         path = _extract_path(exc, target)
         return Err(
-            f"Permission denied writing to '{path}'. "
-            "Check directory permissions."
+            f"Permission denied writing to '{path}'. Check directory permissions."
         )
     return Ok(result)
+
+
+def _create_renderer() -> TemplateRenderer:
+    """Create a TemplateRenderer with discovered built-in templates."""
+    registry = TemplateRegistry()
+    registry.discover()
+    return TemplateRenderer(registry)
 
 
 def _create_directories(target: Path, plan: ScaffoldPlan) -> None:
@@ -36,7 +44,10 @@ def _create_directories(target: Path, plan: ScaffoldPlan) -> None:
 
 
 def _write_files(
-    target: Path, plan: ScaffoldPlan, result: ScaffoldResult,
+    target: Path,
+    plan: ScaffoldPlan,
+    result: ScaffoldResult,
+    renderer: TemplateRenderer,
 ) -> None:
     """Render and write each scaffold file."""
     for scaffold_file in plan.files:
@@ -45,11 +56,13 @@ def _write_files(
             result.skipped.append(abs_path)
             continue
         abs_path.parent.mkdir(parents=True, exist_ok=True)
-        content = render_template(
-            scaffold_file.template_name, **scaffold_file.context,
+        render_result = renderer.render_raw(
+            scaffold_file.template_name,
+            scaffold_file.context,
         )
-        abs_path.write_text(content, encoding="utf-8")
-        result.written.append(abs_path)
+        if render_result.ok:
+            abs_path.write_text(render_result.value, encoding="utf-8")
+            result.written.append(abs_path)
 
 
 def _extract_path(exc: PermissionError, fallback: Path) -> str:

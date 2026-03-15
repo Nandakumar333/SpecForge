@@ -1,0 +1,25 @@
+{% extends "base/prompts/backend.md.j2" %}
+{% block tech_context %}
+- **Runtime**: Python 3.11+
+- **ORM**: SQLAlchemy 2.x
+- **Testing**: pytest + pytest-cov
+{% endblock %}
+{% block conventions %}
+- PEP 8 + ruff for linting and formatting
+- Type hints on every function signature (`from __future__ import annotations`)
+- `pathlib.Path` exclusively (no `os.path`)
+- Dataclasses or Pydantic models for data transfer
+- `Result[T, E]` pattern for recoverable errors
+{% endblock %}
+{% block patterns %}
+- Clean Architecture with dependency injection
+- Repository pattern with SQLAlchemy sessions
+- Click for CLI commands
+- structlog for structured logging
+{% endblock %}
+{% block testing_guidance %}
+- pytest with fixtures and parametrize
+- pytest-mock for dependency isolation
+- `tmp_path` for filesystem tests
+- syrupy for snapshot testing
+{% endblock %}

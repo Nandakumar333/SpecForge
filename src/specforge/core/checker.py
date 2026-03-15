@@ -24,7 +24,10 @@ def _check_tool(tool: str) -> CheckResult:
     version = _get_version(tool) if found else None
     hint = INSTALL_HINTS.get(tool, "")
     return CheckResult(
-        tool=tool, found=found, version=version, install_hint=hint,
+        tool=tool,
+        found=found,
+        version=version,
+        install_hint=hint,
     )
 
 
@@ -33,7 +36,9 @@ def _get_version(tool: str) -> str | None:
     try:
         result = subprocess.run(
             [tool, "--version"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         output = result.stdout.strip() or result.stderr.strip()
         match = re.search(r"(\d+\.\d+[\.\d]*)", output)

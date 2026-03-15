@@ -1,0 +1,34 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Create a checklist for implementation readiness. #}
+{# Each item should be independently verifiable. #}
+{# Group items by category (design, code, testing, docs). #}
+
+# Implementation Checklist — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Design Readiness
+
+- [ ] Spec reviewed and approved
+- [ ] Data model defined and documented
+- [ ] API contracts specified
+- [ ] Edge cases identified
+
+## Code Readiness
+
+- [ ] Project structure supports new modules
+- [ ] Dependencies identified and compatible
+- [ ] No breaking changes to existing APIs
+
+## Testing Readiness
+
+- [ ] Test strategy documented
+- [ ] Test data/fixtures planned
+- [ ] Snapshot baselines established
+
+## Documentation
+
+- [ ] README updated if needed
+- [ ] API docs generated or planned

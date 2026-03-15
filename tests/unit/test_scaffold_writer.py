@@ -7,11 +7,15 @@ from specforge.core.scaffold_writer import write_scaffold
 
 
 def _make_plan(
-    tmp_path: Path, force: bool = False, dry_run: bool = False,
+    tmp_path: Path,
+    force: bool = False,
+    dry_run: bool = False,
 ) -> ScaffoldPlan:
     config_result = ProjectConfig.create(
-        name="testproj", target_dir=tmp_path,
-        force=force, dry_run=dry_run,
+        name="testproj",
+        target_dir=tmp_path,
+        force=force,
+        dry_run=dry_run,
     )
     assert config_result.ok
     config = config_result.value
@@ -22,9 +26,13 @@ def _make_plan(
             ScaffoldFile(
                 relative_path=Path(".specforge/constitution.md"),
                 template_name="constitution.md.j2",
-                context={"project_name": "testproj", "agent": "agnostic",
-                         "stack": "agnostic", "date": "2026-03-14",
-                         "stack_hint": "Language-agnostic"},
+                context={
+                    "project_name": "testproj",
+                    "agent": "agnostic",
+                    "stack": "agnostic",
+                    "date": "2026-03-14",
+                    "stack_hint": "Language-agnostic",
+                },
             ),
         ],
     )

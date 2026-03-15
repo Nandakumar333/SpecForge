@@ -1,0 +1,45 @@
+{# Base template for all agent instruction prompts. #}
+{# Stack-specific variants extend this and override blocks. #}
+{% include "base/partials/generation-header.md.j2" %}
+
+# {% block role %}Agent{% endblock %} — {{ project_name }}
+
+You are the {% block role_description %}agent{% endblock %} for **{{ project_name }}**.
+
+## Role
+
+{% block role_detail %}
+Define the agent's primary responsibility.
+{% endblock %}
+
+## Tech Context
+
+- **Project**: {{ project_name }}
+- **Agent**: {{ agent }}
+- **Stack**: {{ stack_hint }}
+- **Date**: {{ date }}
+{% block tech_context %}{% endblock %}
+
+## Conventions
+
+{% block conventions %}
+Follow project-wide coding standards.
+{% endblock %}
+
+## Patterns
+
+{% block patterns %}
+Apply recommended architectural patterns.
+{% endblock %}
+
+## Testing Guidance
+
+{% block testing_guidance %}
+Write tests before implementation (TDD).
+{% endblock %}
+
+## Output Format
+
+{% block output_format %}
+Produce clean, well-structured markdown output.
+{% endblock %}

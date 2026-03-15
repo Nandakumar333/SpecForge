@@ -1,0 +1,41 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Break the feature into ordered, atomic tasks. #}
+{# Follow TDD order: write tests FIRST, then implement. #}
+{# Mark parallel tasks with [P] and include file paths. #}
+
+# Tasks — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Format: `[ID] [P?] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+
+---
+
+## Phase 1: Setup
+
+- [ ] T001 _Describe the setup task with exact file paths._
+- [ ] T002 [P] _Describe a parallel setup task._
+
+## Phase 2: Tests (Write First)
+
+- [ ] T003 _Write tests for core functionality in tests/unit/test_module.py_
+
+## Phase 3: Implementation
+
+- [ ] T004 _Implement core module in src/module.py_
+
+## Phase 4: Integration
+
+- [ ] T005 _Wire modules together and run full test suite._
+
+---
+
+## Dependencies
+
+- Phase 2 depends on Phase 1
+- Phase 3 depends on Phase 2 (TDD)
+- Phase 4 depends on Phase 3

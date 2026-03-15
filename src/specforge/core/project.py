@@ -43,11 +43,18 @@ class ProjectConfig:
             )
         if here:
             derived_name = target_dir.name
-            return Ok(ProjectConfig(
-                name=derived_name, target_dir=target_dir,
-                agent=agent, stack=stack, no_git=no_git,
-                force=force, dry_run=dry_run, here=True,
-            ))
+            return Ok(
+                ProjectConfig(
+                    name=derived_name,
+                    target_dir=target_dir,
+                    agent=agent,
+                    stack=stack,
+                    no_git=no_git,
+                    force=force,
+                    dry_run=dry_run,
+                    here=True,
+                )
+            )
         if not name:
             return Err("Project name is required.")
         if not re.match(PROJECT_NAME_PATTERN, name):
@@ -56,11 +63,18 @@ class ProjectConfig:
                 "Only alphanumeric characters, hyphens, "
                 "and underscores are allowed."
             )
-        return Ok(ProjectConfig(
-            name=name, target_dir=target_dir,
-            agent=agent, stack=stack, no_git=no_git,
-            force=force, dry_run=dry_run, here=here,
-        ))
+        return Ok(
+            ProjectConfig(
+                name=name,
+                target_dir=target_dir,
+                agent=agent,
+                stack=stack,
+                no_git=no_git,
+                force=force,
+                dry_run=dry_run,
+                here=here,
+            )
+        )
 
 
 @dataclass(frozen=True)
