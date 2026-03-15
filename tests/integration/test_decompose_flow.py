@@ -122,6 +122,64 @@ class TestGibberishInput:
         assert "e-commerce" in result.output.lower()
 
 
+class TestRemapFlow:
+    """IT-003: remap from monolith to microservice preserves features."""
+
+    def test_remap_monolith_to_microservice(self, tmp_path: Path) -> None:
+        # First decompose as monolith
+        _run_in_tmp(
+            tmp_path,
+            ["decompose", "--arch", "monolithic", "Create a personal finance webapp"],
+        )
+        manifest_path = tmp_path / ".specforge" / "manifest.json"
+        assert manifest_path.exists()
+
+        import json
+
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        original_features = len(data["features"])
+
+        # Remap to microservice
+        result = _run_in_tmp(
+            tmp_path,
+            ["decompose", "--remap", "microservice", "--no-warn", "Create a personal finance webapp"],
+            input_text="done\n",
+        )
+        assert result.exit_code == 0, result.output
+
+        data2 = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert data2["architecture"] == "microservice"
+        assert len(data2["features"]) == original_features
+
+
+class TestEndToEndMicroservice:
+    """IT-001: full microservice E2E flow."""
+
+    def test_microservice_creates_manifest_and_dirs(self, tmp_path: Path) -> None:
+        import json
+
+        result = _run_in_tmp(
+            tmp_path,
+            ["decompose", "--arch", "microservice", "--no-warn", "Create a personal finance webapp"],
+            input_text="done\n",
+        )
+        assert result.exit_code == 0, result.output
+
+        manifest_path = tmp_path / ".specforge" / "manifest.json"
+        assert manifest_path.exists()
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert data["architecture"] == "microservice"
+        assert data["schema_version"] == "1.0"
+        assert len(data["features"]) >= 8
+        assert len(data["services"]) >= 2
+
+        features_dir = tmp_path / ".specforge" / "features"
+        assert features_dir.exists()
+
+        comm_map = tmp_path / ".specforge" / "communication-map.md"
+        assert comm_map.exists()
+
+
 class TestMutualExclusion:
     """FR-048: --arch and --remap cannot be used together."""
 
