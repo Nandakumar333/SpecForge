@@ -137,6 +137,79 @@ GOVERNANCE_AGNOSTIC_FILE_PATTERN: str = "{domain}.prompts.md"
 SPECFORGE_CONFIG_FILE: str = ".specforge/config.json"
 
 
+# ── Architecture Decomposer Constants (Feature 004) ──────────────────
+
+ArchitectureType = Literal["monolithic", "microservice", "modular-monolith"]
+
+VALID_ARCHITECTURES: list[str] = ["monolithic", "microservice", "modular-monolith"]
+
+OVER_ENGINEERING_THRESHOLD: int = 5
+
+MANIFEST_PATH: str = ".specforge/manifest.json"
+
+STATE_PATH: str = ".specforge/decompose-state.json"
+
+COMMUNICATION_MAP_PATH: str = ".specforge/communication-map.md"
+
+FEATURES_DIR: str = ".specforge/features"
+
+FEATURE_CATEGORIES: list[str] = [
+    "foundation",
+    "core",
+    "supporting",
+    "integration",
+    "admin",
+]
+
+FEATURE_PRIORITIES: list[str] = ["P0", "P1", "P2", "P3"]
+
+COMMUNICATION_PATTERNS: list[str] = ["sync-rest", "sync-grpc", "async-event"]
+
+DECOMPOSITION_STEPS: list[str] = [
+    "architecture",
+    "decomposition",
+    "mapping",
+    "review",
+    "complete",
+]
+
+SCALING_PROFILE: dict[str, str] = {
+    "foundation": "low",
+    "core": "medium",
+    "supporting": "medium",
+    "integration": "high-variance",
+    "admin": "low",
+}
+
+FAILURE_MODE: dict[str, str] = {
+    "foundation": "infrastructure",
+    "core": "business-logic",
+    "supporting": "business-logic",
+    "integration": "external-dependency",
+    "admin": "operational",
+}
+
+MAX_FEATURES_PER_SERVICE: int = 4
+
+AFFINITY_SAME_CATEGORY: int = 3
+AFFINITY_SHARED_DATA: int = 2
+AFFINITY_DIFF_SCALING: int = -2
+AFFINITY_DIFF_FAILURE: int = -2
+AFFINITY_MERGE_THRESHOLD: int = 3
+
+SCHEMA_VERSION: str = "1.0"
+
+CLARIFICATION_QUESTIONS: list[str] = [
+    "What domain or industry is this application for?",
+    "Who are the primary users?",
+    "What is the core action users perform?",
+    "What scale do you expect (personal, team, enterprise)?",
+    "Are there any external integrations (payments, APIs, social login)?",
+]
+
+MIN_KEYWORD_SCORE: int = 2
+
+
 def get_constitution_vars() -> TemplateVarSchema:
     """Variable schema for constitution templates."""
     from specforge.core.template_models import TemplateVarSchema
