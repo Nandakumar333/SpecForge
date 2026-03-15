@@ -1,5 +1,7 @@
 """Snapshot tests for Jinja2 template rendering."""
 
+from pathlib import Path
+
 from specforge.core.template_loader import render_template
 from specforge.core.template_models import TemplateType
 from specforge.core.template_registry import TemplateRegistry
@@ -204,3 +206,78 @@ class TestNewTemplateSnapshots:
         )
         assert result.ok
         assert result.value == snapshot
+
+
+class TestStackVariantSnapshots:
+    """Snapshot tests for stack-specific prompt variants (US3 — T026)."""
+
+    def test_backend_dotnet(self, snapshot: object) -> None:
+        renderer = _make_renderer()
+        result = renderer.render(
+            "backend", TemplateType.prompt, _CTX, stack="dotnet"
+        )
+        assert result.ok
+        assert result.value == snapshot
+
+    def test_backend_nodejs(self, snapshot: object) -> None:
+        renderer = _make_renderer()
+        result = renderer.render(
+            "backend", TemplateType.prompt, _CTX, stack="nodejs"
+        )
+        assert result.ok
+        assert result.value == snapshot
+
+    def test_backend_python(self, snapshot: object) -> None:
+        renderer = _make_renderer()
+        result = renderer.render(
+            "backend", TemplateType.prompt, _CTX, stack="python"
+        )
+        assert result.ok
+        assert result.value == snapshot
+
+    def test_variants_differ(self) -> None:
+        """Stack variants must produce different content."""
+        renderer = _make_renderer()
+        dotnet = renderer.render(
+            "backend", TemplateType.prompt, _CTX, stack="dotnet"
+        )
+        nodejs = renderer.render(
+            "backend", TemplateType.prompt, _CTX, stack="nodejs"
+        )
+        generic = renderer.render(
+            "backend", TemplateType.prompt, _CTX
+        )
+        assert dotnet.value != nodejs.value
+        assert dotnet.value != generic.value
+        assert nodejs.value != generic.value
+
+
+class TestUserOverrideSnapshots:
+    """Snapshot test for user override vs built-in (US2 — T021)."""
+
+    def test_override_differs_from_built_in(
+        self, tmp_path: Path, snapshot: object
+    ) -> None:
+        user_dir = tmp_path / ".specforge" / "templates"
+        user_dir.mkdir(parents=True)
+        (user_dir / "constitution.md.j2").write_text(
+            "# Custom {{ project_name }} Constitution\n\n"
+            "This is a custom constitution for **{{ project_name }}**.\n",
+            encoding="utf-8",
+        )
+        registry = TemplateRegistry(tmp_path)
+        registry.discover()
+        renderer = TemplateRenderer(registry)
+        result = renderer.render(
+            "constitution", TemplateType.constitution, _CTX
+        )
+        assert result.ok
+        assert result.value == snapshot
+        # Verify it differs from built-in
+        builtin_reg = TemplateRegistry()
+        builtin_reg.discover()
+        builtin_renderer = TemplateRenderer(builtin_reg)
+        builtin_result = builtin_renderer.render(
+            "constitution", TemplateType.constitution, _CTX
+        )
+        assert result.value != builtin_result.value
