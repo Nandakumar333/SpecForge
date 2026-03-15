@@ -1,10 +1,14 @@
 <div align="center">
     <h1>⚙️ SpecForge</h1>
-    <h3><em>Build high-quality software faster.</em></h3>
+    <h3><em>From One Prompt to Production-Ready Features.</em></h3>
 </div>
 
 <p align="center">
-    <strong>An open source, AI-powered spec-driven development engine that scaffolds your project, enforces your principles, and guides every feature from idea to implementation.</strong>
+    <strong>An open source, AI-powered spec-driven development engine that takes a single natural-language prompt, auto-decomposes it into bounded features, and implements each one through isolated sub-agents governed by strict coding standards.</strong>
+</p>
+
+<p align="center">
+    <em>Inspired by GitHub Spec Kit &nbsp;|&nbsp; Built for Enterprise AI Agents</em>
 </p>
 
 <p align="center">
@@ -13,6 +17,7 @@
     <a href="https://github.com/your-org/specforge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/your-org/specforge" alt="License"/></a>
     <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"/>
     <img src="https://img.shields.io/badge/install%20with-uv-violet" alt="Install with uv"/>
+    <img src="https://img.shields.io/badge/version-1.0--March%202026-orange" alt="Version 1.0"/>
 </p>
 
 ---
@@ -20,11 +25,17 @@
 ## Table of Contents
 
 - [🤔 What is Spec-Driven Development?](#-what-is-spec-driven-development)
-- [⚡ Get Started](#-get-started)
+- [⚡ What Makes SpecForge Different](#-what-makes-specforge-different)
+- [🚀 Get Started](#-get-started)
+- [📂 Project Structure](#-project-structure)
+- [📋 Per-Feature Pipeline](#-per-feature-pipeline)
 - [🤖 Supported AI Agents](#-supported-ai-agents)
-- [🔧 SpecForge CLI Reference](#-specforge-cli-reference)
-- [📚 Core Philosophy](#-core-philosophy)
-- [🌟 Development Phases](#-development-phases)
+- [🔧 CLI Reference](#-cli-reference)
+- [📖 Slash Commands](#-slash-commands)
+- [🌟 Development Phases (Roadmap)](#-development-phases-roadmap)
+- [🎯 Feature Decomposition Example](#-feature-decomposition-example)
+- [🔒 Agent Instruction Prompts](#-agent-instruction-prompts)
+- [⚠️ Edge Cases as First-Class Citizens](#️-edge-cases-as-first-class-citizens)
 - [🔧 Prerequisites](#-prerequisites)
 - [📋 Detailed Process](#-detailed-process)
 - [🔍 Troubleshooting](#-troubleshooting)
@@ -37,17 +48,51 @@
 
 Spec-Driven Development **flips the script** on traditional software development. For decades, code has been king — specifications were just scaffolding we built and discarded once the "real work" of coding began. Spec-Driven Development changes this: **specifications become executable**, directly generating working implementations rather than just guiding them.
 
-SpecForge is the engine that makes this workflow concrete. It scaffolds your project with a structured `.specforge/` directory, populates it with AI agent prompts and feature templates tailored to your tech stack, and provides a suite of slash commands that guide your AI coding agent through every phase — from idea to shipped feature.
+SpecForge is the engine that makes this workflow concrete at enterprise scale. One prompt. Twelve features. Every feature fully specified, planned, and implemented — independently, in parallel, with strict coding governance enforced at every step.
+
+```
+"Create a webapp for PersonalFinance"
+         │
+         ▼
+  App Analyzer Agent
+  Identifies 12 bounded features
+         │
+         ▼
+  Per-Feature Pipeline (×12)
+  spec → research → data-model → plan → checklist → edge-cases → tasks
+         │
+         ▼
+  Sub-Agent Executor (isolated per feature)
+  Implements, tests, auto-fixes, commits
+         │
+         ▼
+  Integration Orchestrator
+  Merges features, resolves contracts, runs integration tests
+         │
+         ▼
+  Production-Ready Application
+```
 
 ---
 
-## ⚡ Get Started
+## ⚡ What Makes SpecForge Different
+
+| Feature | Spec Kit | SpecForge |
+|---------|----------|-----------|
+| Feature identification | Manual — you define each feature | **Automatic** — one-line prompt → AI decomposes into 10–15 bounded features |
+| Sub-agent execution | Single agent, sequential | **Isolated sub-agents per feature** — no context window pollution, parallel execution |
+| Coding governance | Templates and guidelines | **Agent Instruction Prompts** — hard constraints enforced at generation time, violations trigger rejection + re-generation |
+| Edge cases | Listed in spec | **First-class artifact** — dedicated `edge-cases.md` per feature, analyzed before implementation |
+| Industry standard bias | Follows common defaults | **Zero bias** — no assumptions about architecture, patterns, or libraries unless you define them |
+| Auto-fix loop | None | **Built-in** — tests fail → agent fixes → re-tests (max 3 iterations before escalation) |
+
+---
+
+## 🚀 Get Started
 
 ### 1. Install SpecForge
 
 #### Option 1: Persistent Installation (Recommended)
-
-Install once and use everywhere:
 
 ```bash
 uv tool install specforge --from git+https://github.com/your-org/specforge.git
@@ -56,17 +101,17 @@ uv tool install specforge --from git+https://github.com/your-org/specforge.git
 Then use the tool directly:
 
 ```bash
-# Create a new project
+# Scaffold a new project
 specforge init <PROJECT_NAME>
 
 # Or initialize in an existing project
 specforge init --here --agent claude
 
-# Check installed tools and prerequisites
+# Verify your environment
 specforge check
 ```
 
-To upgrade SpecForge:
+To upgrade:
 
 ```bash
 uv tool install specforge --force --from git+https://github.com/your-org/specforge.git
@@ -74,86 +119,124 @@ uv tool install specforge --force --from git+https://github.com/your-org/specfor
 
 #### Option 2: One-time Usage
 
-Run directly without installing:
-
 ```bash
-# Create a new project
 uvx --from git+https://github.com/your-org/specforge.git specforge init <PROJECT_NAME>
-
-# Or initialize in an existing project
-uvx --from git+https://github.com/your-org/specforge.git specforge init --here --agent claude
 ```
-
-**Benefits of persistent installation:**
-
-- Tool stays installed and available in PATH
-- No need to create shell aliases
-- Better tool management with `uv tool list`, `uv tool upgrade`, `uv tool uninstall`
-- Cleaner shell configuration
 
 ---
 
 ### 2. Establish project principles
 
-Launch your AI assistant in the project directory. The `/speckit.*` commands are available in the assistant after initialization.
+Launch your AI assistant in the project directory. The `/speckit.*` commands are available after initialization.
 
-Use the **`/speckit.constitution`** command to create your project's governing principles — the development guidelines that will steer every subsequent decision.
-
-```
-/speckit.constitution Create principles focused on code quality, testing standards, clean architecture, and performance requirements.
-```
-
-This step creates `.specforge/memory/constitution.md` — the foundational document that your AI agent references throughout specification, planning, and implementation.
-
----
-
-### 3. Create the spec
-
-Use **`/speckit.specify`** to describe what you want to build. Focus on the **what** and **why** — not the tech stack.
+Use **`/speckit.constitution`** to define the governance rules that every sub-agent will follow:
 
 ```
-/speckit.specify Build a task management app where teams create projects, assign tasks to members, and track progress through a Kanban board with drag-and-drop cards.
+/speckit.constitution Create principles for a .NET microservices backend with Clean Architecture.
+Functions must not exceed 30 lines. SOLID principles enforced. Result<T> pattern for all error handling.
+No magic strings. 100% unit test coverage for domain logic.
 ```
 
 ---
 
-### 4. Clarify the spec
+### 3. Decompose your app into features
 
-Use **`/speckit.clarify`** to identify and resolve underspecified areas before investing in a technical plan. This step significantly reduces downstream rework.
+Use **`specforge decompose`** to have the App Analyzer Agent break your one-line description into bounded feature modules:
+
+```bash
+specforge decompose "Create a webapp for PersonalFinance"
+```
+
+SpecForge identifies 10–15 independent features, builds a dependency graph, and scaffolds a numbered directory for each one.
+
+---
+
+### 4. Run the per-feature pipeline
+
+For each feature, run the full 7-phase pipeline:
 
 ```
-/speckit.clarify
+/speckit.specify  →  /speckit.clarify  →  /speckit.plan  →  /speckit.tasks  →  /speckit.implement
+```
+
+Or let SpecForge orchestrate the entire pipeline automatically:
+
+```bash
+specforge implement --all --parallel
 ```
 
 ---
 
-### 5. Create a technical implementation plan
+## 📂 Project Structure
 
-Use **`/speckit.plan`** to provide your tech stack and architecture choices.
+SpecForge generates the following structure for every project:
 
-```
-/speckit.plan The backend is Python + FastAPI with PostgreSQL. The frontend is React + TypeScript. Use Docker Compose for local development.
+```text
+project-root/
+├── .specforge/
+│   ├── constitution.md                    # Project-wide governance
+│   ├── memory/
+│   │   ├── constitution.md                # Governance rules (AI-readable)
+│   │   └── decisions.md                   # Architecture Decision Records
+│   ├── prompts/                           # AGENT INSTRUCTION FILES
+│   │   ├── architecture.prompts.md        # System-wide architecture rules
+│   │   ├── backend.prompts.md             # Backend coding standards
+│   │   ├── frontend.prompts.md            # Frontend coding standards
+│   │   ├── database.prompts.md            # Database design rules
+│   │   ├── security.prompts.md            # Security requirements
+│   │   ├── testing.prompts.md             # Testing strategy & standards
+│   │   ├── cicd.prompts.md                # CI/CD pipeline rules
+│   │   └── api-design.prompts.md          # API contract rules
+│   ├── features/
+│   │   ├── 001-authentication/
+│   │   │   ├── spec.md
+│   │   │   ├── research.md
+│   │   │   ├── data-model.md
+│   │   │   ├── plan.md
+│   │   │   ├── checklist.md
+│   │   │   ├── edge-cases.md              # ← SpecForge exclusive
+│   │   │   ├── tasks.md
+│   │   │   └── contracts/
+│   │   │       └── api-spec.json
+│   │   ├── 002-accounts-wallets/
+│   │   │   └── (same 7-artifact structure)
+│   │   └── (all features)
+│   ├── templates/
+│   │   ├── spec-template.md
+│   │   ├── plan-template.md
+│   │   ├── tasks-template.md
+│   │   ├── checklist-template.md
+│   │   ├── research-template.md
+│   │   ├── datamodel-template.md
+│   │   └── edge-cases-template.md
+│   └── scripts/
+│       ├── decompose.sh
+│       ├── generate-feature.sh
+│       └── run-sub-agent.sh
+├── src/                                   # Generated application code
+│   ├── backend/
+│   ├── frontend/
+│   └── shared/
+└── tests/
 ```
 
 ---
 
-### 6. Break down into tasks
+## 📋 Per-Feature Pipeline
 
-Use **`/speckit.tasks`** to create an actionable, dependency-ordered task list from your implementation plan.
+Every feature — regardless of complexity — goes through an identical 7-phase pipeline before a single line of implementation code is written.
 
-```
-/speckit.tasks
-```
+| Phase | Artifact | What It Contains |
+|-------|----------|-----------------|
+| 1 | `spec.md` | User stories (Given/When/Then), functional requirements, non-functional SLOs, explicit out-of-scope, edge case stubs |
+| 2 | `research.md` | Technology options with pros/cons, library version verification, third-party service evaluation, security considerations |
+| 3 | `data-model.md` | All entities with fields and types, relationships, value objects, index strategy, migration plan |
+| 4 | `plan.md` | Architecture decisions, component breakdown, API endpoint design, frontend tree, constitution compliance gate |
+| 5 | `checklist.md` | Quality gate — all items must pass before implementation begins |
+| 6 | `edge-cases.md` | Concurrency, network failure, data boundaries, state machine gaps, security edge cases, UI edge cases |
+| 7 | `tasks.md` | Dependency-ordered tasks with `[P]` parallel markers, test-before-implementation (TDD enforced), file paths per task |
 
----
-
-### 7. Execute implementation
-
-Use **`/speckit.implement`** to execute all tasks and build your feature according to the plan.
-
-```
-/speckit.implement
-```
+> **Spec-First Rule**: No implementation begins until all 7 artifacts exist and the checklist gate passes.
 
 ---
 
@@ -169,137 +252,178 @@ Use **`/speckit.implement`** to execute all tasks and build your feature accordi
 | [Codex CLI](https://github.com/openai/codex) | ✅ | `codex` | Requires manual PATH setup |
 | Agnostic | ✅ | — | Generated when no agent is detected; use `--agent` to override |
 
-**Auto-detection priority**: When `--agent` is not specified, SpecForge scans PATH in the order above and uses the first agent found. If none are found, an agent-agnostic configuration is generated.
+**Auto-detection priority order**: `claude → copilot → gemini → cursor → windsurf → codex`
+
+When `--agent` is not specified, SpecForge scans PATH in the order above and configures the first agent found.
 
 ---
 
-## 🔧 SpecForge CLI Reference
+## 🔧 CLI Reference
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `init` | Scaffold a new SpecForge project with `.specforge/` structure, agent config, and git initialization |
-| `check` | Verify that all required tools (`git`, `python`, `uv`, agent CLI) are installed and accessible |
-| `decompose` | Break a one-line application description into a list of features to spec individually |
+| `specforge init <project>` | Scaffold project with `.specforge/` directory, prompt files, templates, and agent config |
+| `specforge decompose <description>` | Take a one-line app description and auto-split into bounded feature modules |
+| `specforge check` | Verify all required tools (`git`, `python`, `uv`, agent CLI) are installed |
+| `specforge implement --all` | Execute all features respecting the dependency graph |
+| `specforge status` | Show progress dashboard across all features |
 
 ---
 
-### `specforge init` Arguments & Options
+### `specforge init` Options
 
 | Argument/Option | Type | Default | Description |
 |----------------|------|---------|-------------|
-| `<project-name>` | Argument | — | Name for your new project directory. Required unless `--here` is used. Allowed characters: `[a-zA-Z0-9_-]` |
-| `--agent` | Option | (auto-detect) | AI agent to configure: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex` |
-| `--stack` | Option | (agnostic) | Tech stack for template defaults: `dotnet`, `nodejs`, `python`, `go`, `java` |
-| `--here` | Flag | `False` | Scaffold `.specforge/` into the current directory instead of creating a new subdirectory. Mutually exclusive with `<project-name>` |
-| `--force` | Flag | `False` | Allow scaffolding into an existing directory. Preserves existing files; only adds missing ones |
-| `--no-git` | Flag | `False` | Skip `git init`, `.gitignore` creation, and initial commit |
-| `--dry-run` | Flag | `False` | Preview the file tree that would be created — no files written, no git operations |
-
----
-
-### `specforge check` Options
-
-| Option | Description |
-|--------|-------------|
-| `--agent` | Include a specific agent CLI in the prerequisite check: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex` |
-
----
-
-### `specforge decompose` Arguments
-
-| Argument | Description |
-|----------|-------------|
-| `DESCRIPTION` | Required. A one-line description of the application to break down into features |
+| `<project-name>` | Argument | — | Project directory name. Required unless `--here`. Allowed: `[a-zA-Z0-9_-]` |
+| `--agent` | Option | (auto-detect) | AI agent: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex` |
+| `--stack` | Option | (agnostic) | Tech stack for prompt defaults: `dotnet`, `nodejs`, `python`, `go`, `java` |
+| `--here` | Flag | `False` | Scaffold `.specforge/` into current directory. Mutually exclusive with `<project-name>` |
+| `--force` | Flag | `False` | Allow existing directory — preserves existing files, only adds missing ones |
+| `--no-git` | Flag | `False` | Skip `git init`, `.gitignore`, and initial commit |
+| `--dry-run` | Flag | `False` | Preview the full file tree without writing anything |
 
 ---
 
 ### Examples
 
 ```bash
-# Basic project initialization (auto-detects installed agent)
-specforge init my-project
+# Scaffold a new project (auto-detects agent)
+specforge init PersonalFinance
 
-# Initialize with a specific AI agent
-specforge init my-project --agent claude
+# Scaffold with specific agent and stack
+specforge init PersonalFinance --agent claude --stack dotnet
 
-# Initialize with agent and tech stack
-specforge init my-project --agent claude --stack python
+# Decompose app description into features
+specforge decompose "Create a webapp for PersonalFinance"
 
-# Initialize in the current directory (existing project)
+# Initialize in an existing project
 specforge init --here --agent copilot
 
-# Add missing .specforge/ files to an existing project (preserves existing files)
+# Add missing .specforge/ files without overwriting existing ones
 specforge init --here --force --agent gemini
 
-# Preview what would be created without writing anything
-specforge init my-project --dry-run
+# Preview what would be created
+specforge init PersonalFinance --dry-run
 
 # Skip git initialization
-specforge init my-project --agent claude --no-git
+specforge init PersonalFinance --agent claude --no-git
 
 # Check all prerequisites
 specforge check
 
 # Check prerequisites including a specific agent
 specforge check --agent claude
-
-# Decompose an app description into features
-specforge decompose "A task management app with team collaboration and Kanban boards"
 ```
 
 ---
 
-### Available Slash Commands
+## 📖 Slash Commands
 
-After running `specforge init`, your AI coding agent will have access to these slash commands for structured spec-driven development:
+After running `specforge init`, your AI agent has access to these slash commands:
 
-#### Core Commands
-
-Essential commands for the full Spec-Driven Development workflow:
+### Core Commands
 
 | Command | Description |
 |---------|-------------|
-| `/speckit.constitution` | Create or update project governing principles and development guidelines |
-| `/speckit.specify` | Define what you want to build — requirements, user stories, and acceptance criteria |
+| `/speckit.constitution` | Create or update project governing principles — the foundational governance for all sub-agents |
+| `/speckit.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs |
 | `/speckit.clarify` | Identify and resolve underspecified areas before planning (recommended before `/speckit.plan`) |
-| `/speckit.plan` | Create a technical implementation plan with your chosen tech stack and architecture |
-| `/speckit.tasks` | Generate an actionable, dependency-ordered task list for implementation |
-| `/speckit.implement` | Execute all tasks and build the feature according to the plan |
+| `/speckit.plan` | Generate `plan.md` — technical blueprint with architecture decisions and constitution gate |
+| `/speckit.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list |
+| `/speckit.implement` | Execute all tasks for a feature via isolated sub-agent |
 
-#### Optional Commands
-
-Additional commands for quality, validation, and exploration:
+### Quality & Validation Commands
 
 | Command | Description |
 |---------|-------------|
 | `/speckit.analyze` | Cross-artifact consistency and coverage analysis — run after `/speckit.tasks`, before `/speckit.implement` |
-| `/speckit.checklist` | Generate custom quality checklists that validate requirements completeness, clarity, and consistency — "unit tests for English" |
+| `/speckit.checklist` | Generate quality checklists that validate requirements completeness, clarity, and consistency |
 
 ---
 
-## 📚 Core Philosophy
+## 🌟 Development Phases (Roadmap)
 
-Spec-Driven Development is a structured process that emphasizes:
+SpecForge is built in 4 phases. Phase 1 is complete.
 
-- **Intent-driven development** where specifications define the *what* before the *how*
-- **Constitution-first governance** — project principles established once, enforced everywhere
-- **Spec-before-code** discipline — no implementation begins until `spec.md`, `plan.md`, and `tasks.md` all exist
-- **Multi-step refinement** rather than one-shot code generation from prompts
-- **Heavy reliance** on advanced AI model capabilities for specification interpretation and implementation
+### Phase 1 — Foundation ✅
+CLI scaffold, constitution generator, 7 prompt files, 7 feature templates, git branching, slash commands.
 
-SpecForge enforces these principles through its project structure, its template system, and the constitution gates built into every slash command.
+### Phase 2 — Intelligence Layer
+App Analyzer Agent, feature decomposer with dependency graph, edge-case analyzer, research agent, clarification engine.
+
+### Phase 3 — Sub-Agent Engine
+Isolated sub-agent execution per feature, parallel feature implementation, auto-fix loop (tests fail → fix → re-test), quality gate, cross-feature integration orchestrator, real-time progress dashboard.
+
+### Phase 4 — Polish & Ecosystem
+Multi-stack prompt plugins (Node.js, Python, Go, Java, React, Vue), brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
 
 ---
 
-## 🌟 Development Phases
+## 🎯 Feature Decomposition Example
 
-| Phase | Focus | Key Activities |
-|-------|-------|----------------|
-| **0-to-1 Development** ("Greenfield") | Generate from scratch | Start with high-level requirements → generate specifications → plan implementation → build production-ready applications |
-| **Creative Exploration** | Parallel implementations | Explore diverse solutions, support multiple technology stacks and architectures, experiment with UX patterns |
-| **Iterative Enhancement** ("Brownfield") | Add to existing projects | Adopt SpecForge mid-project with `--here`, add features iteratively, modernize incrementally |
+When you run `specforge decompose "Create a webapp for PersonalFinance"`, the App Analyzer identifies and orders these features:
+
+| # | Feature | Depends On | Priority |
+|---|---------|-----------|----------|
+| 001 | Authentication & User Management | — | P0 — Critical Path |
+| 002 | Accounts & Wallets | 001 | P0 — Critical Path |
+| 003 | Transactions | 001, 002 | P0 — Critical Path |
+| 004 | Budgeting | 001, 002, 003 | P1 — High |
+| 005 | Investments | 001, 002 | P1 — High |
+| 006 | Bills & Subscriptions | 001, 002, 003 | P1 — High |
+| 007 | Financial Goals | 001, 002 | P2 — Medium |
+| 008 | Reports & Analytics | 001–005 | P1 — High |
+| 009 | Alerts & Notifications | 001 + any | P2 — Medium |
+| 010 | Data Import & Bank Integration | 001, 002, 003 | P1 — High |
+| 011 | AI Financial Advisor | 001–005, 008 | P2 — Medium |
+| 012 | Admin & System Management | 001 | P1 — High |
+
+Features with no shared dependencies (e.g., 002 and 012 both only need 001) are implemented **in parallel**.
+
+---
+
+## 🔒 Agent Instruction Prompts
+
+The `.specforge/prompts/` directory contains 8 agent instruction files. These are **not guidelines** — they are hard constraints. Sub-agents that violate them have their output rejected and regenerated.
+
+### What They Enforce
+
+**`backend.prompts.md`** — microservice architecture, Clean Architecture layers, CQRS, SOLID principles, 30-line function limit, 300-line class limit, Result\<T\> pattern, no magic strings, structured logging.
+
+**`frontend.prompts.md`** — Atomic Design component architecture, typed state management, no prop drilling beyond 2 levels, 150-line component limit, Zod schema validation, WCAG 2.1 AA accessibility, zero `any` TypeScript.
+
+**`database.prompts.md`** — schema-first migrations, snake_case naming, indexed foreign keys, soft deletes with `IsDeleted + DeletedAt`, audit trail on every table, no N+1 queries, connection pooling.
+
+**`security.prompts.md`** — JWT with refresh tokens (15 min / 7 day TTL), policy-based authorization, input validation at API boundary AND domain layer, no raw SQL concatenation, CORS origin whitelist, HSTS, no secrets in code.
+
+**`testing.prompts.md`** — xUnit + Moq, one test class per production class, 80% line coverage minimum (100% for domain logic), `MethodName_StateUnderTest_ExpectedBehavior` naming, Testcontainers for integration tests, Stryker.NET mutation testing.
+
+**`cicd.prompts.md`** — multi-stage Docker builds, non-root Alpine images, Terraform/Pulumi IaC, Conventional Commits, automatic rollback on health check failure, SemVer artifact versioning.
+
+**`api-design.prompts.md`** — resource-oriented URLs with plural nouns, URL-based versioning (v1/v2), `{ data, errors, meta }` response envelope, RFC 7807 Problem Details for errors, OpenAPI spec generated from code, idempotency key support.
+
+**`architecture.prompts.md`** — system-wide rules with highest precedence. When rules conflict across prompt files, `security.prompts.md > architecture.prompts.md > domain-specific files`.
+
+### Tech Stack Adaptation
+
+Prompt files ship with `.NET` defaults but adapt automatically to your stack. Specify `--stack python` and `FluentValidation → Pydantic`, `EF Core → SQLAlchemy`, `xUnit → pytest`. The same governance, applied to your language.
+
+---
+
+## ⚠️ Edge Cases as First-Class Citizens
+
+Every feature in SpecForge has a dedicated `edge-cases.md` — generated before implementation begins, not discovered after. Categories covered:
+
+- **Concurrency** — two users updating the same resource simultaneously
+- **Network failure** — API timeouts, partial writes, third-party service down
+- **Data boundaries** — empty lists, max values, special characters, encoding issues
+- **State machine gaps** — session expiry mid-flow, interrupted transactions
+- **Integration failures** — rate limiting, contract breaking changes, API deprecation
+- **Security edge cases** — token replay, CSRF, concurrent sessions, privilege escalation
+- **UI edge cases** — long text overflow, missing data, slow connections, keyboard navigation
+- **Recovery** — partial implementation recovery, circular dependency detection, context window overflow
 
 ---
 
@@ -318,143 +442,113 @@ Run `specforge check` at any time to verify your environment.
 ## 📋 Detailed Process
 
 <details>
-<summary>Click to expand the step-by-step walkthrough</summary>
+<summary>Click to expand the full step-by-step walkthrough</summary>
 
 ### Bootstrap your project
 
-Use the SpecForge CLI to scaffold your project directory:
-
 ```bash
-specforge init <project_name>
-```
-
-Or adopt SpecForge in an existing project:
-
-```bash
-# Scaffold .specforge/ into your current directory
-specforge init --here --agent claude
-
-# Force-add missing files alongside existing .specforge/ content
-specforge init --here --force --agent claude
+specforge init PersonalFinance --agent claude --stack dotnet
 ```
 
 SpecForge will:
-1. Create the `.specforge/` directory structure
+1. Create the full `.specforge/` directory structure
 2. Render all Jinja2 templates with your project name, agent, and stack
-3. Initialize a git repository and create an initial commit: `chore: init specforge scaffold`
-4. Print a summary of all created files and suggested next steps
+3. Populate all 8 agent instruction prompt files with stack-appropriate rules
+4. Initialize a git repository and make the initial commit: `chore: init specforge scaffold`
+5. Print a summary of all created files and suggested next steps
 
-Preview what would be created without writing anything:
-
+Preview without writing:
 ```bash
-specforge init my-project --dry-run
+specforge init PersonalFinance --dry-run
 ```
 
 ---
 
 ### STEP 1: Establish project principles
 
-Open your AI coding agent in the project directory. You'll see the `/speckit.*` commands are now available.
-
-Start with **`/speckit.constitution`** to create your project's governing principles:
+Open your AI coding agent in the project directory and run `/speckit.constitution`:
 
 ```
-/speckit.constitution Create principles focused on code quality and testability. All domain logic must be in the core layer with zero external dependencies. Functions must not exceed 30 lines. All recoverable errors must use Result[T] — no exceptions for control flow.
+/speckit.constitution Create principles for a .NET microservices platform. Clean Architecture with Domain/Application/Infrastructure/API layers. CQRS for all commands and queries. Functions ≤30 lines, classes ≤300 lines. Result<T> for all business logic errors — no exceptions for control flow. 80% minimum test coverage, 100% for domain layer.
 ```
 
-This creates `.specforge/memory/constitution.md` — the foundational document that gates all planning and implementation work.
+This creates `.specforge/memory/constitution.md` — the document that gates every planning, implementation, and review step.
 
 ---
 
-### STEP 2: Create the spec
+### STEP 2: Decompose your app
 
-Use **`/speckit.specify`** and describe your feature in natural language. Focus on the *what* and *why* — leave the technology choices for the planning step.
+Run the App Analyzer to identify features:
 
-> **Important**: Be as explicit as possible about what you are building and why. Do not mention the tech stack yet.
-
-```
-/speckit.specify Build a Kanban task board. Users log in, see their assigned projects, open a project to view its Kanban columns (To Do, In Progress, In Review, Done), and drag-and-drop task cards between columns. Cards show assignee, title, and status. Users can comment on cards and edit or delete only their own comments.
+```bash
+specforge decompose "Create a webapp for PersonalFinance"
 ```
 
-Once complete, a new branch is created (e.g., `001-kanban-task-board`) along with `specs/001-kanban-task-board/spec.md` containing user stories, functional requirements, success criteria, and edge cases.
+The agent identifies bounded contexts, extracts features, builds a dependency graph, and scaffolds a numbered `features/` directory for each one. Features with no shared dependencies are flagged for parallel execution.
 
 ---
 
-### STEP 3: Clarify the spec
+### STEP 3: Run the per-feature pipeline
 
-Run **`/speckit.clarify`** to surface and resolve underspecified areas before you invest in a technical plan. The command identifies up to 5 high-impact clarification questions and records the answers directly in the spec.
+For each feature, work through the 7-phase pipeline:
 
+**Specify:**
+```
+/speckit.specify 001-authentication
+```
+Produces `spec.md` with user stories (Given/When/Then), functional requirements, NFR SLOs, and edge case stubs.
+
+**Clarify:**
 ```
 /speckit.clarify
 ```
+Resolves underspecified areas through structured Q&A — answers recorded directly in the spec.
 
-This step is not optional for production work — skipping it increases downstream rework risk significantly.
-
----
-
-### STEP 4: Generate the plan
-
-Now specify your tech stack. Use **`/speckit.plan`**:
-
+**Plan:**
 ```
-/speckit.plan The backend is Python 3.11 + FastAPI with PostgreSQL. Frontend is React 18 + TypeScript with Vite. Real-time updates via WebSockets. Deployed on Docker Compose locally.
+/speckit.plan The backend uses ASP.NET Core 8 with PostgreSQL via EF Core. JWT authentication with refresh tokens.
 ```
+Produces `plan.md`, `research.md`, `data-model.md`, `contracts/api-spec.json`, and `quickstart.md`.
 
-This produces:
-- `plan.md` — full technical implementation plan with constitution gates
-- `research.md` — resolved technical unknowns and library decisions
-- `data-model.md` — all domain entities, fields, and relationships
-- `contracts/` — API contracts, CLI command schemas, or other interface specs
-- `quickstart.md` — from-zero-to-running guide for the feature
-
----
-
-### STEP 5: Validate the plan
-
-Before generating tasks, use **`/speckit.analyze`** to cross-check all artifacts for consistency and coverage gaps:
-
+**Validate:**
 ```
-/speckit.analyze
+/speckit.checklist 001-authentication
 ```
+Generates and runs the quality gate. All items must pass before tasks are generated.
 
-This catches mismatches between `spec.md`, `plan.md`, and your contracts before they become bugs.
-
-You can also generate a custom validation checklist:
-
-```
-/speckit.checklist Validate all acceptance criteria are testable, all error handling is specified, and the plan references constitution coding standards.
-```
-
----
-
-### STEP 6: Generate tasks
-
-Use **`/speckit.tasks`** to create a dependency-ordered, TDD-structured task list:
-
+**Generate tasks:**
 ```
 /speckit.tasks
 ```
+Produces `tasks.md` with TDD-ordered tasks, `[P]` parallel markers, exact file paths, and conventional commit labels per task.
 
-This creates `tasks.md` containing:
-- Tasks organized by user story
-- Dependencies respected (models before services, services before endpoints)
-- Test files ordered before their implementation counterparts (TDD enforced)
-- Parallel execution markers `[P]` for tasks that can run concurrently
-- Exact file paths for every task
-
----
-
-### STEP 7: Implement
-
-Use **`/speckit.implement`** to execute the full task list:
-
+**Implement:**
 ```
 /speckit.implement
 ```
+The sub-agent loads constitution + applicable prompt files + this feature's spec artifacts — nothing else. It executes tasks in order, runs tests after each task, and auto-fixes failures (max 3 iterations).
 
-The command validates prerequisites (constitution ✓, spec ✓, plan ✓, tasks ✓), then executes tasks in order — respecting dependencies, following TDD sequence, and providing progress updates throughout.
+---
 
-> **Note**: SpecForge will run local CLI commands (e.g., `pytest`, `npm`, `dotnet`) as part of implementation. Ensure required tools are installed on your machine.
+### STEP 4: Run all features
+
+Once all features are specified and planned, implement them respecting the dependency graph:
+
+```bash
+specforge implement --all --parallel
+```
+
+Features in the same dependency phase run concurrently. The integration orchestrator merges them, resolves shared contracts, and runs end-to-end integration tests.
+
+---
+
+### STEP 5: Check progress
+
+```bash
+specforge status
+```
+
+Shows a real-time dashboard across all features: `specifying → planning → implementing → testing → complete`.
 
 </details>
 
@@ -464,25 +558,21 @@ The command validates prerequisites (constitution ✓, spec ✓, plan ✓, tasks
 
 ### `specforge: command not found` after install
 
-The `uv tool` bin directory may not be in your PATH. Run:
-
 ```bash
 uv tool update-shell
 ```
 
-Then restart your terminal, or manually add `~/.local/bin` (Linux/macOS) or `%USERPROFILE%\.local\bin` (Windows) to your PATH.
+Restart your terminal, or add `~/.local/bin` (Linux/macOS) or `%USERPROFILE%\.local\bin` (Windows) to PATH.
 
 ---
 
 ### Agent detected as `agnostic` when agent is installed
 
-Your agent CLI may not be in PATH, or its binary name differs. Run:
-
 ```bash
 specforge check
 ```
 
-This shows which tools are found and which are missing with install hints. Use `--agent` to override auto-detection:
+Shows which tools are found and which are missing with install hints. Override auto-detection:
 
 ```bash
 specforge init my-project --agent claude
@@ -492,7 +582,7 @@ specforge init my-project --agent claude
 
 ### Git operations fail during `specforge init`
 
-Git may not be installed, or the target directory may be in a restricted location. Either install git, or skip git initialization:
+Use `--no-git` to skip git initialization:
 
 ```bash
 specforge init my-project --no-git
@@ -502,7 +592,7 @@ specforge init my-project --no-git
 
 ### `Error: Directory 'X' already exists`
 
-The target directory exists. Use `--force` to scaffold into it without overwriting existing files:
+Use `--force` to scaffold into an existing directory without overwriting files:
 
 ```bash
 specforge init my-project --force
@@ -510,9 +600,13 @@ specforge init my-project --force
 
 ---
 
-### Preview changes before committing
+### Sub-agent violates prompt file rules
 
-Use `--dry-run` to see the full file tree without writing anything:
+Sub-agents that generate code violating agent instruction prompts (e.g., function exceeds 30 lines, missing type hints) have their output automatically flagged. The agent is instructed to regenerate the affected section. After 3 failed iterations, the task is escalated with a diagnostic report for human review.
+
+---
+
+### Preview changes before committing
 
 ```bash
 specforge init my-project --dry-run
@@ -531,3 +625,7 @@ For support, please open a [GitHub issue](https://github.com/your-org/specforge/
 This project is licensed under the terms of the MIT open source license. Please refer to the [LICENSE](./LICENSE) file for the full terms.
 
 ---
+
+<div align="center">
+    <em>SpecForge — Spec-First. Agent-Governed. Production-Ready.</em>
+</div>
