@@ -7,7 +7,8 @@ from typing import Any
 
 from specforge.core.config import SCAFFOLD_DIRS, STACK_HINTS
 from specforge.core.project import ProjectConfig, ScaffoldFile, ScaffoldPlan
-from specforge.core.result import Ok, Result
+from specforge.core.prompt_manager import PromptFileManager
+from specforge.core.result import Err, Ok, Result
 from specforge.core.template_models import TemplateType
 from specforge.core.template_registry import TemplateRegistry
 
@@ -118,9 +119,59 @@ def _build_files(config: ProjectConfig) -> list[ScaffoldFile]:
     return sorted(files, key=lambda f: str(f.relative_path))
 
 
+def generate_governance_files(config: ProjectConfig) -> Result:
+    """Generate governance prompt files for a project.
+
+    Called AFTER write_scaffold to ensure target directory exists first.
+    Handles --force by skipping customized files.
+    """
+    if config.dry_run:
+        return Ok([])
+
+    registry = TemplateRegistry()
+    registry.discover()
+    mgr = PromptFileManager(project_root=config.target_dir, registry=registry)
+
+    if config.force:
+        return _generate_governance_with_force(mgr, config)
+    return mgr.generate(project_name=config.name, stack=config.stack)
+
+
+def _generate_governance_with_force(
+    mgr: PromptFileManager,
+    config: ProjectConfig,
+) -> Result:
+    """Generate governance files for --force, skipping customized files."""
+    from specforge.core.config import GOVERNANCE_DOMAINS
+
+    paths: list[Path] = []
+    for domain in GOVERNANCE_DOMAINS:
+        file_path = mgr.resolve_path(domain, config.stack)
+        if file_path.exists():
+            custom_result = mgr.is_customized(file_path, config.stack)
+            if custom_result.ok and custom_result.value:
+                # File is customized — skip regeneration
+                paths.append(file_path)
+                continue
+        # Not customized or doesn't exist — regenerate
+        result = mgr.generate_one(domain, config.name, config.stack)
+        if not result.ok:
+            return Err(result.error)
+        paths.append(result.value)
+
+    # Always update config.json
+    from specforge.core.prompt_manager import _write_config_json
+    config_result = _write_config_json(config.target_dir, config.name, config.stack)
+    if not config_result.ok:
+        return Err(config_result.error)
+
+    return Ok(paths)
+
+
 def build_scaffold_plan(config: ProjectConfig) -> Result:
     """Build a complete scaffold plan from a ProjectConfig."""
     directories = [Path(d) for d in SCAFFOLD_DIRS]
     files = _build_files(config)
+
     plan = ScaffoldPlan(config=config, files=files, directories=directories)
     return Ok(plan)
