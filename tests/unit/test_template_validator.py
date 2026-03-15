@@ -1,0 +1,139 @@
+"""Unit tests for TemplateValidator."""
+
+from __future__ import annotations
+
+import pytest
+
+from specforge.core.template_models import TemplateVarSchema, ValidationReport
+from specforge.core.template_validator import validate, validate_context
+
+
+class TestValidateContext:
+    def test_missing_required_returns_err(self) -> None:
+        schema = TemplateVarSchema(required={"project_name": str, "date": str})
+        result = validate_context({"date": "2026-01-01"}, schema)
+        assert not result.ok
+        assert "project_name" in result.error[0]
+
+    def test_type_mismatch_returns_err(self) -> None:
+        schema = TemplateVarSchema(required={"project_name": str})
+        result = validate_context({"project_name": 42}, schema)
+        assert not result.ok
+        assert "expected str" in result.error[0]
+        assert "got int" in result.error[0]
+
+    def test_valid_context_returns_ok(self) -> None:
+        schema = TemplateVarSchema(required={"project_name": str})
+        result = validate_context({"project_name": "test"}, schema)
+        assert result.ok
+        assert result.value == {"project_name": "test"}
+
+    def test_optional_defaults_injected(self) -> None:
+        schema = TemplateVarSchema(
+            required={"project_name": str},
+            optional={"stack": (str, "agnostic")},
+        )
+        result = validate_context({"project_name": "test"}, schema)
+        assert result.ok
+        assert result.value["stack"] == "agnostic"
+
+    def test_optional_provided_preserved(self) -> None:
+        schema = TemplateVarSchema(
+            required={"project_name": str},
+            optional={"stack": (str, "agnostic")},
+        )
+        result = validate_context(
+            {"project_name": "test", "stack": "python"}, schema
+        )
+        assert result.ok
+        assert result.value["stack"] == "python"
+
+
+class TestValidateRenderedOutput:
+    def test_clean_output_is_valid(self) -> None:
+        content = "# Title\n\nSome content.\n"
+        report = validate(content, "test")
+        assert report.is_valid
+
+    def test_detects_unresolved_double_brace(self) -> None:
+        content = "Hello {{ name }}, welcome!\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert report.issues[0].issue_type == "unresolved_placeholder"
+        assert report.issues[0].placeholder_name == "name"
+
+    def test_detects_unresolved_block_tag(self) -> None:
+        content = "{% if something %}\nContent\n{% endif %}\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert report.issues[0].issue_type == "unresolved_placeholder"
+
+    def test_detects_unresolved_comment_tag(self) -> None:
+        content = "Some {# comment #} text.\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert report.issues[0].issue_type == "unresolved_placeholder"
+
+    def test_excludes_placeholders_inside_code_fences(self) -> None:
+        content = (
+            "# Title\n\n"
+            "```python\n"
+            "x = {{ some_var }}\n"
+            "```\n"
+        )
+        report = validate(content, "test")
+        assert report.is_valid
+
+    def test_excludes_placeholders_inside_triple_backtick_text(self) -> None:
+        content = (
+            "# Title\n\n"
+            "```text\n"
+            "{% if cond %}\n"
+            "  some stuff\n"
+            "{% endif %}\n"
+            "```\n"
+        )
+        report = validate(content, "test")
+        assert report.is_valid
+
+    def test_detects_unclosed_code_block(self) -> None:
+        content = "# Title\n\n```python\nsome code\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert any(
+            i.issue_type == "unclosed_code_block" for i in report.issues
+        )
+
+    def test_detects_heading_skip(self) -> None:
+        content = "# Title\n\n#### Skipped to H4\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert any(i.issue_type == "heading_skip" for i in report.issues)
+
+    def test_valid_heading_hierarchy(self) -> None:
+        content = "# H1\n\n## H2\n\n### H3\n"
+        report = validate(content, "test")
+        assert report.is_valid
+
+    def test_report_includes_template_name(self) -> None:
+        report = validate("Clean output.\n", "my-template")
+        assert report.template_name == "my-template"
+
+    def test_report_has_line_numbers(self) -> None:
+        content = "Line 1\n{{ oops }}\nLine 3\n"
+        report = validate(content, "test")
+        assert not report.is_valid
+        assert report.issues[0].line == 2
+
+    def test_multiple_issues_reported(self) -> None:
+        content = "{{ a }}\n{{ b }}\n"
+        report = validate(content, "test")
+        assert len(report.issues) >= 2
+
+    def test_html_comment_header_not_flagged(self) -> None:
+        content = (
+            "<!-- Generated by SpecForge — do not edit manually -->\n"
+            "# Title\n"
+        )
+        report = validate(content, "test")
+        assert report.is_valid

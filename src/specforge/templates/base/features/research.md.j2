@@ -1,0 +1,33 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Document research findings for the feature. #}
+{# Include technology comparisons, library evaluations, and decisions. #}
+{# Each decision should have rationale and alternatives considered. #}
+
+# Research — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Research Questions
+
+1. _What technology/approach should we use for X?_
+
+## Findings
+
+### R-01: [Topic]
+
+**Question**: _What is the best approach?_
+
+**Options Evaluated**:
+
+| Option | Pros | Cons |
+|--------|------|------|
+| Option A | ... | ... |
+| Option B | ... | ... |
+
+**Decision**: _Selected option with rationale._
+
+## References
+
+- _List relevant documentation, articles, and prior art._

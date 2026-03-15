@@ -1,0 +1,41 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+{# Guidance: Describe the implementation plan with file structure. #}
+{# Mark each file as NEW, MODIFIED, or DEPRECATED. #}
+{# Include architecture decisions and integration points. #}
+
+# Implementation Plan — {{ project_name }}
+
+**Feature**: {{ feature_name | default("unnamed-feature") }}
+**Created**: {{ date }}
+
+## Architecture
+
+_Describe the high-level design approach._
+
+## File Structure
+
+```text
+src/
+├── module_a.py    # NEW — Description
+├── module_b.py    # MODIFIED — Description
+└── module_c.py    # DEPRECATED — Replaced by module_a
+```
+
+## Implementation Phases
+
+### Phase 1: Setup
+
+_Describe setup tasks._
+
+### Phase 2: Core
+
+_Describe core implementation._
+
+## Integration Points
+
+_How this feature connects to existing code._
+
+## Testing Strategy
+
+_Test types and coverage targets._

@@ -1,0 +1,25 @@
+{% extends "base/prompts/backend.md.j2" %}
+{% block tech_context %}
+- **Runtime**: .NET 8+ / C#
+- **ORM**: Entity Framework Core
+- **Testing**: xUnit + Moq + FluentAssertions
+{% endblock %}
+{% block conventions %}
+- Microsoft C# coding conventions
+- Nullable reference types enabled
+- `async/await` for all I/O operations
+- Dependency injection via `IServiceCollection`
+- Options pattern for configuration
+{% endblock %}
+{% block patterns %}
+- Clean Architecture with MediatR for CQRS
+- Minimal APIs or Controller-based routing
+- FluentValidation for request validation
+- Serilog for structured logging
+{% endblock %}
+{% block testing_guidance %}
+- xUnit with `[Fact]` and `[Theory]` attributes
+- `WebApplicationFactory<T>` for integration tests
+- EF Core in-memory provider for repository tests
+- Verify middleware pipeline with test server
+{% endblock %}
