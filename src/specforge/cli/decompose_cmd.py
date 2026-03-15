@@ -239,8 +239,14 @@ def _finalize_monolith(
     features: list,
 ) -> None:
     """Finalize monolithic architecture — skip service mapping."""
+    from specforge.core.service_mapper import ServiceMapper
+
+    mapper = ServiceMapper()
+    result = mapper.map_features(features, architecture)
+    services = result.value if result.ok else []
     _write_manifest_and_dirs(
-        root, description, architecture, domain_match, features, services=None
+        root, description, architecture, domain_match,
+        features, services, events=[],
     )
 
 
@@ -251,31 +257,36 @@ def _finalize_services(
     domain_match: object,
     features: list,
 ) -> None:
-    """Finalize microservice/modular-monolith — placeholder for mapping."""
-    try:
-        from specforge.core.service_mapper import ServiceMapper
+    """Finalize microservice/modular-monolith with service mapping."""
+    from specforge.core.communication_planner import CommunicationPlanner
+    from specforge.core.service_mapper import ServiceMapper
 
-        mapper = ServiceMapper()
-        result = mapper.map_features(features, architecture)
-        if not result.ok:
-            _exit_error(f"Service mapping failed: {result.error}")
-        services = result.value
-        _display_services(services)
-        _save_mapping_state(
-            root, description, architecture, domain_match, features, services
-        )
-        services = _interactive_review(root, services, features)
-        _write_manifest_and_dirs(
-            root, description, architecture, domain_match, features, services
-        )
-    except ImportError:
-        console.print(
-            "\n[yellow]Service mapping not yet implemented. "
-            "Features listed above.[/yellow]"
-        )
-        _write_manifest_and_dirs(
-            root, description, architecture, domain_match, features, services=None
-        )
+    mapper = ServiceMapper()
+    result = mapper.map_features(features, architecture)
+    if not result.ok:
+        _exit_error(f"Service mapping failed: {result.error}")
+    services = result.value
+    _display_services(services)
+    _save_mapping_state(
+        root, description, architecture, domain_match, features, services
+    )
+    services = _interactive_review(root, services, features)
+
+    planner = CommunicationPlanner()
+    services, events = planner.plan(services)
+    cycles = planner.detect_cycles(services)
+    if cycles:
+        for cycle in cycles:
+            console.print(
+                f"[yellow]Circular dependency: "
+                f"{' -> '.join(cycle)}[/yellow]"
+            )
+
+    _write_comm_map(root, architecture, services, events, planner)
+    _write_manifest_and_dirs(
+        root, description, architecture, domain_match,
+        features, services, events,
+    )
 
 
 def _display_services(services: list) -> None:
@@ -500,46 +511,103 @@ def _show_edit_help() -> None:
     )
 
 
+def _write_comm_map(
+    root: Path,
+    architecture: str,
+    services: list,
+    events: list,
+    planner: object,
+) -> None:
+    """Write communication-map.md using Jinja2 template."""
+    from specforge.core.config import COMMUNICATION_MAP_PATH
+
+    mermaid = planner.generate_mermaid(services, events)
+    svc_dicts = [
+        {
+            "name": s.name,
+            "communication": [
+                {
+                    "target": lnk.target,
+                    "pattern": lnk.pattern,
+                    "required": lnk.required,
+                    "description": lnk.description,
+                }
+                for lnk in s.communication
+            ],
+        }
+        for s in services
+    ]
+    event_dicts = [
+        {
+            "name": e.name,
+            "producer": e.producer,
+            "consumers": list(e.consumers),
+            "payload_summary": e.payload_summary,
+        }
+        for e in events
+    ]
+    context = {
+        "app_name": "Project",
+        "architecture": architecture,
+        "services": svc_dicts,
+        "events": event_dicts,
+        "mermaid_diagram": mermaid,
+    }
+    try:
+        from specforge.core.template_registry import TemplateRegistry
+        from specforge.core.template_renderer import TemplateRenderer
+
+        registry = TemplateRegistry()
+        renderer = TemplateRenderer(registry)
+        result = renderer.render_raw(
+            "base/features/communication-map.md.j2", context
+        )
+        if result.ok:
+            comm_path = root / COMMUNICATION_MAP_PATH
+            comm_path.parent.mkdir(parents=True, exist_ok=True)
+            comm_path.write_text(result.value, encoding="utf-8")
+            console.print(
+                f"[green]Communication map written to "
+                f"{COMMUNICATION_MAP_PATH}[/green]"
+            )
+    except Exception:
+        pass
+
+
 def _write_manifest_and_dirs(
     root: Path,
     description: str,
     architecture: str,
     domain_match: object,
     features: list,
-    services: list | None,
+    services: list,
+    events: list | None = None,
 ) -> None:
     """Write manifest.json and create feature directories."""
-    try:
-        from specforge.core.manifest_writer import ManifestWriter
+    from specforge.core.manifest_writer import ManifestWriter
 
-        writer = ManifestWriter()
-        manifest = writer.build_manifest(
-            arch=architecture,
-            domain=domain_match.domain_name,
-            features=features,
-            services=services or [],
-            events=[],
-            description=description,
-        )
-        manifest_path = root / MANIFEST_PATH
-        result = writer.write(manifest_path, manifest)
-        if not result.ok:
-            _exit_error(f"Manifest write failed: {result.error}")
-        val_result = writer.validate(manifest_path)
-        if not val_result.ok:
-            console.print(
-                f"[yellow]Manifest validation warning: "
-                f"{val_result.error}[/yellow]"
-            )
+    writer = ManifestWriter()
+    manifest = writer.build_manifest(
+        arch=architecture,
+        domain=domain_match.domain_name,
+        features=features,
+        services=services,
+        events=events or [],
+        description=description,
+    )
+    manifest_path = root / MANIFEST_PATH
+    result = writer.write(manifest_path, manifest)
+    if not result.ok:
+        _exit_error(f"Manifest write failed: {result.error}")
+    val_result = writer.validate(manifest_path)
+    if not val_result.ok:
         console.print(
-            f"\n[green]Manifest written to {MANIFEST_PATH}[/green]"
+            f"[yellow]Manifest validation warning: "
+            f"{val_result.error}[/yellow]"
         )
-    except ImportError:
-        console.print(
-            "\n[yellow]ManifestWriter not yet available. "
-            "Skipping manifest write.[/yellow]"
-        )
-
+    console.print(
+        f"\n[green]Manifest written to {MANIFEST_PATH}[/green]"
+    )
     _create_feature_dirs(root, features)
     _cleanup_state(root)
     console.print("[green]Done![/green]")
@@ -681,10 +749,36 @@ def _handle_remap(
     remap: str,
     no_warn: bool,
 ) -> None:
-    """Handle --remap flow."""
-    console.print(
-        f"\n[yellow]Re-mapping to {remap} not yet implemented.[/yellow]"
-    )
+    """Handle --remap flow: reload features, re-map to new architecture."""
+    import json
+
+    manifest_path = root / MANIFEST_PATH
+    if not manifest_path.exists():
+        _exit_error("No existing manifest found. Run decompose first.")
+
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    from specforge.core.domain_analyzer import Feature
+
+    features = [
+        Feature(
+            id=f["id"], name=f["name"],
+            display_name=f.get("display_name", f["name"]),
+            description=f["description"], priority=f["priority"],
+            category=f["category"], always_separate=False,
+            data_keywords=(),
+        )
+        for f in data["features"]
+    ]
+    from specforge.core.domain_analyzer import DomainMatch
+
+    domain = DomainMatch(data.get("domain", "generic"), 0, ())
+    console.print(f"\nRe-mapping {len(features)} features to {remap}")
+    _check_overengineering(remap, len(features), no_warn)
+
+    if remap == "monolithic":
+        _finalize_monolith(root, description, remap, domain, features)
+    else:
+        _finalize_services(root, description, remap, domain, features)
 
 
 def _exit_error(message: str) -> None:

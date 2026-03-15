@@ -17,7 +17,12 @@ if TYPE_CHECKING:
     from importlib.abc import Traversable
 
 # Files excluded from registry discovery (rendered via render_raw only)
-_EXCLUDED_FILES = {"decisions.md.j2", "gitignore.j2"}
+_EXCLUDED_FILES = {
+    "decisions.md.j2",
+    "gitignore.j2",
+    "communication-map.md.j2",
+    "manifest.json.j2",
+}
 
 # Directories that map to template types
 _TYPE_MAP: dict[str, TemplateType] = {
@@ -173,6 +178,8 @@ class TemplateRegistry:
         for item in items:
             name = item.name if hasattr(item, "name") else str(item)
             if not name.endswith(".md.j2"):
+                continue
+            if name in _EXCLUDED_FILES:
                 continue
             info = self._parse_template_file(name, template_type, source, path_prefix)
             if info is not None:
