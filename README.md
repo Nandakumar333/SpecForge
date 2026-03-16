@@ -17,7 +17,7 @@
     <a href="https://github.com/your-org/specforge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/your-org/specforge" alt="License"/></a>
     <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"/>
     <img src="https://img.shields.io/badge/install%20with-uv-violet" alt="Install with uv"/>
-    <img src="https://img.shields.io/badge/version-1.0--March%202026-orange" alt="Version 1.0"/>
+    <img src="https://img.shields.io/badge/version-0.1.0--March%202026-orange" alt="Version 0.1.0"/>
 </p>
 
 ---
@@ -79,9 +79,9 @@ SpecForge is the engine that makes this workflow concrete at enterprise scale. O
 
 | Feature | Spec Kit | SpecForge |
 |---------|----------|-----------|
-| Feature identification | Manual — you define each feature | **Automatic** — one-line prompt → AI decomposes into 10–15 bounded features |
+| Feature identification | Manual — you define each feature | **Automatic** — one-line prompt → architecture decision gate → 8–15 domain-aware features → service mapping |
 | Sub-agent execution | Single agent, sequential | **Isolated sub-agents per feature** — no context window pollution, parallel execution |
-| Coding governance | Templates and guidelines | **Agent Instruction Prompts** — hard constraints enforced at generation time, violations trigger rejection + re-generation |
+| Coding governance | Templates and guidelines | **7-domain governance prompts** — hard constraints with precedence rules, threshold conflict detection, stack-specific variants |
 | Edge cases | Listed in spec | **First-class artifact** — dedicated `edge-cases.md` per feature, analyzed before implementation |
 | Industry standard bias | Follows common defaults | **Zero bias** — no assumptions about architecture, patterns, or libraries unless you define them |
 | Auto-fix loop | None | **Built-in** — tests fail → agent fixes → re-tests (max 3 iterations before escalation) |
@@ -141,13 +141,13 @@ No magic strings. 100% unit test coverage for domain logic.
 
 ### 3. Decompose your app into features
 
-Use **`specforge decompose`** to have the App Analyzer Agent break your one-line description into bounded feature modules:
+Use **`specforge decompose`** to break your one-line description into bounded feature modules:
 
 ```bash
 specforge decompose "Create a webapp for PersonalFinance"
 ```
 
-SpecForge identifies 10–15 independent features, builds a dependency graph, and scaffolds a numbered directory for each one.
+SpecForge asks your architecture preference (monolithic / microservice / modular monolith), then identifies 8–15 features using domain knowledge patterns. For microservice architecture, it intelligently groups features into services and generates a `manifest.json` with the full mapping.
 
 ---
 
@@ -169,39 +169,38 @@ specforge implement --all --parallel
 
 ## 📂 Project Structure
 
-SpecForge generates the following structure for every project:
+SpecForge generates the following structure when you run `specforge init`:
 
 ```text
 project-root/
 ├── .specforge/
-│   ├── constitution.md                    # Project-wide governance
+│   ├── config.json                        # Agent, stack, and project config
+│   ├── constitution.md                    # Project-wide governance principles
 │   ├── memory/
 │   │   ├── constitution.md                # Governance rules (AI-readable)
 │   │   └── decisions.md                   # Architecture Decision Records
-│   ├── prompts/                           # AGENT INSTRUCTION FILES
+│   ├── prompts/                           # GOVERNANCE PROMPT FILES (7 domains)
 │   │   ├── architecture.prompts.md        # System-wide architecture rules
-│   │   ├── backend.prompts.md             # Backend coding standards
+│   │   ├── backend.prompts.md             # Backend coding standards (stack-specific variants)
 │   │   ├── frontend.prompts.md            # Frontend coding standards
 │   │   ├── database.prompts.md            # Database design rules
 │   │   ├── security.prompts.md            # Security requirements
-│   │   ├── testing.prompts.md             # Testing strategy & standards
-│   │   ├── cicd.prompts.md                # CI/CD pipeline rules
-│   │   └── api-design.prompts.md          # API contract rules
-│   ├── features/
+│   │   ├── testing.prompts.md             # Testing strategy & standards (stack-specific variants)
+│   │   └── cicd.prompts.md                # CI/CD pipeline rules
+│   ├── features/                          # Generated after `specforge decompose`
 │   │   ├── 001-authentication/
 │   │   │   ├── spec.md
 │   │   │   ├── research.md
 │   │   │   ├── data-model.md
 │   │   │   ├── plan.md
 │   │   │   ├── checklist.md
-│   │   │   ├── edge-cases.md              # ← SpecForge exclusive
-│   │   │   ├── tasks.md
-│   │   │   └── contracts/
-│   │   │       └── api-spec.json
-│   │   ├── 002-accounts-wallets/
-│   │   │   └── (same 7-artifact structure)
-│   │   └── (all features)
-│   ├── templates/
+│   │   │   ├── edge-cases.md
+│   │   │   └── tasks.md
+│   │   └── 002-accounts-wallets/
+│   │       └── (same artifact structure)
+│   ├── manifest.json                      # Architecture + feature→service mapping
+│   ├── communication-map.md               # Mermaid service dependency diagram
+│   ├── templates/                         # Rendered feature pipeline templates
 │   │   ├── spec-template.md
 │   │   ├── plan-template.md
 │   │   ├── tasks-template.md
@@ -210,15 +209,12 @@ project-root/
 │   │   ├── datamodel-template.md
 │   │   └── edge-cases-template.md
 │   └── scripts/
-│       ├── decompose.sh
-│       ├── generate-feature.sh
-│       └── run-sub-agent.sh
-├── src/                                   # Generated application code
-│   ├── backend/
-│   ├── frontend/
-│   └── shared/
+│       └── (agent-specific scripts)
+├── src/                                   # Generated application code (future)
 └── tests/
 ```
+
+> **Governance file naming**: Stack-specific domains use `{domain}.{stack}.prompts.md` format (e.g., `backend.dotnet.prompts.md`, `testing.nodejs.prompts.md`). Stack-agnostic domains use flat naming (e.g., `architecture.prompts.md`, `security.prompts.md`).
 
 ---
 
@@ -262,13 +258,14 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `specforge init <project>` | Scaffold project with `.specforge/` directory, prompt files, templates, and agent config |
-| `specforge decompose <description>` | Take a one-line app description and auto-split into bounded feature modules |
-| `specforge check` | Verify all required tools (`git`, `python`, `uv`, agent CLI) are installed |
-| `specforge implement --all` | Execute all features respecting the dependency graph |
-| `specforge status` | Show progress dashboard across all features |
+| Command | Description | Status |
+|---------|-------------|--------|
+| `specforge init <project>` | Scaffold project with `.specforge/` directory, governance prompts, templates, and agent config | ✅ Implemented |
+| `specforge check` | Verify all required tools (`git`, `python`, `uv`, agent CLI) are installed | ✅ Implemented |
+| `specforge validate-prompts` | Validate governance prompt files for threshold conflicts across domains | ✅ Implemented |
+| `specforge decompose <description>` | Architecture decision gate → feature decomposition → service mapping → manifest | ✅ Implemented |
+| `specforge implement --all` | Execute all features respecting the dependency graph | 🔜 Planned |
+| `specforge status` | Show progress dashboard across all features | 🔜 Planned |
 
 ---
 
@@ -278,11 +275,37 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 |----------------|------|---------|-------------|
 | `<project-name>` | Argument | — | Project directory name. Required unless `--here`. Allowed: `[a-zA-Z0-9_-]` |
 | `--agent` | Option | (auto-detect) | AI agent: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex` |
-| `--stack` | Option | (agnostic) | Tech stack for prompt defaults: `dotnet`, `nodejs`, `python`, `go`, `java` |
+| `--stack` | Option | (auto-detect) | Tech stack for governance prompt variants: `dotnet`, `nodejs`, `python`, `go`, `java` |
 | `--here` | Flag | `False` | Scaffold `.specforge/` into current directory. Mutually exclusive with `<project-name>` |
-| `--force` | Flag | `False` | Allow existing directory — preserves existing files, only adds missing ones |
+| `--force` | Flag | `False` | Allow existing directory — preserves customized files (SHA-256 comparison), only adds missing ones |
 | `--no-git` | Flag | `False` | Skip `git init`, `.gitignore`, and initial commit |
 | `--dry-run` | Flag | `False` | Preview the full file tree without writing anything |
+
+---
+
+### `specforge validate-prompts` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `--project` | Option | `.` | Path to the project root containing `.specforge/` |
+
+Exit codes: `0` = no conflicts, `1` = threshold conflicts found, `2` = project not initialized.
+
+---
+
+### `specforge decompose` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `<description>` | Argument | — | One-line application description (e.g., `"Create a personal finance webapp"`) |
+| `--arch` | Option | (interactive) | Skip architecture prompt: `monolithic`, `microservice`, `modular-monolith` |
+| `--remap` | Option | — | Re-map existing features to a new architecture without losing content |
+| `--no-warn` | Flag | `False` | Suppress over-engineering warnings (for scripted/CI usage) |
+
+The decompose flow executes a 3-step decision pipeline:
+1. **Architecture Decision Gate** — ask monolithic / microservice / modular monolith (unless `--arch` is given)
+2. **Feature Decomposition** — analyze description using 6 built-in domain patterns (finance, e-commerce, SaaS, social, healthcare, education) to produce 8–15 features
+3. **Service Mapping** (microservice only) — group features into services using affinity scoring, with interactive review
 
 ---
 
@@ -295,13 +318,10 @@ specforge init PersonalFinance
 # Scaffold with specific agent and stack
 specforge init PersonalFinance --agent claude --stack dotnet
 
-# Decompose app description into features
-specforge decompose "Create a webapp for PersonalFinance"
-
 # Initialize in an existing project
 specforge init --here --agent copilot
 
-# Add missing .specforge/ files without overwriting existing ones
+# Add missing .specforge/ files without overwriting customized ones
 specforge init --here --force --agent gemini
 
 # Preview what would be created
@@ -315,6 +335,18 @@ specforge check
 
 # Check prerequisites including a specific agent
 specforge check --agent claude
+
+# Validate governance prompt files for conflicts
+specforge validate-prompts
+
+# Decompose app description into features (interactive architecture prompt)
+specforge decompose "Create a webapp for PersonalFinance"
+
+# Decompose with architecture pre-selected (skip interactive prompt)
+specforge decompose --arch microservice "Create a webapp for PersonalFinance"
+
+# Re-map existing features to a different architecture
+specforge decompose --remap modular-monolith
 ```
 
 ---
@@ -345,70 +377,118 @@ After running `specforge init`, your AI agent has access to these slash commands
 
 ## 🌟 Development Phases (Roadmap)
 
-SpecForge is built in 4 phases. Phase 1 is complete.
+SpecForge is built incrementally. Features 001–004 are complete.
 
 ### Phase 1 — Foundation ✅
-CLI scaffold, constitution generator, 7 prompt files, 7 feature templates, git branching, slash commands.
+**Feature 001** — CLI Scaffold: `specforge init` with agent detection, stack selection, dry-run preview, git integration, `specforge check` for prerequisites.
 
-### Phase 2 — Intelligence Layer
-App Analyzer Agent, feature decomposer with dependency graph, edge-case analyzer, research agent, clarification engine.
+**Feature 002** — Template Rendering Engine: Jinja2-based template system with `TemplateRegistry` auto-discovery, stack-specific variants, custom filters, snapshot-tested output.
 
-### Phase 3 — Sub-Agent Engine
+### Phase 2 — Governance & Intelligence ✅
+**Feature 003** — Agent Instruction Prompt System: 7-domain governance layer (`architecture`, `backend`, `frontend`, `database`, `security`, `testing`, `cicd`), stack-specific prompt variants, `PromptLoader` with Result pattern, `PromptValidator` for threshold conflict detection, `specforge validate-prompts` command, `PromptContextBuilder` for sub-agent context assembly.
+
+**Feature 004** — Architecture Decision Gate & Decomposer: `specforge decompose` with 3-step flow (architecture selection → feature decomposition → service mapping), 6 built-in domain patterns, affinity-based service mapper, interactive review/edit, `manifest.json` generation, communication map with Mermaid diagrams, `--arch`/`--remap`/`--no-warn` flags, crash-safe state persistence.
+
+### Phase 3 — Sub-Agent Engine 🔜
 Isolated sub-agent execution per feature, parallel feature implementation, auto-fix loop (tests fail → fix → re-test), quality gate, cross-feature integration orchestrator, real-time progress dashboard.
 
-### Phase 4 — Polish & Ecosystem
-Multi-stack prompt plugins (Node.js, Python, Go, Java, React, Vue), brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
+### Phase 4 — Polish & Ecosystem 🔜
+Brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
 
 ---
 
 ## 🎯 Feature Decomposition Example
 
-When you run `specforge decompose "Create a webapp for PersonalFinance"`, the App Analyzer identifies and orders these features:
+When you run `specforge decompose "Create a webapp for PersonalFinance"`, SpecForge executes a 3-step flow:
 
-| # | Feature | Depends On | Priority |
-|---|---------|-----------|----------|
-| 001 | Authentication & User Management | — | P0 — Critical Path |
-| 002 | Accounts & Wallets | 001 | P0 — Critical Path |
-| 003 | Transactions | 001, 002 | P0 — Critical Path |
-| 004 | Budgeting | 001, 002, 003 | P1 — High |
-| 005 | Investments | 001, 002 | P1 — High |
-| 006 | Bills & Subscriptions | 001, 002, 003 | P1 — High |
-| 007 | Financial Goals | 001, 002 | P2 — Medium |
-| 008 | Reports & Analytics | 001–005 | P1 — High |
-| 009 | Alerts & Notifications | 001 + any | P2 — Medium |
-| 010 | Data Import & Bank Integration | 001, 002, 003 | P1 — High |
-| 011 | AI Financial Advisor | 001–005, 008 | P2 — Medium |
-| 012 | Admin & System Management | 001 | P1 — High |
+### Step 1 — Architecture Decision Gate
 
-Features with no shared dependencies (e.g., 002 and 012 both only need 001) are implemented **in parallel**.
+```
+? Which architecture pattern for this project?
+  ❯ 1. Monolithic — All features in a single deployable unit with module separation
+    2. Microservice — Features mapped to independent services
+    3. Modular Monolith — Single deploy but strict module boundaries (can split later)
+```
+
+### Step 2 — Feature Decomposition
+
+The domain analyzer matches "PersonalFinance" to the **finance** domain pattern and generates:
+
+| # | Feature | Category | Priority |
+|---|---------|----------|----------|
+| 001 | Authentication & User Management | foundation | P0 |
+| 002 | Accounts & Wallets | core | P0 |
+| 003 | Transactions | core | P0 |
+| 004 | Budgeting | core | P1 |
+| 005 | Investments | core | P1 |
+| 006 | Bills & Subscriptions | supporting | P1 |
+| 007 | Financial Goals | supporting | P2 |
+| 008 | Reports & Analytics | supporting | P1 |
+| 009 | Alerts & Notifications | integration | P2 |
+| 010 | Data Import & Bank Integration | integration | P1 |
+| 011 | AI Financial Advisor | supporting | P3 |
+| 012 | Admin & System Management | admin | P1 |
+
+### Step 3 — Service Mapping (Microservice only)
+
+12 features → 8 services via affinity scoring:
+
+| Service | Features | Rationale |
+|---------|----------|-----------|
+| Identity Service | 001 | **WHY SEPARATE**: Foundation — every other service depends on it |
+| Ledger Service | 002, 003 | **WHY COMBINED**: Shared bounded context — accounts and transactions access the same data |
+| Planning Service | 004, 006, 007 | **WHY COMBINED**: All three are future financial planning with shared domain vocabulary |
+| Portfolio Service | 005 | **WHY SEPARATE**: Specialized domain with unique external dependencies (market data APIs) |
+| Analytics Service | 008, 011 | **WHY COMBINED**: Both read-heavy consumers with same data pipeline and caching strategy |
+| Notification Service | 009 | **WHY SEPARATE**: Purely async, multi-channel, different scaling profile |
+| Integration Service | 010 | **WHY SEPARATE**: External API dependency with rate limiting and circuit-breaker patterns |
+| Admin Service | 012 | **WHY SEPARATE**: System management with different access control |
+
+Output: `manifest.json` + `communication-map.md` (Mermaid diagram) + feature directories under `.specforge/features/`.
 
 ---
 
 ## 🔒 Agent Instruction Prompts
 
-The `.specforge/prompts/` directory contains 8 agent instruction files. These are **not guidelines** — they are hard constraints. Sub-agents that violate them have their output rejected and regenerated.
+The `.specforge/prompts/` directory contains **7 governance prompt files** across 7 domains. These are **not guidelines** — they are hard constraints. Sub-agents that violate them have their output rejected and regenerated.
+
+### Governance Domains
+
+| Domain | File | Precedence | Description |
+|--------|------|-----------|-------------|
+| Architecture | `architecture.prompts.md` | 1 (highest) | System-wide architecture rules — Clean Architecture, layering, dependency direction |
+| Security | `security.prompts.md` | 2 | Auth, input validation, secrets management, CORS, HSTS |
+| Backend | `backend.{stack}.prompts.md` | 3 | Backend coding standards — function/class limits, error patterns, naming |
+| Frontend | `frontend.prompts.md` | 4 | Component architecture, state management, accessibility |
+| Database | `database.prompts.md` | 5 | Schema-first migrations, naming, indexing, audit trails |
+| Testing | `testing.{stack}.prompts.md` | 6 | Testing framework, coverage thresholds, naming conventions |
+| CI/CD | `cicd.prompts.md` | 7 (lowest) | Docker builds, IaC, commit conventions, deployment |
+
+> **Precedence rule**: When rules conflict across governance domains, higher-precedence domains win. Security always overrides backend-specific rules.
 
 ### What They Enforce
 
-**`backend.prompts.md`** — microservice architecture, Clean Architecture layers, CQRS, SOLID principles, 30-line function limit, 300-line class limit, Result\<T\> pattern, no magic strings, structured logging.
+**`architecture.prompts.md`** — System-wide rules with highest precedence. Clean Architecture layers, SOLID principles, dependency direction, no circular dependencies.
 
-**`frontend.prompts.md`** — Atomic Design component architecture, typed state management, no prop drilling beyond 2 levels, 150-line component limit, Zod schema validation, WCAG 2.1 AA accessibility, zero `any` TypeScript.
+**`security.prompts.md`** — JWT with refresh tokens, policy-based authorization, input validation at API boundary AND domain layer, no raw SQL concatenation, CORS origin whitelist, HSTS, no secrets in code.
 
-**`database.prompts.md`** — schema-first migrations, snake_case naming, indexed foreign keys, soft deletes with `IsDeleted + DeletedAt`, audit trail on every table, no N+1 queries, connection pooling.
+**`backend.prompts.md`** — 30-line function limit, 300-line class limit, Result\<T\> pattern, no magic strings, structured logging. Stack-specific variants: `.dotnet`, `.nodejs`, `.python`, `.go`, `.java`.
 
-**`security.prompts.md`** — JWT with refresh tokens (15 min / 7 day TTL), policy-based authorization, input validation at API boundary AND domain layer, no raw SQL concatenation, CORS origin whitelist, HSTS, no secrets in code.
+**`frontend.prompts.md`** — Atomic Design component architecture, typed state management, no prop drilling beyond 2 levels, 150-line component limit, WCAG 2.1 AA accessibility.
 
-**`testing.prompts.md`** — xUnit + Moq, one test class per production class, 80% line coverage minimum (100% for domain logic), `MethodName_StateUnderTest_ExpectedBehavior` naming, Testcontainers for integration tests, Stryker.NET mutation testing.
+**`database.prompts.md`** — Schema-first migrations, snake_case naming, indexed foreign keys, soft deletes with `is_deleted + deleted_at`, audit trail on every table, no N+1 queries.
 
-**`cicd.prompts.md`** — multi-stage Docker builds, non-root Alpine images, Terraform/Pulumi IaC, Conventional Commits, automatic rollback on health check failure, SemVer artifact versioning.
+**`testing.prompts.md`** — 80% line coverage minimum (100% for domain logic), `MethodName_StateUnderTest_ExpectedBehavior` naming, integration test containers. Stack-specific variants available.
 
-**`api-design.prompts.md`** — resource-oriented URLs with plural nouns, URL-based versioning (v1/v2), `{ data, errors, meta }` response envelope, RFC 7807 Problem Details for errors, OpenAPI spec generated from code, idempotency key support.
+**`cicd.prompts.md`** — Multi-stage Docker builds, non-root Alpine images, Terraform/Pulumi IaC, Conventional Commits, automatic rollback on health check failure.
 
-**`architecture.prompts.md`** — system-wide rules with highest precedence. When rules conflict across prompt files, `security.prompts.md > architecture.prompts.md > domain-specific files`.
+### Conflict Detection
+
+Run `specforge validate-prompts` to detect threshold conflicts between governance files. For example, if `backend.prompts.md` sets max function length to 30 lines but `testing.prompts.md` sets it to 50 lines, the validator flags the conflict.
 
 ### Tech Stack Adaptation
 
-Prompt files ship with `.NET` defaults but adapt automatically to your stack. Specify `--stack python` and `FluentValidation → Pydantic`, `EF Core → SQLAlchemy`, `xUnit → pytest`. The same governance, applied to your language.
+Governance prompts adapt to your stack. Specify `--stack python` during `specforge init` and `FluentValidation → Pydantic`, `EF Core → SQLAlchemy`, `xUnit → pytest`. The same governance rules, applied to your language.
 
 ---
 
@@ -453,9 +533,10 @@ specforge init PersonalFinance --agent claude --stack dotnet
 SpecForge will:
 1. Create the full `.specforge/` directory structure
 2. Render all Jinja2 templates with your project name, agent, and stack
-3. Populate all 8 agent instruction prompt files with stack-appropriate rules
-4. Initialize a git repository and make the initial commit: `chore: init specforge scaffold`
-5. Print a summary of all created files and suggested next steps
+3. Generate 7 governance prompt files with stack-appropriate rules and threshold constraints
+4. Write `config.json` with agent, stack, and project metadata
+5. Initialize a git repository and make the initial commit: `chore: init specforge scaffold`
+6. Print a summary of all created files and suggested next steps
 
 Preview without writing:
 ```bash
@@ -478,13 +559,18 @@ This creates `.specforge/memory/constitution.md` — the document that gates eve
 
 ### STEP 2: Decompose your app
 
-Run the App Analyzer to identify features:
+Run the decompose command to identify features and (optionally) map them to services:
 
 ```bash
 specforge decompose "Create a webapp for PersonalFinance"
 ```
 
-The agent identifies bounded contexts, extracts features, builds a dependency graph, and scaffolds a numbered `features/` directory for each one. Features with no shared dependencies are flagged for parallel execution.
+The system executes a 3-step pipeline:
+1. **Architecture Decision Gate** — asks monolithic / microservice / modular monolith
+2. **Feature Decomposition** — matches domain patterns and generates 8–15 features
+3. **Service Mapping** (microservice only) — groups features into services using affinity scoring
+
+State is saved after each step — if interrupted, re-running resumes from where you left off.
 
 ---
 

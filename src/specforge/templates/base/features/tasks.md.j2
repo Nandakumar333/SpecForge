@@ -8,6 +8,47 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Format: `[ID] [P?] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+
+---
+
+## Phase 1: Setup
+
+{% for feat in features %}
+- [ ] T{{ '%03d' | format(loop.index) }} Set up project structure for {{ feat.display_name }}
+{% endfor %}
+
+## Phase 2: Tests (Write First)
+
+{% for feat in features %}
+- [ ] T{{ '%03d' | format(loop.index + features | length) }} [P] Write tests for {{ feat.display_name }} in tests/unit/
+{% endfor %}
+
+## Phase 3: Implementation
+
+{% for feat in features %}
+- [ ] T{{ '%03d' | format(loop.index + features | length * 2) }} Implement {{ feat.display_name }} core logic
+{% endfor %}
+
+## Phase 4: Integration
+
+- [ ] Wire modules together and run full test suite
+{% if adapter_tasks %}
+
+## Phase 5: Architecture-Specific Tasks
+
+{% for task in adapter_tasks %}
+- [ ] {{ task.name }}: {{ task.description }}
+{% endfor %}
+{% endif %}
+{% else %}
 
 ## Format: `[ID] [P?] Description`
 
@@ -31,6 +72,7 @@
 ## Phase 4: Integration
 
 - [ ] T005 _Wire modules together and run full test suite._
+{% endif %}
 
 ---
 

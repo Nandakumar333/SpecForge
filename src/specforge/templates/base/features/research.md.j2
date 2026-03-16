@@ -8,6 +8,43 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Service Feature Scope
+
+{% for feat in features %}
+- **{{ feat.display_name }}**: {{ feat.description }}
+{% endfor %}
+
+## Research Questions
+
+{% for feat in features %}
+{{ loop.index }}. What technology/approach should we use for {{ feat.display_name | lower }}?
+{% endfor %}
+{% if adapter_research_extras %}
+
+## Architecture-Specific Research
+
+{% for extra in adapter_research_extras %}
+### R-{{ loop.index }}: {{ extra.topic }}
+
+**Question**: {{ extra.description }}
+
+**Options Evaluated**:
+
+| Option | Pros | Cons |
+|--------|------|------|
+| Option A | ... | ... |
+| Option B | ... | ... |
+
+**Decision**: _Selected option with rationale._
+
+{% endfor %}
+{% endif %}
+{% else %}
 
 ## Research Questions
 
@@ -27,6 +64,7 @@
 | Option B | ... | ... |
 
 **Decision**: _Selected option with rationale._
+{% endif %}
 
 ## References
 

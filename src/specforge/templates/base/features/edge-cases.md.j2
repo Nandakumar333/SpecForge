@@ -8,6 +8,43 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Feature Coverage
+
+{% for feat in features %}
+- **{{ feat.display_name }}**: {{ feat.description }}
+{% endfor %}
+
+## Edge Cases
+
+{% for feat in features %}
+### EC-{{ loop.index }}: {{ feat.display_name }} — Input Validation
+
+- **Trigger**: Invalid or missing input for {{ feat.display_name | lower }}
+- **Expected Behavior**: Return descriptive error, no state mutation
+- **Test Approach**: Unit test with boundary inputs
+- **Priority**: High
+
+{% endfor %}
+{% if adapter_edge_cases %}
+
+## Architecture-Specific Edge Cases
+
+{% for ec in adapter_edge_cases %}
+### EC-A{{ loop.index }}: {{ ec.name }}
+
+- **Trigger**: {{ ec.description }}
+- **Expected Behavior**: Graceful degradation with appropriate error handling
+- **Test Approach**: Integration test simulating failure scenario
+- **Priority**: High
+
+{% endfor %}
+{% endif %}
+{% else %}
 
 ## Edge Cases
 
@@ -24,6 +61,7 @@
 - **Expected Behavior**: _How should the system respond?_
 - **Test Approach**: _How to verify correct behavior._
 - **Priority**: High / Medium / Low
+{% endif %}
 
 ## Boundary Conditions
 

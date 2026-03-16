@@ -8,6 +8,44 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Design Readiness
+
+- [ ] Spec reviewed and approved
+- [ ] Data model defined and documented
+- [ ] Edge cases identified
+{% if architecture == 'microservice' %}
+- [ ] API contracts specified
+- [ ] Service dependencies documented
+{% endif %}
+{% if architecture == 'modular-monolith' %}
+- [ ] Module interface contract defined
+{% endif %}
+
+## Code Readiness
+
+- [ ] Project structure supports new modules
+- [ ] Dependencies identified and compatible
+- [ ] No breaking changes to existing APIs
+
+## Testing Readiness
+
+- [ ] Test strategy documented
+- [ ] Test data/fixtures planned
+- [ ] Snapshot baselines established
+{% if adapter_checklist %}
+
+## Architecture-Specific Checks
+
+{% for item in adapter_checklist %}
+- [ ] {{ item.description }}
+{% endfor %}
+{% endif %}
+{% else %}
 
 ## Design Readiness
 
@@ -27,6 +65,7 @@
 - [ ] Test strategy documented
 - [ ] Test data/fixtures planned
 - [ ] Snapshot baselines established
+{% endif %}
 
 ## Documentation
 
