@@ -1,0 +1,29 @@
+# Communication Map — {{ app_name }}
+
+**Architecture**: {{ architecture }}
+
+## Service Dependency Graph
+
+```mermaid
+{{ mermaid_diagram }}
+```
+
+## Service Communication Table
+
+| Source | Target | Pattern | Required | Description |
+|--------|--------|---------|----------|-------------|
+{% for svc in services %}
+{% for link in svc.communication %}
+| {{ svc.name }} | {{ link.target }} | {{ link.pattern }} | {{ "Yes" if link.required else "No" }} | {{ link.description }} |
+{% endfor %}
+{% endfor %}
+
+{% if events %}
+## Async Events
+
+| Event | Producer | Consumers | Payload |
+|-------|----------|-----------|---------|
+{% for event in events %}
+| {{ event.name }} | {{ event.producer }} | {{ event.consumers | join(", ") }} | {{ event.payload_summary }} |
+{% endfor %}
+{% endif %}
