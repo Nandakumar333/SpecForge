@@ -131,8 +131,13 @@ into infrastructure layers.
 ### VII. Governance
 
 This constitution supersedes all prompt files, agent instructions, and
-per-feature conventions. When conflicts arise, the resolution priority
-order is:
+per-feature conventions. **Scope clarification**: governance prompt files
+in `.specforge/prompts/` govern the *target application's* coding
+standards, not SpecForge's own implementation — they are excluded from
+this supersession clause and do not inherit SpecForge's own code quality
+thresholds (e.g., the 30-line function limit applies to SpecForge source
+only). When conflicts arise within SpecForge's own codebase, the
+resolution priority order is:
 
 1. Security concerns
 2. This constitution

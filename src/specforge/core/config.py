@@ -210,6 +210,35 @@ CLARIFICATION_QUESTIONS: list[str] = [
 MIN_KEYWORD_SCORE: int = 2
 
 
+# ── Spec Generation Pipeline Constants (Feature 005) ─────────────────
+
+PIPELINE_STATE_FILENAME: str = ".pipeline-state.json"
+PIPELINE_LOCK_FILENAME: str = ".pipeline-lock"
+LOCK_STALE_THRESHOLD_MINUTES: int = 30
+
+PIPELINE_PHASE_STATUSES: list[str] = [
+    "pending",
+    "in-progress",
+    "complete",
+    "failed",
+]
+
+PIPELINE_PHASES: list[str] = [
+    "spec",
+    "research",
+    "datamodel",
+    "edgecase",
+    "plan",
+    "checklist",
+    "tasks",
+]
+
+SHARED_ENTITIES_PATH: str = ".specforge/shared_entities.md"
+CONTRACTS_DIR: str = "contracts"
+STUB_CONTRACT_SUFFIX: str = ".stub.json"
+INTERFACES_FILENAME: str = "interfaces.md"
+
+
 def get_constitution_vars() -> TemplateVarSchema:
     """Variable schema for constitution templates."""
     from specforge.core.template_models import TemplateVarSchema
@@ -257,5 +286,22 @@ def get_feature_vars() -> TemplateVarSchema:
             "feature_name": (str, ""),
             "stack": (str, "agnostic"),
             "stack_hint": (str, "Language-agnostic"),
+            # Pipeline context (Feature 005)
+            "service": (dict, {}),
+            "architecture": (str, ""),
+            "features": (list, []),
+            "dependencies": (list, []),
+            "capabilities": (list, []),
+            "entities": (list, []),
+            "adapter_sections": (list, []),
+            "adapter_tasks": (list, []),
+            "adapter_edge_cases": (list, []),
+            "adapter_checklist": (list, []),
+            "adapter_research_extras": (list, []),
+            "datamodel_context": (dict, {}),
+            "prompt_context": (str, ""),
+            "events": (list, []),
+            "communication_patterns": (list, []),
+            "input_artifacts": (dict, {}),
         },
     )

@@ -8,10 +8,67 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Service Scope
+
+{% for feat in features %}
+- **{{ feat.display_name }}**: {{ feat.description }}
+{% endfor %}
+
+## Architecture
+
+Design approach for {{ service.name }} as a single deployable unit within a {{ architecture }} architecture.
+{% if prompt_context %}
+
+### Governance Context
+
+{{ prompt_context }}
+{% endif %}
+{% if adapter_sections %}
+
+## Architecture-Specific Concerns
+
+{% for section in adapter_sections %}
+### {{ section.title }}
+
+{{ section.description }}
+
+{% endfor %}
+{% endif %}
+{% if architecture == 'microservice' %}
+
+## Deployment
+
+This service is deployed as an independent container with its own database.
+
+{% endif %}
+{% if architecture == 'modular-monolith' %}
+
+## Module Boundary Enforcement
+
+- All inter-module communication MUST go through defined interfaces
+- No direct cross-module database access
+- Module boundaries are enforced at build time
+
+{% endif %}
+{% if architecture in ['monolithic', 'modular-monolith'] %}
+
+## Shared Infrastructure
+
+- **Database**: Shared across modules
+- **Auth Middleware**: Shared authentication layer
+
+{% endif %}
+{% else %}
 
 ## Architecture
 
 _Describe the high-level design approach._
+{% endif %}
 
 ## File Structure
 

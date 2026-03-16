@@ -9,6 +9,92 @@
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
 **Status**: Draft
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+
+## Service Scope
+
+This specification covers all features mapped to **{{ service.name }}**:
+
+{% for feat in features %}
+- **{{ feat.display_name }}** ({{ feat.id }}, {{ feat.priority }}): {{ feat.description }}
+{% endfor %}
+
+## User Scenarios & Testing
+
+{% for cap in capabilities %}
+### {{ cap.name }}
+
+{% for feat in cap.features %}
+#### {{ feat.display_name }} (Priority: {{ feat.priority }})
+
+{{ feat.description }}
+
+**Acceptance Scenarios**:
+
+1. **Given** the system is configured for {{ feat.display_name | lower }}, **When** the user interacts with the feature, **Then** the expected behavior is observed.
+
+{% endfor %}
+{% endfor %}
+{% if architecture == 'microservice' %}
+
+## Service Dependencies
+
+{% if dependencies %}
+| Dependency | Pattern | Required | Description |
+|------------|---------|----------|-------------|
+{% for dep in dependencies %}
+| {{ dep.name }} (`{{ dep.target }}`) | {{ dep.pattern }} | {{ dep.required }} | {{ dep.description }} |
+{% endfor %}
+{% else %}
+_No external service dependencies._
+{% endif %}
+{% if events %}
+
+### Events
+
+{% for event in events %}
+- **{{ event.name }}**: Produced by `{{ event.producer }}`, consumed by {{ event.consumers | join(', ') }}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% if architecture == 'modular-monolith' %}
+
+## Module Interface Contract
+
+This module exposes a public interface for inter-module communication. All access from other modules MUST go through this interface — no direct database access is permitted.
+
+{% endif %}
+{% if architecture in ['monolithic', 'modular-monolith'] %}
+
+## Module Context
+
+This module operates within a {{ architecture }} architecture with shared infrastructure (database, auth middleware).
+
+{% endif %}
+
+## Requirements
+
+### Functional Requirements
+
+{% for feat in features %}
+- **FR-{{ loop.index }}**: {{ feat.display_name }} — {{ feat.description }}
+{% endfor %}
+
+### Constraints & Tradeoffs
+
+- Architecture type: {{ architecture }}
+
+{% include "base/partials/out-of-scope.md.j2" %}
+
+## Success Criteria
+
+{% for feat in features %}
+- **SC-{{ loop.index }}**: {{ feat.display_name }} requirements are fully met
+{% endfor %}
+{% else %}
 
 ## Clarifications
 
@@ -39,3 +125,4 @@ _Description of user scenario._
 ## Success Criteria
 
 - **SC-001**: _Define measurable success criteria._
+{% endif %}

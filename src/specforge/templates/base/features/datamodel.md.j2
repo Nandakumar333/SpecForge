@@ -8,6 +8,63 @@
 
 **Feature**: {{ feature_name | default("unnamed-feature") }}
 **Created**: {{ date }}
+{% if service %}
+
+**Service**: {{ service.name }} (`{{ service.slug }}`)
+**Architecture**: {{ architecture }}
+{% if datamodel_context %}
+**Entity Scope**: {{ datamodel_context.entity_scope }}
+{% endif %}
+
+## Feature Coverage
+
+{% for feat in features %}
+- **{{ feat.display_name }}**: {{ feat.description }}
+{% endfor %}
+
+## Entities
+
+{% for feat in features %}
+### {{ feat.display_name }} Entities
+
+_Define entities owned by this service for {{ feat.display_name | lower }}._
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `str` | Unique identifier |
+
+{% endfor %}
+{% if architecture == 'microservice' %}
+
+## API Contract References
+
+Cross-service data access is expressed through API contracts, not shared tables.
+
+{% if dependencies is defined and dependencies %}
+{% for dep in dependencies %}
+- **{{ dep.name }}** (`{{ dep.target }}`): Access via {{ dep.pattern }} API contract
+{% endfor %}
+{% else %}
+_No cross-service data dependencies._
+{% endif %}
+{% endif %}
+{% if architecture == 'modular-monolith' %}
+
+## Module Boundary Constraints
+
+- **No cross-module direct database access** — all data access from other modules MUST go through the module interface
+- Entity scope: `{{ datamodel_context.entity_scope | default("strict_module") }}`
+- Cross-reference method: `{{ datamodel_context.cross_service_ref | default("interface_contract") }}`
+
+{% endif %}
+{% if architecture in ['monolithic', 'modular-monolith'] %}
+
+## Shared Entities
+
+Entities that span multiple modules are documented in the project-level [`shared_entities.md`](../../shared_entities.md).
+
+{% endif %}
+{% else %}
 
 ## Entities
 
@@ -18,6 +75,7 @@ _Description of the entity._
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | `str` | Unique identifier |
+{% endif %}
 
 ## Relationships
 
