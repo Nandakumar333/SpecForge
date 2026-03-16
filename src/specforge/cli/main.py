@@ -17,9 +17,11 @@ def cli(ctx: click.Context) -> None:
 
 # Import and register subcommands
 from specforge.cli.check_cmd import check  # noqa: E402
+from specforge.cli.clarify_cmd import clarify  # noqa: E402
 from specforge.cli.decompose_cmd import decompose  # noqa: E402
 from specforge.cli.init_cmd import init  # noqa: E402
 from specforge.cli.pipeline_status_cmd import pipeline_status  # noqa: E402
+from specforge.cli.research_cmd import research  # noqa: E402
 from specforge.cli.specify_cmd import specify  # noqa: E402
 from specforge.cli.validate_prompts_cmd import validate_prompts  # noqa: E402
 
@@ -29,3 +31,5 @@ cli.add_command(decompose)
 cli.add_command(validate_prompts)
 cli.add_command(specify)
 cli.add_command(pipeline_status)
+cli.add_command(clarify)
+cli.add_command(research)

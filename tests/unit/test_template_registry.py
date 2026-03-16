@@ -42,6 +42,7 @@ class TestBuiltInDiscovery:
             "datamodel",
             "plan",
             "checklist",
+            "clarifications-report",
             "edge-cases",
             "tasks",
         }
@@ -180,13 +181,13 @@ class TestListAndHas:
         assert not registry.has("nonexistent", TemplateType.feature)
 
     def test_discovery_completeness(self) -> None:
-        """All 7 prompts + 7 features + 1 constitution + 3 variants."""
+        """All 7 prompts + 8 features + 1 constitution + 3 variants."""
         registry = TemplateRegistry()
         registry.discover()
         prompts = registry.list(TemplateType.prompt)
         features = registry.list(TemplateType.feature)
         consts = registry.list(TemplateType.constitution)
         assert len(consts) == 1
-        assert len(features) == 7
+        assert len(features) == 8
         # 7 generic + 3 stack variants
         assert len(prompts) == 10

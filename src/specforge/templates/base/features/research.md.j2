@@ -44,6 +44,31 @@
 
 {% endfor %}
 {% endif %}
+{% if findings %}
+
+## Structured Findings
+
+{% for finding in findings %}
+### R-{{ "%03d" | format(loop.index) }}: {{ finding.topic }}
+
+**Status**: {{ finding.status }}
+**Source**: {{ finding.source }}
+**Triggered by**: "{{ finding.originating_marker }}"
+
+{{ finding.summary }}
+{% if finding.status == "CONFLICTING" and finding.alternatives %}
+
+{% for alt in finding.alternatives %}
+**Alternative {{ "ABCDEFGH"[loop.index0] }}**: {{ alt }}
+{% endfor %}
+
+Recommendation: Requires human decision based on project requirements.
+{% endif %}
+
+---
+
+{% endfor %}
+{% endif %}
 {% else %}
 
 ## Research Questions
