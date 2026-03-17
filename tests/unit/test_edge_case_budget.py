@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from specforge.core.edge_case_budget import EdgeCaseBudget
 from specforge.core.edge_case_models import EdgeCase
 

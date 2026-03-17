@@ -104,7 +104,7 @@ class TestCaching:
 
 
 class TestPatternCount:
-    """Minimum pattern count: 13 categories × 2 scenarios each."""
+    """Minimum pattern count: 13 categories x 2 scenarios each."""
 
     def test_at_least_26_patterns(self, loaded_patterns) -> None:
         assert len(loaded_patterns) >= 26
