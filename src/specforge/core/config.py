@@ -563,3 +563,34 @@ CROSS_SERVICE_SCOPE: dict[str, tuple[str, ...]] = {
     "modular-monolith": ("shared_contracts", "shared_auth"),
     "monolithic": (),
 }
+
+# ── Sub-Agent Executor Constants (Feature 009) ────────────────────────
+
+EXECUTION_STATE_FILENAME: str = ".execution-state.json"
+EXECUTION_LOCK_FILENAME: str = ".execution-lock"
+EXECUTION_LOCK_STALE_MINUTES: int = 60
+
+MAX_FIX_ATTEMPTS: int = 3
+CONTEXT_TOKEN_BUDGET: int = 100_000
+CHARS_PER_TOKEN_ESTIMATE: int = 4
+
+AGENT_RETRY_DELAYS: tuple[int, ...] = (1, 2, 4)
+HEALTH_CHECK_TIMEOUT: int = 30
+HEALTH_CHECK_ENDPOINT: str = "/health"
+
+DOCKER_COMPOSE_TEST_PROFILE: str = "test"
+
+IMPLEMENTATION_MODES: tuple[str, ...] = ("prompt-display", "agent-call")
+
+# Context priority order (lowest priority first — truncated first when over budget)
+CONTEXT_PRIORITY: tuple[str, ...] = (
+    "edge_cases",
+    "architecture_prompts",
+    "dependency_contracts",
+    "data_model",
+    "plan",
+    "governance_prompts",
+    "spec",
+    "constitution",
+    "current_task",
+)

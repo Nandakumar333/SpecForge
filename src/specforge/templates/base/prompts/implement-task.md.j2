@@ -1,0 +1,46 @@
+# Implementation Task: {{ task_id }}
+
+## Task Description
+
+{{ task_description }}
+
+## File Targets
+{% for path in file_hints %}
+- `{{ path }}`
+{% endfor %}
+
+## Quality Standards (Governance)
+
+{{ governance_prompts }}
+
+## Service Context
+
+{{ service_spec_summary }}
+
+## Data Model
+
+{{ data_model_summary }}
+{% if dependency_contracts %}
+
+## Dependency Contracts
+{% for dep, contract in dependency_contracts.items() %}
+
+### {{ dep }}
+
+{{ contract }}
+{% endfor %}
+{% endif %}
+{% if prior_commits %}
+
+## Prior Tasks Completed
+{% for msg in prior_commits %}
+- {{ msg }}
+{% endfor %}
+{% endif %}
+
+## Constraints
+
+- Follow conventional commit format for any files you create
+- Stay within the scope of this service only
+- Reference dependency contracts for inter-service communication
+{{ architecture_constraints }}
