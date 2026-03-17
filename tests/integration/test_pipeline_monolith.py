@@ -108,7 +108,10 @@ class TestMonolithE2E:
         runner.invoke(cli, ["specify", "auth-module"])
         ec = tmp_path / ".specforge" / "features" / "auth-module" / "edge-cases.md"
         content = ec.read_text(encoding="utf-8")
-        assert "Module Boundary Violation" in content
+        # Enriched format uses category titles; fallback uses adapter names
+        has_enriched = "Data Boundary" in content or "Concurrency" in content
+        has_fallback = "Module Boundary Violation" in content
+        assert has_enriched or has_fallback
 
     def test_plan_no_docker(self, tmp_path: Path, monkeypatch) -> None:
         monkeypatch.chdir(tmp_path)

@@ -1,0 +1,25 @@
+category: service_unavailability
+scenarios:
+  - scenario_template: "{{target_service}} is unavailable when {{source_service}} attempts {{operation}}"
+    trigger_template: "{{target_service}} returns 503 or connection refused"
+    handling_strategies:
+      - circuit_breaker
+      - retry_with_backoff
+      - fallback_cache
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: stub {{target_service}} returning 503, verify {{source_service}} degrades gracefully"
+    applicable_patterns:
+      - sync-rest
+      - sync-grpc
+  - scenario_template: "{{target_service}} responds with degraded data when {{source_service}} calls {{operation}}"
+    trigger_template: "{{target_service}} returns partial response or exceeds timeout threshold"
+    handling_strategies:
+      - bulkhead
+      - timeout_with_fallback
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: inject 5s delay on {{target_service}}, verify {{source_service}} uses cached or default response"
+    applicable_patterns:
+      - sync-rest
+      - sync-grpc

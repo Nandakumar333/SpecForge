@@ -1,0 +1,23 @@
+category: distributed_transaction
+scenarios:
+  - scenario_template: "Partial failure in multi-service operation: {{source_service}} succeeds but downstream consumers of {{event_name}} fail"
+    trigger_template: "One or more consumers of {{event_name}} fail to process while others succeed"
+    handling_strategies:
+      - saga_pattern
+      - compensating_transaction
+      - outbox_pattern
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: fail one consumer of {{event_name}}, verify {{source_service}} triggers compensating action or retry"
+    applicable_patterns:
+      - async-event
+  - scenario_template: "Orchestration timeout: {{source_service}} waits for acknowledgment from multiple consumers of {{event_name}}"
+    trigger_template: "Multi-consumer coordination for {{event_name}} exceeds timeout threshold"
+    handling_strategies:
+      - saga_with_timeout
+      - eventual_completion
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: delay consumer acknowledgment beyond timeout, verify {{source_service}} handles incomplete saga"
+    applicable_patterns:
+      - async-event

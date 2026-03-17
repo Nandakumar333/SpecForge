@@ -410,3 +410,73 @@ def get_feature_vars() -> TemplateVarSchema:
             "input_artifacts": (dict, {}),
         },
     )
+
+# ── Feature 007: Edge Case Analysis Engine ────────────────────────────
+
+EDGE_CASE_MAX_PER_SERVICE: int = 30
+
+EDGE_CASE_BASE_COUNT: int = 6
+EDGE_CASE_PER_DEPENDENCY: int = 2
+EDGE_CASE_PER_EVENT: int = 1
+EDGE_CASE_PER_EXTRA_FEATURE: int = 2
+
+STANDARD_EDGE_CASE_CATEGORIES: tuple[str, ...] = (
+    "concurrency",
+    "data_boundary",
+    "state_machine",
+    "ui_ux",
+    "security",
+    "data_migration",
+)
+
+MICROSERVICE_EDGE_CASE_CATEGORIES: tuple[str, ...] = (
+    "service_unavailability",
+    "network_partition",
+    "eventual_consistency",
+    "distributed_transaction",
+    "version_skew",
+    "data_ownership",
+)
+
+MODULAR_MONOLITH_EXTRA_CATEGORIES: tuple[str, ...] = (
+    "interface_contract_violation",
+)
+
+SEVERITY_MATRIX_MICROSERVICE: dict[tuple[bool, str], str] = {
+    (True, "sync-rest"): "critical",
+    (True, "sync-grpc"): "critical",
+    (True, "async-event"): "high",
+    (False, "sync-rest"): "high",
+    (False, "sync-grpc"): "high",
+    (False, "async-event"): "medium",
+}
+
+SEVERITY_MATRIX_MONOLITH: dict[str, str] = {
+    "security": "high",
+    "concurrency": "high",
+    "data_boundary": "medium",
+    "state_machine": "medium",
+    "ui_ux": "low",
+    "data_migration": "low",
+}
+
+SEVERITY_DEFAULT_REQUIRED: str = "high"
+SEVERITY_DEFAULT_OPTIONAL: str = "medium"
+SEVERITY_DATA_OWNERSHIP: str = "high"
+SEVERITY_INTERFACE_CONTRACT: str = "high"
+
+EDGE_CASE_CATEGORY_PRIORITY: dict[str, int] = {
+    "service_unavailability": 1,
+    "distributed_transaction": 2,
+    "network_partition": 3,
+    "eventual_consistency": 4,
+    "data_ownership": 5,
+    "version_skew": 6,
+    "interface_contract_violation": 7,
+    "security": 8,
+    "concurrency": 9,
+    "data_boundary": 10,
+    "state_machine": 11,
+    "ui_ux": 12,
+    "data_migration": 13,
+}

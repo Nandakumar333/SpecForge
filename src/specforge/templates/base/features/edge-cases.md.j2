@@ -18,6 +18,29 @@
 {% for feat in features %}
 - **{{ feat.display_name }}**: {{ feat.description }}
 {% endfor %}
+{% if edge_cases is defined and edge_cases %}
+
+## Edge Cases ({{ edge_cases | length }})
+
+{% for ec in edge_cases %}
+### {{ ec.id }}: {{ ec.category | replace("_", " ") | title }}
+
+```yaml
+id: {{ ec.id }}
+category: {{ ec.category }}
+severity: {{ ec.severity }}
+affected_services:
+{% for svc in ec.affected_services %}- {{ svc }}
+{% endfor %}handling_strategy: "{{ ec.handling_strategy }}"
+test_suggestion: "{{ ec.test_suggestion }}"
+```
+
+**Scenario**: {{ ec.scenario }}
+
+**Trigger**: {{ ec.trigger }}
+
+{% endfor %}
+{% else %}
 
 ## Edge Cases
 
@@ -43,6 +66,7 @@
 - **Priority**: High
 
 {% endfor %}
+{% endif %}
 {% endif %}
 {% else %}
 

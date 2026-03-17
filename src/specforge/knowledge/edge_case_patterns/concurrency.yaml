@@ -1,0 +1,22 @@
+category: concurrency
+scenarios:
+  - scenario_template: "Race condition when multiple users modify {{resource}} simultaneously in {{service}}"
+    trigger_template: "Concurrent write requests to the same {{resource}}"
+    handling_strategies:
+      - optimistic_locking
+      - pessimistic_locking
+      - conflict_detection
+    severity_microservice: null
+    severity_monolith: high
+    test_template: "Unit test: simulate concurrent updates to {{resource}}, verify only one succeeds or conflicts are resolved"
+    applicable_patterns: []
+  - scenario_template: "Deadlock between {{feature_a}} and {{feature_b}} competing for shared write lock in {{service}}"
+    trigger_template: "Two features acquire locks in different order"
+    handling_strategies:
+      - lock_ordering
+      - lock_timeout
+      - retry_with_backoff
+    severity_microservice: null
+    severity_monolith: high
+    test_template: "Integration test: trigger both features simultaneously, verify no deadlock within timeout"
+    applicable_patterns: []

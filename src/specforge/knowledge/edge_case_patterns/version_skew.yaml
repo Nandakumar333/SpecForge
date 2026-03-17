@@ -1,0 +1,26 @@
+category: version_skew
+scenarios:
+  - scenario_template: "{{target_service}} API contract changes break {{source_service}} integration"
+    trigger_template: "{{target_service}} deploys v2 API while {{source_service}} expects v1 schema"
+    handling_strategies:
+      - api_versioning
+      - backward_compatible_changes
+      - consumer_driven_contracts
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Contract test: verify {{source_service}} handles both v1 and v2 responses from {{target_service}}"
+    applicable_patterns:
+      - sync-rest
+      - sync-grpc
+      - async-event
+  - scenario_template: "{{target_service}} returns new JWT claims that {{source_service}} cannot parse"
+    trigger_template: "{{target_service}} v2 adds new authentication token fields"
+    handling_strategies:
+      - tolerant_reader
+      - claim_validation_fallback
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Unit test: parse JWT with unknown claims, verify {{source_service}} ignores unrecognized fields"
+    applicable_patterns:
+      - sync-rest
+      - sync-grpc

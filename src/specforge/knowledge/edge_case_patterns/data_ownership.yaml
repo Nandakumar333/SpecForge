@@ -1,0 +1,21 @@
+category: data_ownership
+scenarios:
+  - scenario_template: "Conflicting updates to shared entity '{{shared_entity}}' between {{source_service}} and {{target_service}}"
+    trigger_template: "Both services modify '{{shared_entity}}' without clear ownership"
+    handling_strategies:
+      - single_source_of_truth
+      - event_sourcing
+      - domain_event_propagation
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: concurrent update to '{{shared_entity}}' from both services, verify conflict resolution"
+    applicable_patterns: []
+  - scenario_template: "{{source_service}} cache of '{{shared_entity}}' becomes stale after {{target_service}} update"
+    trigger_template: "{{target_service}} updates '{{shared_entity}}' but {{source_service}} serves cached version"
+    handling_strategies:
+      - cache_invalidation_event
+      - ttl_based_cache
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: update '{{shared_entity}}' in {{target_service}}, verify {{source_service}} cache invalidation"
+    applicable_patterns: []

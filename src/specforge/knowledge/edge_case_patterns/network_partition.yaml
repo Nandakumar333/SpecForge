@@ -1,0 +1,23 @@
+category: network_partition
+scenarios:
+  - scenario_template: "Messages from {{source_service}} to {{target_service}} are lost during network partition"
+    trigger_template: "Event bus loses messages between {{source_service}} and {{target_service}}"
+    handling_strategies:
+      - outbox_pattern
+      - at_least_once_delivery
+      - dead_letter_queue
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: simulate message broker failure, verify {{source_service}} retries or persists undelivered events"
+    applicable_patterns:
+      - async-event
+  - scenario_template: "{{target_service}} receives duplicate messages from {{source_service}} after partition recovery"
+    trigger_template: "Network partition heals and pending messages are replayed"
+    handling_strategies:
+      - idempotent_consumer
+      - deduplication_filter
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: send same event twice to {{target_service}}, verify idempotent handling"
+    applicable_patterns:
+      - async-event
