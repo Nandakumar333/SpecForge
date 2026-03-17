@@ -1,0 +1,74 @@
+{
+  "project_name": "PersonalFinance",
+  "project_description": "Personal finance management platform",
+  "domain": "fintech",
+  "architecture": "microservice",
+  "services": [
+    {
+      "slug": "identity-service",
+      "name": "Identity Service",
+      "features": ["001", "002"],
+      "communication": []
+    },
+    {
+      "slug": "ledger-service",
+      "name": "Ledger Service",
+      "features": ["003", "004", "005"],
+      "communication": [
+        {
+          "target": "identity-service",
+          "pattern": "sync-grpc",
+          "required": true,
+          "description": "Authenticate and authorize ledger operations"
+        }
+      ]
+    },
+    {
+      "slug": "analytics-service",
+      "name": "Analytics Service",
+      "features": ["006"],
+      "communication": [
+        {
+          "target": "identity-service",
+          "pattern": "sync-grpc",
+          "required": true,
+          "description": "Resolve user identity for analytics"
+        },
+        {
+          "target": "ledger-service",
+          "pattern": "sync-grpc",
+          "required": true,
+          "description": "Query transaction data"
+        },
+        {
+          "target": "notification-service",
+          "pattern": "sync-rest",
+          "required": false,
+          "description": "Send analytics alerts"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {"id": "001", "name": "user-auth", "display_name": "User Authentication", "description": "JWT-based auth", "priority": "P0", "category": "foundation", "service": "identity-service"},
+    {"id": "002", "name": "user-profile", "display_name": "User Profile", "description": "Profile management", "priority": "P1", "category": "core", "service": "identity-service"},
+    {"id": "003", "name": "accounts", "display_name": "Account Management", "description": "Create and manage accounts", "priority": "P0", "category": "foundation", "service": "ledger-service"},
+    {"id": "004", "name": "transactions", "display_name": "Transaction Processing", "description": "Record transactions", "priority": "P0", "category": "core", "service": "ledger-service"},
+    {"id": "005", "name": "reconciliation", "display_name": "Reconciliation", "description": "Auto-reconcile", "priority": "P2", "category": "supporting", "service": "ledger-service"},
+    {"id": "006", "name": "spending-insights", "display_name": "Spending Insights", "description": "Analytics dashboards", "priority": "P1", "category": "core", "service": "analytics-service"}
+  ],
+  "events": [
+    {
+      "name": "TransactionCreated",
+      "producer": "ledger-service",
+      "consumers": ["analytics-service"],
+      "payload_summary": "transaction_id, amount, category, timestamp"
+    },
+    {
+      "name": "AnalyticsRequested",
+      "producer": "analytics-service",
+      "consumers": ["ledger-service"],
+      "payload_summary": "user_id, date_range, report_type"
+    }
+  ]
+}

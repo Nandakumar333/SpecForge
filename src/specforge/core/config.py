@@ -480,3 +480,86 @@ EDGE_CASE_CATEGORY_PRIORITY: dict[str, int] = {
     "ui_ux": 12,
     "data_migration": 13,
 }
+
+# ── Task Generation Constants (Feature 008) ──────────────────────────
+
+TASK_ID_PREFIX: str = "T"
+CROSS_SERVICE_TASK_PREFIX: str = "X-T"
+CROSS_SERVICE_TARGET: str = "cross-service-infra"
+MAX_TASKS_PER_SERVICE: int = 50
+
+EFFORT_SIZES: tuple[str, ...] = ("S", "M", "L", "XL")
+EFFORT_BUMP_THRESHOLD_FEATURES: int = 3
+EFFORT_BUMP_THRESHOLD_DEPS: int = 2
+
+CROSS_SERVICE_CATEGORIES: tuple[str, ...] = (
+    "shared_contracts",
+    "docker_compose",
+    "message_broker",
+    "api_gateway",
+    "shared_auth",
+)
+
+MICROSERVICE_STEP_COUNT: int = 14
+MONOLITH_STEP_COUNT: int = 7
+
+CONDITIONAL_STEPS: dict[str, str] = {
+    "communication_clients": "dependencies",
+    "event_handlers": "events",
+    "contract_tests": "dependencies",
+    "boundary_interface": "modular-monolith",
+    "database": "entities",
+}
+
+# Effort bump table: category → (base, 3-4 features, 5+ features)
+EFFORT_BUMP_TABLE: dict[str, tuple[str, str, str]] = {
+    "scaffolding": ("S", "S", "M"),
+    "domain_models": ("M", "L", "L"),
+    "database": ("L", "L", "XL"),
+    "repository": ("M", "L", "L"),
+    "service_layer": ("L", "L", "XL"),
+    "communication_clients": ("M", "L", "L"),
+    "controllers": ("M", "L", "L"),
+    "event_handlers": ("M", "M", "L"),
+    "health_checks": ("S", "S", "S"),
+    "contract_tests": ("L", "L", "XL"),
+    "unit_tests": ("L", "XL", "XL"),
+    "integration_tests": ("XL", "XL", "XL"),
+    "container_optimization": ("S", "S", "M"),
+    "gateway_config": ("S", "S", "M"),
+    "folder_structure": ("S", "S", "M"),
+    "repo_service": ("L", "L", "XL"),
+    "boundary_interface": ("M", "M", "L"),
+    "tests": ("L", "XL", "XL"),
+}
+
+# Plan.md required sections for validation (FR-015)
+PLAN_REQUIRED_SECTIONS: tuple[str, ...] = (
+    "Summary",
+    "Technical Context",
+    "Design Decisions",
+)
+
+# Governance scope-to-layer mapping for GovernanceReader
+GOVERNANCE_SCOPE_TO_LAYERS: dict[str, tuple[str, ...]] = {
+    "architecture": ("scaffolding", "domain_models", "service_layer"),
+    "backend": (
+        "service_layer", "repository", "controllers",
+        "communication_clients", "event_handlers",
+    ),
+    "frontend": (),
+    "database": ("database",),
+    "security": ("controllers", "shared_auth", "health_checks"),
+    "testing": ("unit_tests", "integration_tests", "contract_tests"),
+    "cicd": ("container_optimization", "gateway_config"),
+}
+
+# Cross-service categories by architecture
+CROSS_SERVICE_SCOPE: dict[str, tuple[str, ...]] = {
+    "microservice": (
+        "shared_contracts", "docker_compose",
+        "message_broker", "api_gateway", "shared_auth",
+    ),
+    "modular-monolith": ("shared_contracts", "shared_auth"),
+    "monolithic": (),
+}

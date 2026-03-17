@@ -1,0 +1,33 @@
+{
+  "project_name": "PersonalFinance",
+  "project_description": "Personal finance management platform",
+  "domain": "fintech",
+  "architecture": "monolithic",
+  "services": [
+    {
+      "slug": "auth",
+      "name": "Auth Module",
+      "features": ["001", "002"],
+      "communication": []
+    },
+    {
+      "slug": "billing",
+      "name": "Billing Module",
+      "features": ["003"],
+      "communication": []
+    },
+    {
+      "slug": "reporting",
+      "name": "Reporting Module",
+      "features": ["004"],
+      "communication": []
+    }
+  ],
+  "features": [
+    {"id": "001", "name": "user-auth", "display_name": "User Authentication", "description": "Session-based auth", "priority": "P0", "category": "foundation", "service": "auth"},
+    {"id": "002", "name": "user-profile", "display_name": "User Profile", "description": "Profile management", "priority": "P1", "category": "core", "service": "auth"},
+    {"id": "003", "name": "invoicing", "display_name": "Invoicing", "description": "Generate invoices", "priority": "P0", "category": "core", "service": "billing"},
+    {"id": "004", "name": "reports", "display_name": "Financial Reports", "description": "Generate reports", "priority": "P1", "category": "supporting", "service": "reporting"}
+  ],
+  "events": []
+}
