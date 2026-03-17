@@ -1,4 +1,11 @@
-"""AutoFixLoop — error → analyze → fix → retry (thin wrapper, Feature 010 replaces)."""
+"""AutoFixLoop — backward-compat shim (Feature 009 interface → Feature 010 engine).
+
+Preserves the Feature 009 public API:
+    AutoFixLoop(task_runner, quality_checker, max_attempts=3)
+    .fix(original_prompt, error, changed_files, mode) → Result[list[Path], str]
+
+For new code, use ``AutoFixEngine`` and ``create_auto_fix_engine()`` directly.
+"""
 
 from __future__ import annotations
 
@@ -20,7 +27,13 @@ logger = logging.getLogger(__name__)
 
 
 class AutoFixLoop:
-    """Retry loop: error → fix prompt → execute → quality check."""
+    """Backward-compat retry loop — delegates error → fix → retry.
+
+    Feature 010 adds ``create_auto_fix_engine()`` for the full
+    categorized auto-fix pipeline with targeted prompts.  This class
+    is kept so Feature 009 callers (and tests that mock
+    ``_git_checkout_files``) continue to work unchanged.
+    """
 
     def __init__(
         self,
@@ -114,6 +127,35 @@ class AutoFixLoop:
         )
 
         return dc_replace(original, task_description=fix_desc)
+
+
+# -----------------------------------------------------------------------
+# Factory — preferred entry point for new code
+# -----------------------------------------------------------------------
+
+
+def create_auto_fix_engine(
+    task_runner: object,
+    quality_gate: object,
+    max_attempts: int = 3,
+) -> object:
+    """Create a full ``AutoFixEngine`` with targeted fix strategies.
+
+    Returns the engine so callers can use categorized error analysis,
+    regression detection, and diagnostic report generation.
+    """
+    from specforge.core.auto_fix_engine import AutoFixEngine
+
+    return AutoFixEngine(
+        task_runner=task_runner,
+        quality_gate=quality_gate,
+        max_attempts=max_attempts,
+    )
+
+
+# -----------------------------------------------------------------------
+# Subprocess helper (kept for backward compat — tests mock this)
+# -----------------------------------------------------------------------
 
 
 def _git_checkout_files(files: list[Path]) -> None:

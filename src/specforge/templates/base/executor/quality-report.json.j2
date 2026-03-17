@@ -1,0 +1,45 @@
+{
+  "schema_version": "{{ schema_version }}",
+  "service_slug": "{{ service_slug }}",
+  "architecture": "{{ architecture }}",
+  "level": "{{ level }}",
+  "task_id": {{ task_id | tojson }},
+  "timestamp": "{{ timestamp }}",
+  "passed": {{ gate_result.passed | tojson }},
+  "failed_checks": {{ gate_result.failed_checks | list | tojson }},
+  "skipped_checks": {{ gate_result.skipped_checks | list | tojson }},
+  "check_results": [
+    {% for cr in gate_result.check_results %}
+    {
+      "checker_name": "{{ cr.checker_name }}",
+      "passed": {{ cr.passed | tojson }},
+      "category": "{{ cr.category.value }}",
+      "skipped": {{ cr.skipped | tojson }},
+      "skip_reason": {{ cr.skip_reason | tojson }},
+      "error_count": {{ cr.error_details | length }},
+      "errors": [
+        {% for ed in cr.error_details %}
+        {
+          "file_path": {{ ed.file_path | tojson }},
+          "line_number": {{ ed.line_number | tojson }},
+          "code": {{ ed.code | tojson }},
+          "message": {{ ed.message | tojson }}
+        }{{ "," if not loop.last else "" }}
+        {% endfor %}
+      ]
+    }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ],
+  "fix_attempts": [
+    {% for fa in fix_attempts %}
+    {
+      "attempt_number": {{ fa.attempt_number }},
+      "category": "{{ fa.category.value }}",
+      "files_changed": {{ fa.files_changed | list | tojson }},
+      "reverted": {{ fa.reverted | tojson }},
+      "passed": {{ fa.result.passed | tojson if fa.result else "null" }}
+    }{{ "," if not loop.last else "" }}
+    {% endfor %}
+  ],
+  "diagnostic": {{ "null" if not diagnostic else "{}" }}
+}

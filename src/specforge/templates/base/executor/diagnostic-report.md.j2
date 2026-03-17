@@ -1,0 +1,59 @@
+# Diagnostic Report: {{ task_id }}
+
+**Generated**: {{ created_at }}
+**Status**: Auto-fix exhausted after {{ attempts | length }} attempts
+
+## Summary
+
+The quality gate failed for task `{{ task_id }}` and could not be automatically resolved after {{ attempts | length }} fix attempts. Manual intervention is required.
+
+## Original Failure
+
+**Failing checks**: {{ still_failing | join(", ") }}
+**Architecture**: {{ original_error.architecture }}
+
+{% for result in original_error.check_results %}
+{% if not result.passed and not result.skipped %}
+### {{ result.checker_name }} ({{ result.category.value }})
+```
+{{ result.output }}
+```
+{% for detail in result.error_details %}
+- {{ detail.file_path }}{% if detail.line_number %}:{{ detail.line_number }}{% endif %} — {{ detail.message }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+
+## Fix Attempt Timeline
+
+{% for attempt in attempts %}
+### Attempt {{ attempt.attempt_number }}
+- **Category targeted**: {{ attempt.category.value }}
+- **Files modified**: {{ attempt.files_changed | join(", ") if attempt.files_changed else "none" }}
+{% if attempt.reverted %}
+- **⚠️ REVERTED**: {{ attempt.revert_reason }}
+{% endif %}
+{% if attempt.result %}
+- **Result**: {% if attempt.result.passed %}✅ Passed{% else %}❌ Failed ({{ attempt.result.failed_checks | join(", ") }}){% endif %}
+{% endif %}
+
+{% endfor %}
+
+## What's Still Failing
+
+{% for check_name in still_failing %}
+- **{{ check_name }}**
+{% endfor %}
+
+## Suggested Manual Steps
+
+{% for step in suggested_steps %}
+{{ loop.index }}. {{ step }}
+{% endfor %}
+
+## Next Actions
+
+1. Review the error details above and the attempted fixes
+2. Follow the suggested manual steps in order
+3. Run quality checks manually: `specforge check --service {{ task_id.split('-')[0] if '-' in task_id else task_id }}`
+4. If the issue persists, check whether the task specification needs revision
