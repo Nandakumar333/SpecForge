@@ -88,7 +88,7 @@ EdgeCase entities are stateless — they are generated, rendered, and discarded.
 
 - `id` must match pattern `EC-\d{3}`
 - `severity` must be one of the four valid levels
-- `category` must be in `STANDARD_EDGE_CASE_CATEGORIES ∪ MICROSERVICE_EDGE_CASE_CATEGORIES`
+- `category` must be in `STANDARD_EDGE_CASE_CATEGORIES ∪ MICROSERVICE_EDGE_CASE_CATEGORIES ∪ MODULAR_MONOLITH_EXTRA_CATEGORIES`
 - `affected_services` must be non-empty
 - `total_count` must equal `len(edge_cases)`
 - `total_count` must not exceed `EDGE_CASE_MAX_PER_SERVICE` (30)

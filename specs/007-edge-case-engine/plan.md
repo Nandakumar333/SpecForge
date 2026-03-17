@@ -76,6 +76,7 @@ src/specforge/
 │       ├── distributed_transactions.yaml
 │       ├── version_skew.yaml
 │       ├── data_ownership.yaml
+│       ├── interface_contract_violation.yaml
 │       ├── concurrency.yaml
 │       ├── data_boundary.yaml
 │       ├── state_machine.yaml
@@ -130,6 +131,7 @@ EdgeCasePattern (frozen dataclass) — loaded from YAML
 ├── severity_microservice: str | None
 ├── severity_monolith: str | None
 ├── test_template: str
+├── applicable_patterns: tuple[str, ...]  # ["sync-rest", "sync-grpc"] — which communication patterns this applies to
 ```
 
 ### D2: MicroserviceEdgeCaseAnalyzer
@@ -157,9 +159,10 @@ analyze(service_ctx) -> EdgeCaseReport:
 
 ```text
 filter(patterns, architecture) -> tuple[EdgeCasePattern, ...]:
-  - monolithic: keep only patterns where severity_monolith is not None
+  - monolithic: keep only patterns whose category is in STANDARD_EDGE_CASE_CATEGORIES
   - microservice: keep all patterns
-  - modular-monolith: keep monolith patterns + interface_contract_violation
+  - modular-monolith: keep monolith set + patterns whose category is "interface_contract_violation"
+  - unknown architecture: fall back to monolithic behavior + emit warning via warnings.warn()
 ```
 
 ### D4: EdgeCaseBudget
@@ -203,14 +206,18 @@ MICROSERVICE_EDGE_CASE_CATEGORIES: tuple[str, ...] = (
     "version_skew", "data_ownership",
 )
 
+MODULAR_MONOLITH_EXTRA_CATEGORIES: tuple[str, ...] = (
+    "interface_contract_violation",
+)
+
 # Deterministic severity matrix: (required, pattern) -> severity
 SEVERITY_MATRIX_MICROSERVICE: dict[tuple[bool, str], str] = {
     (True, "sync-rest"): "critical",
     (True, "sync-grpc"): "critical",
-    (True, "async-events"): "high",
+    (True, "async-event"): "high",
     (False, "sync-rest"): "high",
     (False, "sync-grpc"): "high",
-    (False, "async-events"): "medium",
+    (False, "async-event"): "medium",
 }
 
 SEVERITY_MATRIX_MONOLITH: dict[str, str] = {
@@ -229,12 +236,13 @@ EDGE_CASE_CATEGORY_PRIORITY: dict[str, int] = {
     "eventual_consistency": 4,
     "data_ownership": 5,
     "version_skew": 6,
-    "security": 7,
-    "concurrency": 8,
-    "data_boundary": 9,
-    "state_machine": 10,
-    "ui_ux": 11,
-    "data_migration": 12,
+    "interface_contract_violation": 7,
+    "security": 8,
+    "concurrency": 9,
+    "data_boundary": 10,
+    "state_machine": 11,
+    "ui_ux": 12,
+    "data_migration": 13,
 }
 ```
 
@@ -294,6 +302,19 @@ scenarios:
 ```
 
 Severity is `null` in YAML because it's determined at runtime by the `SeverityMatrix` using the `required` flag and `pattern` from `communication[]`.
+
+**Pattern-to-Category Mapping** (which communication patterns trigger which categories):
+
+| Category | Applicable Patterns | Notes |
+|----------|-------------------|-------|
+| service_unavailability | sync-rest, sync-grpc | Sync deps can fail with 503/timeout |
+| network_partition | async-event | Async messaging can lose/delay messages |
+| eventual_consistency | async-event | Consumer data lags behind producer |
+| distributed_transaction | async-event | Multi-consumer coordination failures |
+| version_skew | sync-rest, sync-grpc, async-event | API/schema changes affect all patterns |
+| data_ownership | (none — derived from BoundaryAnalyzer) | Triggered by shared entities, not patterns |
+| interface_contract_violation | (none — module boundary) | Modular-monolith only |
+| concurrency–data_migration | (none — standard categories) | All architectures, pattern-independent |
 
 ### D10: Enhanced Template
 
