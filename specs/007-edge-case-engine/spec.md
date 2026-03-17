@@ -103,20 +103,21 @@ As a developer, I want to run the edge case engine independently via `specforge 
 - What happens when spec.md is empty? Engine produces minimal edge cases derived from manifest features only — the spec content enriches but is not required.
 - What happens when the manifest has circular dependencies (A→B→A)? Engine detects the cycle and generates a "circular dependency" edge case rather than infinite-looping.
 - What happens when two services share the same entity? Engine generates a "data ownership conflict" edge case specifying the shared entity and asking who is source of truth.
+- What happens when a communication[] entry references a target service not in the manifest? Engine generates the edge case with a "(service not found in manifest)" warning — does not crash or skip.
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: System MUST read `manifest.json` to determine the architecture type and produce architecture-appropriate edge case categories
-- **FR-002**: For microservice architecture, system MUST generate inter-service failure edge cases derived from actual `communication[]` entries: service unavailability, network partition, eventual consistency, distributed transaction failure, version skew, and data ownership conflict
+- **FR-001**: System MUST read `manifest.json` to determine the architecture type and produce architecture-appropriate edge case categories. If architecture is missing or not one of the 3 valid types (monolithic, microservice, modular-monolith), system MUST fall back to monolithic behavior and emit a warning
+- **FR-002**: For microservice architecture, system MUST generate inter-service failure edge cases derived from actual `communication[]` entries: service unavailability, network partition, eventual consistency, distributed transaction failure, version skew, and data ownership conflict. Version skew covers both API contract changes (REST endpoint schema changes) and authentication token changes (new JWT claims) between service versions
 - **FR-003**: For monolith architecture, system MUST generate edge cases from standard categories only: concurrency, data boundaries, state machine, UI/UX, security, and data migration
-- **FR-004**: For modular-monolith architecture, system MUST generate standard monolith categories PLUS interface contract violation edge cases
+- **FR-004**: For modular-monolith architecture, system MUST generate standard monolith categories PLUS interface contract violation edge cases. Interface contract violation covers published module interfaces (public API surface of a module) — not internal implementation details
 - **FR-005**: Each generated edge case MUST include: scenario description, severity level, affected service(s), recommended handling strategy, and test suggestion
 - **FR-006**: Each edge case MUST include a YAML frontmatter block with machine-parseable fields: `id`, `category`, `severity`, `affected_services`, `handling_strategy`, `test_suggestion`
 - **FR-007**: Edge case IDs MUST follow the pattern `EC-NNN` with sequential numbering per service
 - **FR-008**: For microservice edge cases, the system MUST use the actual service dependency graph from `communication[]` to generate edge cases for the calling service (the service that declares the dependency). Each `communication[]` entry produces edge cases on the source service, not the target. Bidirectional edge cases are not generated — only the service initiating the call gets the failure scenario
-- **FR-009**: For microservice edge cases involving events, the system MUST use the actual `events[]` entries to name the specific event and its consumers in eventual consistency scenarios. The producer service gets "consumer unavailable" and "message loss" cases; each consumer service gets "stale data during propagation delay" cases
+- **FR-009**: For microservice edge cases involving events, the system MUST use the actual `events[]` entries to name the specific event and its consumers in eventual consistency scenarios. The producer service gets "consumer unavailable" and "message loss" cases; each consumer service gets "stale data during propagation delay" cases. Each event produces exactly 1 eventual_consistency case per consumer PLUS 1 distributed_transaction case if the event has 2+ consumers (multi-consumer coordination). Services that are both producer AND consumer of different events get edge cases for both roles
 - **FR-010**: System MUST render edge-cases.md via the existing `edge-cases.md.j2` Jinja2 template (enhanced to support YAML frontmatter)
 - **FR-011**: System MUST update pipeline state to `complete` for the `edgecase` phase after successful generation
 - **FR-012**: System MUST be invocable as a standalone CLI command `specforge edge-cases <target>` where target is a service slug or feature number
@@ -128,9 +129,12 @@ As a developer, I want to run the edge case engine independently via `specforge 
   - **Monolith standard categories**: security and concurrency → `high`; data_boundary and state_machine → `medium`; ui_ux and data_migration → `low`
   - **Modular-monolith**: inherits monolith severity rules; interface_contract_violation → `high`
   - **Data ownership conflict** (shared entity): always `high` regardless of architecture
+  - **Default**: Any communication pattern not in the matrix (e.g., future "sync-websocket") defaults to `high` for required, `medium` for optional
 - **FR-017**: System MUST use the existing `ArchitectureAdapter.get_edge_case_extras()` for architecture-generic edge cases and layer service-specific edge cases on top
-- **FR-018**: Edge case count per service MUST follow this budget: 6 base cases (1 per standard category) + 2 per external dependency + 1 per event (producer or consumer) + 2 per additional feature beyond the first (feature-interaction cases). Total MUST NOT exceed 30 per service
+- **FR-018**: Edge case count per service MUST follow this budget: 6 base cases (1 per standard category) + 2 per external dependency + 1 per event (producer or consumer) + 2 per additional feature beyond the first (feature-interaction cases). Data ownership cases from BoundaryAnalyzer count within the 2-per-dependency allocation (not additive). Feature-interaction cases cover scenarios where two features within the same service have conflicting resource needs (e.g., account creation and transaction processing competing for write locks). Total MUST NOT exceed 30 per service. When truncation is needed, cases are prioritized by severity (critical > high > medium > low), then by category priority order
 - **FR-019**: The `handling_strategy` field MUST name architectural patterns (e.g., circuit breaker, outbox pattern, saga, compensating transaction, bulkhead, retry with backoff) — NOT library names (e.g., Polly, Resilience4j, Hystrix). The implementation plan decides the specific library
+- **FR-020**: If a `communication[]` entry references a `target` service slug that does not exist in the manifest's `services[]` array, the system MUST emit the edge case with the target slug as-is and append a warning note "(service not found in manifest)" to the scenario description
+- **FR-021**: The YAML frontmatter block MUST use fenced code block format (` ```yaml ... ``` `) — NOT document-level `---` frontmatter. The `affected_services` field MUST be a YAML list (sequence), not a comma-separated string. Additional fields MAY be added in future versions without breaking backward compatibility — consumers MUST tolerate unknown keys
 
 ### Key Entities
 
