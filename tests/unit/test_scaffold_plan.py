@@ -60,7 +60,7 @@ class TestBuildScaffoldPlan:
                 str(Path(".specforge/templates/features"))
             )
         ]
-        assert len(feature_files) == 7
+        assert len(feature_files) == 8
 
     def test_file_ordering_is_deterministic(self) -> None:
         config = self._make_config()

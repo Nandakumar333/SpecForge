@@ -1,0 +1,32 @@
+{% include "base/partials/generation-header.md.j2" %}
+
+# Clarification Report — {{ service.name }}
+
+**Service**: `{{ service.slug }}`
+**Date**: {{ date }}
+**Architecture**: {{ architecture }}
+**Total Ambiguities**: {{ questions | length }}
+
+{% if questions | length == 0 %}
+No ambiguities detected in the service spec.
+{% else %}
+{% set categories = questions | map(attribute='category') | unique | sort %}
+{% for cat in categories %}
+
+## {{ cat | replace("_", " ") | title }}
+
+{% set cat_questions = questions | selectattr("category", "equalto", cat) | list %}
+{% for q in cat_questions %}
+### {{ q.id }}: {{ q.question_text }}
+
+**Context**: "{{ q.context_excerpt }}"
+
+| Option | Answer | Implications |
+|--------|--------|--------------|
+{% for a in q.suggested_answers %}
+| {{ a.label }} | {{ a.text }} | {{ a.implications }} |
+{% endfor %}
+
+{% endfor %}
+{% endfor %}
+{% endif %}

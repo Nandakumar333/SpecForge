@@ -239,6 +239,111 @@ STUB_CONTRACT_SUFFIX: str = ".stub.json"
 INTERFACES_FILENAME: str = "interfaces.md"
 
 
+# ── Research & Clarification Engine Constants (Feature 006) ───────────
+
+
+AMBIGUITY_CATEGORIES: tuple[str, ...] = (
+    "domain",
+    "technical",
+    "service_boundary",
+    "communication",
+)
+
+FINDING_STATUSES: tuple[str, ...] = (
+    "RESOLVED",
+    "UNVERIFIED",
+    "BLOCKED",
+    "CONFLICTING",
+)
+
+VAGUE_TERM_PATTERNS: tuple[str, ...] = (
+    r"\bappropriate(ly)?\b",
+    r"\bas needed\b",
+    r"\bsuitable|suitably\b",
+    r"\bproper(ly)?\b",
+    r"\brelevant\b",
+    r"\betc\.\b",
+    r"\bvarious\b",
+    r"\brobust(ly|ness)?\b",
+    r"\bintuitive(ly)?\b",
+    r"\bflexible|flexibility\b",
+)
+
+CLARIFICATION_SECTION_HEADING: str = "## Clarifications"
+SESSION_HEADING_PREFIX: str = "### Session"
+CLARIFICATION_REPORT_FILENAME: str = "clarifications-report.md"
+
+IMPACT_PRIORITY: dict[str, int] = {
+    "service_boundary": 1,
+    "domain": 2,
+    "technical": 3,
+    "communication": 4,
+}
+
+BOUNDARY_STOP_WORDS: frozenset[str] = frozenset({
+    "the", "a", "an", "and", "or", "is", "are", "was", "were",
+    "in", "on", "at", "to", "for", "of", "with", "by", "from",
+    "as", "it", "its", "this", "that", "be", "has", "have", "had",
+    "not", "will", "can", "should", "must", "each", "all", "any",
+    "service", "system", "feature", "support", "manage", "management",
+    "provide", "handle", "allow", "enable", "include", "use",
+    "based", "using", "via", "also", "may", "which", "when",
+})
+
+ANSWER_TEMPLATES: dict[str, tuple[str, ...]] = {
+    "domain": (
+        "Define specific business rules for {concept}",
+        "Use industry-standard definition of {concept}",
+        "Defer to domain expert for {concept} requirements",
+        "Split {concept} into sub-categories with separate rules",
+    ),
+    "technical": (
+        "Use {concept} with default configuration",
+        "Evaluate alternatives to {concept} before committing",
+        "Use {concept} for MVP, revisit for production",
+    ),
+    "service_boundary": (
+        "{concept} owned by {service_a}",
+        "{concept} owned by {service_b}",
+        "Extract {concept} into shared library",
+        "Duplicate {concept} with eventual consistency",
+    ),
+    "communication": (
+        "Synchronous (REST/gRPC) for {concept}",
+        "Asynchronous (events/messages) for {concept}",
+        "Hybrid: sync for queries, async for commands",
+    ),
+}
+
+UBIQUITY_THRESHOLD: float = 0.6
+
+REMAP_QUESTION_TOPICS: tuple[str, ...] = (
+    "service boundaries",
+    "communication patterns",
+    "data ownership",
+    "shared state",
+    "eventual consistency",
+)
+
+MICROSERVICE_RESEARCH_TOPICS: tuple[dict[str, str], ...] = (
+    {
+        "topic": "Docker base image selection",
+        "description": "Evaluate base images for containerized deployment "
+        "(alpine, distroless, slim variants)",
+    },
+    {
+        "topic": "Health check endpoint design",
+        "description": "Liveness and readiness probes for "
+        "container orchestration",
+    },
+    {
+        "topic": "Message broker comparison",
+        "description": "Compare message brokers for async communication "
+        "(RabbitMQ, Kafka, Redis Streams)",
+    },
+)
+
+
 def get_constitution_vars() -> TemplateVarSchema:
     """Variable schema for constitution templates."""
     from specforge.core.template_models import TemplateVarSchema
