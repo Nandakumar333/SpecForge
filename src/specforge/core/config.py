@@ -563,3 +563,89 @@ CROSS_SERVICE_SCOPE: dict[str, tuple[str, ...]] = {
     "modular-monolith": ("shared_contracts", "shared_auth"),
     "monolithic": (),
 }
+
+# ── Sub-Agent Executor Constants (Feature 009) ────────────────────────
+
+EXECUTION_STATE_FILENAME: str = ".execution-state.json"
+EXECUTION_LOCK_FILENAME: str = ".execution-lock"
+EXECUTION_LOCK_STALE_MINUTES: int = 60
+
+MAX_FIX_ATTEMPTS: int = 3
+CONTEXT_TOKEN_BUDGET: int = 100_000
+CHARS_PER_TOKEN_ESTIMATE: int = 4
+
+AGENT_RETRY_DELAYS: tuple[int, ...] = (1, 2, 4)
+HEALTH_CHECK_TIMEOUT: int = 30
+HEALTH_CHECK_ENDPOINT: str = "/health"
+
+DOCKER_COMPOSE_TEST_PROFILE: str = "test"
+
+IMPLEMENTATION_MODES: tuple[str, ...] = ("prompt-display", "agent-call")
+
+# Context priority order (lowest priority first — truncated first when over budget)
+CONTEXT_PRIORITY: tuple[str, ...] = (
+    "edge_cases",
+    "architecture_prompts",
+    "dependency_contracts",
+    "data_model",
+    "plan",
+    "governance_prompts",
+    "spec",
+    "constitution",
+    "current_task",
+)
+
+# ── Quality Validation Constants (Feature 010) ───────────────────────
+
+ERROR_CATEGORIES: tuple[str, ...] = (
+    "syntax", "logic", "type", "lint",
+    "coverage", "docker", "contract", "boundary", "security",
+)
+
+CONTAINER_RELEVANT_PATTERNS: frozenset[str] = frozenset({
+    "Dockerfile",
+    "Dockerfile.*",
+    "docker-compose*.yml",
+    "docker-compose*.yaml",
+    ".dockerignore",
+    "requirements.txt",
+    "package.json",
+    "*.csproj",
+})
+
+SECRET_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("aws_access_key", r"(?:^|[\"'\s=])AKIA[0-9A-Z]{16}(?:[\"'\s]|$)"),
+    ("aws_secret_key", r"(?:aws_secret_access_key|secret_key)\s*[:=]\s*[\"']?[A-Za-z0-9/+=]{40}"),
+    ("generic_api_key", r"(?:api[_-]?key|apikey)\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{20,}"),
+    ("jwt_token", r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
+    ("private_key", r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH)\s+PRIVATE\s+KEY-----"),
+    ("connection_string", r"(?:mongodb|postgres|mysql|redis)://[^\s\"']+:[^\s\"']+@"),
+    ("generic_secret", r"(?:secret|password|passwd|token)\s*[:=]\s*[\"'][^\s\"']{8,}[\"']"),
+    ("github_token", r"gh[ps]_[A-Za-z0-9_]{36,}"),
+)
+
+THRESHOLD_KEY_MAPPING: dict[str, str] = {
+    "max_function_lines": "line-limit:function",
+    "max_class_lines": "line-limit:class",
+    "min_coverage_percent": "coverage",
+    "max_lines": "line-limit:generic",
+}
+
+MAX_FUNCTION_LINES: int = 30
+MAX_CLASS_LINES: int = 200
+ENTROPY_THRESHOLD: float = 4.5
+
+TODO_PATTERNS: tuple[str, ...] = (
+    r"\bTODO\b",
+    r"\bFIXME\b",
+    r"\bHACK\b",
+    r"\bXXX\b",
+)
+
+TEST_FIXTURE_PATTERNS: frozenset[str] = frozenset({
+    "tests/",
+    "test_",
+    "conftest.py",
+    "fixtures/",
+    "**/testdata/",
+})

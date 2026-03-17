@@ -1,0 +1,44 @@
+# Auto-Fix: {{ checker_name }} ({{ error_category }})
+
+**Attempt**: {{ attempt_number }}/3
+
+## Original Task
+{{ original_task }}
+
+## Error to Fix
+**Category**: {{ error_category }}
+**Checker**: {{ checker_name }}
+
+### Error Details
+{% for detail in error_details %}
+- **{{ detail.file_path }}**{% if detail.line_number %} (line {{ detail.line_number }}{% if detail.column %}, col {{ detail.column }}{% endif %}){% endif %}
+  {% if detail.code %}Code: `{{ detail.code }}`{% endif %}
+  {{ detail.message }}
+  {% if detail.context %}```
+{{ detail.context }}
+```{% endif %}
+{% endfor %}
+
+## Specific Instructions
+{{ specific_instructions }}
+
+## Files to Modify
+{% for file in affected_files %}
+- `{{ file }}`
+{% endfor %}
+{% if prior_attempts %}
+
+## Prior Attempts (DO NOT repeat these approaches)
+{% for attempt in prior_attempts %}
+### Attempt {{ attempt.attempt_number }}
+- **Category**: {{ attempt.category.value }}
+- **Files changed**: {{ attempt.files_changed | join(", ") }}
+{% if attempt.reverted %}- **REVERTED**: {{ attempt.revert_reason }}{% endif %}
+{% if attempt.result and not attempt.result.passed %}- **Still failing**: {{ attempt.result.failed_checks | join(", ") }}{% endif %}
+{% endfor %}
+{% endif %}
+{% if governance_context %}
+
+## Governance Rules (for self-checking)
+{{ governance_context }}
+{% endif %}

@@ -322,28 +322,30 @@
   **Feature**: test-feature
   **Created**: 2026-01-01
   
-  ## Format: `[ID] [P?] Description`
+  ## Format
   
-  - **[P]**: Can run in parallel (different files, no dependencies)
+  ```
+  [ID] [P?] [Effort] Description
+  ```
   
   ---
   
   ## Phase 1: Setup
   
-  - [ ] T001 _Describe the setup task with exact file paths._
-  - [ ] T002 [P] _Describe a parallel setup task._
+  - [ ] T001 [S] _Describe the setup task with exact file paths._
+  - [ ] T002 [P] [S] _Describe a parallel setup task._
   
   ## Phase 2: Tests (Write First)
   
-  - [ ] T003 _Write tests for core functionality in tests/unit/test_module.py_
+  - [ ] T003 [M] _Write tests for core functionality in tests/unit/test_module.py_
   
   ## Phase 3: Implementation
   
-  - [ ] T004 _Implement core module in src/module.py_
+  - [ ] T004 [M] _Implement core module in src/module.py_
   
   ## Phase 4: Integration
   
-  - [ ] T005 _Wire modules together and run full test suite._
+  - [ ] T005 [L] _Wire modules together and run full test suite._
   
   ---
   
@@ -352,7 +354,6 @@
   - Phase 2 depends on Phase 1
   - Phase 3 depends on Phase 2 (TDD)
   - Phase 4 depends on Phase 3
-  
   '''
 # ---
 # name: TestNewTemplateSnapshots.test_frontend_prompt
