@@ -1,6 +1,6 @@
-﻿# SpecForge Development Guidelines
+# SpecForge Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-16
+Auto-generated from all feature plans. Last updated: 2026-03-17
 
 ## Active Technologies
 - Python 3.11+ + Jinja2 3.x (rendering engine), Click 8.x (existing CLI), Rich 13.x (existing output) (002-template-rendering-engine)
@@ -9,6 +9,10 @@ Auto-generated from all feature plans. Last updated: 2026-03-16
 - File system — `.specforge/manifest.json`, `.specforge/decompose-state.json`; atomic writes via `os.replace()` (004-architecture-decomposer)
 - Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output), Jinja2 3.x (template rendering) — all existing (005-spec-generation-pipeline)
 - File system — `.specforge/features/<slug>/` directories with JSON state files (005-spec-generation-pipeline)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (interactive prompts + terminal output), Jinja2 3.x (template rendering) — all existing (006-research-clarification-engine)
+- File system — `.specforge/features/<slug>/` directories; spec.md (read/write), research.md (write), clarifications-report.md (write), manifest.json (read-only) (006-research-clarification-engine)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (output), Jinja2 3.x (template rendering), PyYAML (pattern file loading) — all existing (007-edge-case-engine)
+- File system — `.specforge/features/<slug>/edge-cases.md`, YAML pattern files bundled in package (007-edge-case-engine)
 
 - **Language**: Python 3.11+
 - **CLI Framework**: Click 8.x — command groups, `@click.pass_context`, `CliRunner` for tests
@@ -93,9 +97,9 @@ uv run pytest --snapshot-update
 - Dependency flow: `cli` → `core` → stdlib only; `plugins` → `core`; never reverse
 
 ## Recent Changes
+- 007-edge-case-engine: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (output), Jinja2 3.x (template rendering), PyYAML (pattern file loading) — all existing
+- 006-research-clarification-engine: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (interactive prompts + terminal output), Jinja2 3.x (template rendering) — all existing
 - 005-spec-generation-pipeline: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output), Jinja2 3.x (template rendering) — all existing
-- 004-architecture-decomposer: Added Python 3.11+ + Click 8.x (CLI framework), Rich 13.x (terminal output + interactive prompts), Jinja2 3.x (template rendering — communication map only)
-- 003-agent-prompt-governance: Governance prompt file system — `PromptFileManager`, `PromptLoader`, `PromptValidator`, `PromptContextBuilder`; `specforge validate-prompts` CLI command; `TemplateType.governance`; `.specforge/config.json`; SHA-256 checksum-based customization detection; structured Markdown parsing via `re` (zero new external deps)
 
 
 
