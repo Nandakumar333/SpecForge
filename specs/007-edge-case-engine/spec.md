@@ -115,16 +115,22 @@ As a developer, I want to run the edge case engine independently via `specforge 
 - **FR-005**: Each generated edge case MUST include: scenario description, severity level, affected service(s), recommended handling strategy, and test suggestion
 - **FR-006**: Each edge case MUST include a YAML frontmatter block with machine-parseable fields: `id`, `category`, `severity`, `affected_services`, `handling_strategy`, `test_suggestion`
 - **FR-007**: Edge case IDs MUST follow the pattern `EC-NNN` with sequential numbering per service
-- **FR-008**: For microservice edge cases, the system MUST use the actual service dependency graph from `communication[]` to name the specific dependent service in the edge case scenario (e.g., "identity-service down" not "a dependent service down")
-- **FR-009**: For microservice edge cases involving events, the system MUST use the actual `events[]` entries to name the specific event and its consumers in eventual consistency scenarios
+- **FR-008**: For microservice edge cases, the system MUST use the actual service dependency graph from `communication[]` to generate edge cases for the calling service (the service that declares the dependency). Each `communication[]` entry produces edge cases on the source service, not the target. Bidirectional edge cases are not generated — only the service initiating the call gets the failure scenario
+- **FR-009**: For microservice edge cases involving events, the system MUST use the actual `events[]` entries to name the specific event and its consumers in eventual consistency scenarios. The producer service gets "consumer unavailable" and "message loss" cases; each consumer service gets "stale data during propagation delay" cases
 - **FR-010**: System MUST render edge-cases.md via the existing `edge-cases.md.j2` Jinja2 template (enhanced to support YAML frontmatter)
 - **FR-011**: System MUST update pipeline state to `complete` for the `edgecase` phase after successful generation
 - **FR-012**: System MUST be invocable as a standalone CLI command `specforge edge-cases <target>` where target is a service slug or feature number
 - **FR-013**: System MUST acquire and release the pipeline lock during execution to prevent concurrent modification
 - **FR-014**: System MUST detect shared entities across service boundaries (using BoundaryAnalyzer patterns) and generate "data ownership conflict" edge cases for each shared entity
 - **FR-015**: System MUST skip inter-service failure categories when the target service has zero external dependencies, even in microservice architecture
-- **FR-016**: Severity levels MUST be one of: `critical`, `high`, `medium`, `low` — derived from the dependency's `required` flag and communication pattern
+- **FR-016**: Severity levels MUST be one of: `critical`, `high`, `medium`, `low` — assigned via a deterministic severity matrix:
+  - **Microservice inter-service**: required+sync-rest/sync-grpc → `critical`; required+async-events → `high`; optional+sync → `high`; optional+async → `medium`
+  - **Monolith standard categories**: security and concurrency → `high`; data_boundary and state_machine → `medium`; ui_ux and data_migration → `low`
+  - **Modular-monolith**: inherits monolith severity rules; interface_contract_violation → `high`
+  - **Data ownership conflict** (shared entity): always `high` regardless of architecture
 - **FR-017**: System MUST use the existing `ArchitectureAdapter.get_edge_case_extras()` for architecture-generic edge cases and layer service-specific edge cases on top
+- **FR-018**: Edge case count per service MUST follow this budget: 6 base cases (1 per standard category) + 2 per external dependency + 1 per event (producer or consumer) + 2 per additional feature beyond the first (feature-interaction cases). Total MUST NOT exceed 30 per service
+- **FR-019**: The `handling_strategy` field MUST name architectural patterns (e.g., circuit breaker, outbox pattern, saga, compensating transaction, bulkhead, retry with backoff) — NOT library names (e.g., Polly, Resilience4j, Hystrix). The implementation plan decides the specific library
 
 ### Key Entities
 
@@ -136,7 +142,7 @@ As a developer, I want to run the edge case engine independently via `specforge 
 
 ### Measurable Outcomes
 
-- **SC-001**: Edge cases generated for a microservice with N dependencies include at least 2×N inter-service failure scenarios (covering primary failure modes per dependency)
+- **SC-001**: Edge cases generated for a microservice with N dependencies and E events include exactly 6 + 2N + E base cases (plus feature-interaction cases), capped at 30 total per service
 - **SC-002**: Edge cases generated for a monolith contain zero distributed-system categories (no service-down, network partition, eventual consistency references)
 - **SC-003**: 100% of generated edge cases have valid YAML frontmatter parseable by a standard YAML parser with all required fields present
 - **SC-004**: Edge case generation for a 5-service PersonalFinance manifest completes in under 2 seconds
@@ -150,3 +156,12 @@ As a developer, I want to run the edge case engine independently via `specforge 
 - The `ArchitectureAdapter` protocol from Feature 005 provides base edge case extras that this engine enriches with service-specific context
 - Feature 005 pipeline orchestrator handles Phase 3a/3b parallelism; this engine only needs to function as a callable phase
 - The `BoundaryAnalyzer` from Feature 006 provides the shared-entity detection capability reusable for data ownership conflict edge cases
+
+## Clarifications
+
+### Session 2026-03-17
+
+- Q: [technical] How should severity differ for microservice vs monolith edge cases? → A: Deterministic severity matrix — microservice uses required flag × communication pattern (required+sync=critical, required+async=high, optional+sync=high, optional+async=medium); monolith uses category-based rules (security/concurrency=high, data_boundary/state_machine=medium, ui_ux/data_migration=low); data ownership conflict=high always
+- Q: [service_boundary] Should the analyzer use the communication map from Feature 004 to identify service-pair edge cases? → A: Yes — each communication[] entry generates edge cases for the calling service only (not bidirectional). Events use producer/consumer pairs: producer gets message-loss cases, consumers get stale-data cases
+- Q: [domain] How many edge cases per service is ideal? → A: Budget formula: 6 base (1 per standard category) + 2 per dependency + 1 per event + 2 per additional feature (interaction cases). Hard cap at 30 per service
+- Q: [technical] Should the analyzer suggest specific resilience patterns or just describe scenarios? → A: Architectural patterns only (circuit breaker, outbox, saga, compensating transaction, bulkhead, retry with backoff). No library names (Polly, Resilience4j). Plan.md decides implementation
