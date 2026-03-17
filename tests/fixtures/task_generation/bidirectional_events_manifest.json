@@ -1,0 +1,52 @@
+{
+  "project_name": "EventTest",
+  "project_description": "Bidirectional event communication test",
+  "domain": "test",
+  "architecture": "microservice",
+  "services": [
+    {
+      "slug": "service-a",
+      "name": "Service A",
+      "features": ["001"],
+      "communication": [
+        {
+          "target": "service-b",
+          "pattern": "async-event",
+          "required": false,
+          "description": "Produces EventX consumed by Service B"
+        }
+      ]
+    },
+    {
+      "slug": "service-b",
+      "name": "Service B",
+      "features": ["002"],
+      "communication": [
+        {
+          "target": "service-a",
+          "pattern": "async-event",
+          "required": false,
+          "description": "Produces EventY consumed by Service A"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {"id": "001", "name": "feature-a", "display_name": "Feature A", "description": "Feature A desc", "priority": "P0", "category": "core", "service": "service-a"},
+    {"id": "002", "name": "feature-b", "display_name": "Feature B", "description": "Feature B desc", "priority": "P0", "category": "core", "service": "service-b"}
+  ],
+  "events": [
+    {
+      "name": "EventX",
+      "producer": "service-a",
+      "consumers": ["service-b"],
+      "payload_summary": "data_x"
+    },
+    {
+      "name": "EventY",
+      "producer": "service-b",
+      "consumers": ["service-a"],
+      "payload_summary": "data_y"
+    }
+  ]
+}
