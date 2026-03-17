@@ -1,0 +1,22 @@
+category: security
+scenarios:
+  - scenario_template: "Unauthorized access attempt to {{resource}} in {{service}}"
+    trigger_template: "User with insufficient permissions attempts restricted operation"
+    handling_strategies:
+      - role_based_access_control
+      - permission_check_middleware
+      - audit_logging
+    severity_microservice: null
+    severity_monolith: high
+    test_template: "Integration test: attempt {{resource}} access with invalid/expired/missing credentials, verify 401/403"
+    applicable_patterns: []
+  - scenario_template: "Injection attack on {{resource}} input in {{service}}"
+    trigger_template: "Malicious input containing SQL, XSS, or command injection payloads"
+    handling_strategies:
+      - input_sanitization
+      - parameterized_queries
+      - content_security_policy
+    severity_microservice: null
+    severity_monolith: high
+    test_template: "Security test: submit injection payloads to {{resource}}, verify sanitization and no execution"
+    applicable_patterns: []

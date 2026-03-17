@@ -1,0 +1,21 @@
+category: data_boundary
+scenarios:
+  - scenario_template: "Input exceeds maximum allowed size for {{resource}} in {{service}}"
+    trigger_template: "User submits data exceeding field limits or payload size"
+    handling_strategies:
+      - input_validation
+      - size_limit_enforcement
+      - graceful_rejection
+    severity_microservice: null
+    severity_monolith: medium
+    test_template: "Unit test: submit oversized input to {{resource}}, verify descriptive error and no state mutation"
+    applicable_patterns: []
+  - scenario_template: "Invalid or malformed data for {{resource}} bypasses validation in {{service}}"
+    trigger_template: "Edge case input that passes basic validation but causes downstream failure"
+    handling_strategies:
+      - defense_in_depth_validation
+      - schema_validation
+    severity_microservice: null
+    severity_monolith: medium
+    test_template: "Unit test: submit boundary-value inputs (empty, max, special chars), verify validation catches all"
+    applicable_patterns: []

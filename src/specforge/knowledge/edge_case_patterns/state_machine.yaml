@@ -1,0 +1,21 @@
+category: state_machine
+scenarios:
+  - scenario_template: "Invalid state transition attempted for {{resource}} in {{service}}"
+    trigger_template: "User action triggers a transition not allowed from current state"
+    handling_strategies:
+      - state_machine_guard
+      - transition_validation
+      - event_replay
+    severity_microservice: null
+    severity_monolith: medium
+    test_template: "Unit test: attempt each invalid state transition, verify rejection with descriptive error"
+    applicable_patterns: []
+  - scenario_template: "Concurrent state transitions for the same {{resource}} in {{service}}"
+    trigger_template: "Two users trigger conflicting state changes simultaneously"
+    handling_strategies:
+      - optimistic_concurrency
+      - state_version_check
+    severity_microservice: null
+    severity_monolith: medium
+    test_template: "Integration test: trigger concurrent state transitions, verify one succeeds and other is rejected"
+    applicable_patterns: []

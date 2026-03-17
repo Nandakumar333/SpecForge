@@ -1,0 +1,22 @@
+category: interface_contract_violation
+scenarios:
+  - scenario_template: "Module {{target_service}} changes its published interface breaking {{source_service}} integration"
+    trigger_template: "{{target_service}} modifies public API surface without updating consumers"
+    handling_strategies:
+      - interface_versioning
+      - consumer_driven_contracts
+      - deprecation_period
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Contract test: verify {{source_service}} correctly calls {{target_service}} published interface"
+    applicable_patterns: []
+  - scenario_template: "{{source_service}} bypasses {{target_service}} public interface and accesses internal implementation"
+    trigger_template: "Direct access to {{target_service}} internals instead of using published API"
+    handling_strategies:
+      - access_control_enforcement
+      - module_boundary_check
+      - architecture_fitness_function
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Architecture test: verify {{source_service}} only imports from {{target_service}} public API module"
+    applicable_patterns: []

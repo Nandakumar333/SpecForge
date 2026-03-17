@@ -1,0 +1,21 @@
+category: ui_ux
+scenarios:
+  - scenario_template: "User action times out waiting for {{operation}} response in {{service}}"
+    trigger_template: "Backend {{operation}} takes longer than user expectation threshold"
+    handling_strategies:
+      - loading_indicator
+      - optimistic_ui_update
+      - background_processing
+    severity_microservice: null
+    severity_monolith: low
+    test_template: "UI test: trigger slow {{operation}}, verify loading state shown and user can cancel"
+    applicable_patterns: []
+  - scenario_template: "User encounters empty state for {{resource}} in {{service}}"
+    trigger_template: "New user or cleared data results in zero items for {{resource}}"
+    handling_strategies:
+      - empty_state_design
+      - onboarding_prompt
+    severity_microservice: null
+    severity_monolith: low
+    test_template: "UI test: render {{resource}} with zero items, verify helpful empty state message"
+    applicable_patterns: []

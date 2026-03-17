@@ -1,0 +1,23 @@
+category: eventual_consistency
+scenarios:
+  - scenario_template: "{{consumer_service}} serves stale data while processing {{event_name}} from {{producer_service}}"
+    trigger_template: "{{producer_service}} publishes {{event_name}} but {{consumer_service}} has propagation delay"
+    handling_strategies:
+      - stale_data_warning
+      - read_your_own_writes
+      - causal_consistency
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: publish {{event_name}}, query {{consumer_service}} immediately, verify stale-data handling or warning"
+    applicable_patterns:
+      - async-event
+  - scenario_template: "User requests report from {{consumer_service}} during propagation window after {{event_name}}"
+    trigger_template: "{{event_name}} published by {{producer_service}} not yet consumed by {{consumer_service}}"
+    handling_strategies:
+      - eventual_consistency_warning
+      - client_side_polling
+    severity_microservice: null
+    severity_monolith: null
+    test_template: "Integration test: query {{consumer_service}} before event processing completes, verify appropriate user feedback"
+    applicable_patterns:
+      - async-event

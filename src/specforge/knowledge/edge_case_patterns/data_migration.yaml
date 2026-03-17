@@ -1,0 +1,21 @@
+category: data_migration
+scenarios:
+  - scenario_template: "Schema migration fails midway for {{resource}} in {{service}}"
+    trigger_template: "Database migration encounters constraint violation or timeout on large table"
+    handling_strategies:
+      - reversible_migration
+      - blue_green_deployment
+      - feature_flag_gating
+    severity_microservice: null
+    severity_monolith: low
+    test_template: "Migration test: run migration on test dataset, verify rollback works and data integrity preserved"
+    applicable_patterns: []
+  - scenario_template: "Data format incompatibility after {{resource}} schema change in {{service}}"
+    trigger_template: "Old data format incompatible with new schema during rolling deployment"
+    handling_strategies:
+      - dual_write_migration
+      - backward_compatible_schema
+    severity_microservice: null
+    severity_monolith: low
+    test_template: "Unit test: read old-format {{resource}} data with new schema, verify graceful handling or conversion"
+    applicable_patterns: []
