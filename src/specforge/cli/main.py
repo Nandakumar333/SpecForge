@@ -26,6 +26,8 @@ from specforge.cli.research_cmd import research  # noqa: E402
 from specforge.cli.specify_cmd import specify  # noqa: E402
 from specforge.cli.validate_prompts_cmd import validate_prompts  # noqa: E402
 
+from specforge.cli.implement_cmd import implement  # noqa: E402
+
 cli.add_command(init)
 cli.add_command(check)
 cli.add_command(decompose)
@@ -35,3 +37,4 @@ cli.add_command(pipeline_status)
 cli.add_command(clarify)
 cli.add_command(research)
 cli.add_command(edge_cases)
+cli.add_command(implement)

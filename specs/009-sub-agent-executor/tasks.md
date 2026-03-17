@@ -27,8 +27,8 @@
 
 **Purpose**: Project initialization, config constants, and frozen data model
 
-- [ ] T001 Add Feature 009 config constants to src/specforge/core/config.py: EXECUTION_STATE_FILENAME, EXECUTION_LOCK_FILENAME, EXECUTION_LOCK_STALE_MINUTES, MAX_FIX_ATTEMPTS, CONTEXT_TOKEN_BUDGET, CHARS_PER_TOKEN_ESTIMATE, AGENT_RETRY_DELAYS, HEALTH_CHECK_TIMEOUT, HEALTH_CHECK_ENDPOINT, DOCKER_COMPOSE_TEST_PROFILE, IMPLEMENTATION_MODES, CONTEXT_PRIORITY
-- [ ] T002 Create implementation prompt Jinja2 template in src/specforge/templates/base/prompts/implement-task.md.j2 with sections: Task Description, File Targets, Quality Standards, Service Context, Data Model, Dependency Contracts, Prior Tasks, Constraints
+- [X] T001 Add Feature 009 config constants to src/specforge/core/config.py: EXECUTION_STATE_FILENAME, EXECUTION_LOCK_FILENAME, EXECUTION_LOCK_STALE_MINUTES, MAX_FIX_ATTEMPTS, CONTEXT_TOKEN_BUDGET, CHARS_PER_TOKEN_ESTIMATE, AGENT_RETRY_DELAYS, HEALTH_CHECK_TIMEOUT, HEALTH_CHECK_ENDPOINT, DOCKER_COMPOSE_TEST_PROFILE, IMPLEMENTATION_MODES, CONTEXT_PRIORITY
+- [X] T002 Create implementation prompt Jinja2 template in src/specforge/templates/base/prompts/implement-task.md.j2 with sections: Task Description, File Targets, Quality Standards, Service Context, Data Model, Dependency Contracts, Prior Tasks, Constraints
 
 ---
 
