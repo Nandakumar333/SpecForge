@@ -209,3 +209,83 @@ class TestSubAgentExecutorExecution:
         # State file should exist
         state_path = project / ".specforge" / "features" / "identity-service" / ".execution-state.json"
         assert state_path.exists()
+
+
+class TestSubAgentExecutorResume:
+    """Resume capability tests."""
+
+    def test_resume_loads_existing_state(self, tmp_path: Path) -> None:
+        from specforge.core.execution_state import (
+            create_initial_state,
+            mark_task_completed,
+            save_state,
+        )
+        from specforge.core.sub_agent_executor import SubAgentExecutor
+
+        project = _scaffold_project(tmp_path)
+        feature_dir = project / ".specforge" / "features" / "identity-service"
+        state_path = feature_dir / ".execution-state.json"
+
+        # Pre-create state with T001 completed
+        state = create_initial_state(
+            "identity-service", "microservice", "prompt-display",
+            ("T001", "T002", "T003"),
+        )
+        state = mark_task_completed(state, "T001", "abc123")
+        save_state(state_path, state)
+
+        mock_ctx_builder = MagicMock()
+        mock_ctx_builder.build.return_value = MagicMock(ok=True, value=MagicMock())
+        mock_runner = MagicMock()
+        mock_runner.run.return_value = MagicMock(ok=True, value=[])
+
+        executor = SubAgentExecutor(
+            context_builder=mock_ctx_builder,
+            task_runner=mock_runner,
+            quality_checker_factory=MagicMock(return_value=MagicMock(check=MagicMock())),
+            auto_fix_loop=None,
+            docker_manager=None,
+            project_root=project,
+        )
+        result = executor.execute("identity-service", "prompt-display", resume=True)
+        assert result.ok
+        # Should only process T002, T003 (T001 already completed)
+        assert mock_runner.run.call_count == 2
+
+    def test_resume_resets_in_progress_to_pending(self, tmp_path: Path) -> None:
+        from specforge.core.execution_state import (
+            create_initial_state,
+            mark_task_in_progress,
+            save_state,
+        )
+        from specforge.core.sub_agent_executor import SubAgentExecutor
+
+        project = _scaffold_project(tmp_path)
+        feature_dir = project / ".specforge" / "features" / "identity-service"
+        state_path = feature_dir / ".execution-state.json"
+
+        # Pre-create state with T001 in_progress (simulating crash)
+        state = create_initial_state(
+            "identity-service", "microservice", "prompt-display",
+            ("T001", "T002", "T003"),
+        )
+        state = mark_task_in_progress(state, "T001")
+        save_state(state_path, state)
+
+        mock_ctx_builder = MagicMock()
+        mock_ctx_builder.build.return_value = MagicMock(ok=True, value=MagicMock())
+        mock_runner = MagicMock()
+        mock_runner.run.return_value = MagicMock(ok=True, value=[])
+
+        executor = SubAgentExecutor(
+            context_builder=mock_ctx_builder,
+            task_runner=mock_runner,
+            quality_checker_factory=MagicMock(return_value=MagicMock(check=MagicMock())),
+            auto_fix_loop=None,
+            docker_manager=None,
+            project_root=project,
+        )
+        result = executor.execute("identity-service", "prompt-display", resume=True)
+        assert result.ok
+        # All 3 tasks should run (T001 was reset from in_progress to pending)
+        assert mock_runner.run.call_count == 3

@@ -35,7 +35,6 @@ from specforge.core.result import Err, Ok, Result
 
 if TYPE_CHECKING:
     from specforge.core.context_builder import ContextBuilder
-    from specforge.core.quality_checker import QualityChecker
     from specforge.core.task_runner import TaskRunner
 
 logger = logging.getLogger(__name__)
@@ -90,9 +89,12 @@ class SubAgentExecutor:
             return lock_result
 
         try:
-            return self._run_tasks(
+            result = self._run_tasks(
                 svc_ctx, service_slug, mode, resume, feature_dir,
             )
+            if result.ok:
+                self._print_summary(result.value)
+            return result
         finally:
             release_lock(lock_path)
 
@@ -175,16 +177,75 @@ class SubAgentExecutor:
                 state = mark_task_completed(state, next_id, sha or "no-sha")
                 save_state(state_path, state)
 
+        # Post-task verification (microservice only)
+        if arch == "microservice" and self._docker is not None:
+            verification = self._run_verification(state_path, state)
+            from dataclasses import replace as dc_replace
+            state = dc_replace(state, verification=verification)
+            save_state(state_path, state)
+
         return Ok(state)
+
+    def _run_verification(self, state_path, state):
+        """Run Docker verification for microservice services."""
+        from specforge.core.executor_models import VerificationState
+
+        errors: list[str] = []
+        container_built = False
+        health_ok = False
+        contracts_ok = False
+        compose_ok = False
+
+        build_result = self._docker.build_image()
+        if build_result.ok:
+            container_built = True
+        else:
+            errors.append(f"Docker build: {build_result.error}")
+
+        if container_built:
+            hc_result = self._docker.health_check()
+            if hc_result.ok:
+                health_ok = True
+            else:
+                errors.append(f"Health check: {hc_result.error}")
+
+            ct_result = self._docker.run_contract_tests()
+            if ct_result.ok:
+                contracts_ok = True
+            else:
+                errors.append(f"Contract tests: {ct_result.error}")
+
+            reg_result = self._docker.register_in_compose()
+            if reg_result.ok:
+                compose_ok = True
+            else:
+                errors.append(f"Compose registration: {reg_result.error}")
+
+        return VerificationState(
+            container_built=container_built,
+            health_check_passed=health_ok,
+            contract_tests_passed=contracts_ok,
+            compose_registered=compose_ok,
+            errors=tuple(errors),
+        )
 
     def _load_or_create_state(
         self, state_path, service_slug, arch, mode, task_ids, resume,
     ) -> ExecutionState:
         """Load existing state or create fresh."""
+        from dataclasses import replace as dc_replace
+
         if resume:
             loaded = load_state(state_path)
             if loaded.ok and loaded.value is not None:
-                return validate_against_tasks(loaded.value, task_ids)
+                state = validate_against_tasks(loaded.value, task_ids)
+                # Reset in-progress tasks to pending (restart from scratch)
+                tasks = tuple(
+                    dc_replace(t, status="pending", attempt=1)
+                    if t.status == "in-progress" else t
+                    for t in state.tasks
+                )
+                return dc_replace(state, tasks=tasks)
         return create_initial_state(service_slug, arch, mode, task_ids)
 
     def _load_manifest(self) -> Result[dict, str]:
@@ -201,7 +262,6 @@ class SubAgentExecutor:
     def _resolve_service(self, manifest, slug) -> Result:
         """Resolve service context from manifest."""
         from specforge.core.service_context import (
-            EventInfo,
             FeatureInfo,
             ServiceContext,
             ServiceDependency,
@@ -315,3 +375,35 @@ class SubAgentExecutor:
         except (subprocess.TimeoutExpired, OSError) as exc:
             logger.warning("Git commit failed: %s", exc)
         return None
+
+    def _print_summary(self, state: ExecutionState) -> None:
+        """Display Rich completion summary."""
+        try:
+            from rich.console import Console
+            from rich.table import Table
+
+            console = Console()
+            completed = sum(1 for t in state.tasks if t.status == "completed")
+            failed = sum(1 for t in state.tasks if t.status == "failed")
+            skipped = sum(1 for t in state.tasks if t.status == "skipped")
+            total = len(state.tasks)
+
+            table = Table(title=f"Implementation: {state.service_slug}")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="green")
+            table.add_row("Total tasks", str(total))
+            table.add_row("Completed", str(completed))
+            if failed:
+                table.add_row("Failed", f"[red]{failed}[/red]")
+            if skipped:
+                table.add_row("Skipped", str(skipped))
+
+            if state.verification:
+                v = state.verification
+                table.add_row("Docker build", "✓" if v.container_built else "✗")
+                table.add_row("Health check", "✓" if v.health_check_passed else "✗")
+                table.add_row("Contract tests", "✓" if v.contract_tests_passed else "✗")
+
+            console.print(table)
+        except ImportError:
+            pass

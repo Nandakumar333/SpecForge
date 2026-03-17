@@ -57,9 +57,36 @@ def implement(
         sys.exit(2)
 
     if shared_infra:
-        console.print("[yellow]Shared infrastructure not yet implemented[/]")
-        sys.exit(3)
+        from specforge.core.context_builder import ContextBuilder
+        from specforge.core.contract_resolver import ContractResolver
+        from specforge.core.quality_checker import QualityChecker
+        from specforge.core.shared_infra_executor import SharedInfraExecutor
+        from specforge.core.task_runner import TaskRunner
 
+        contract_resolver = ContractResolver(project_root)
+        context_builder = ContextBuilder(
+            project_root=project_root,
+            prompt_loader=None,
+            contract_resolver=contract_resolver,
+        )
+        task_runner = TaskRunner(project_root)
+
+        infra_executor = SharedInfraExecutor(
+            context_builder=context_builder,
+            task_runner=task_runner,
+            quality_checker_factory=QualityChecker,
+            auto_fix_loop=None,
+            project_root=project_root,
+        )
+        result = infra_executor.execute(mode)
+        if result.ok:
+            console.print("[bold green]Shared infrastructure complete[/]")
+            sys.exit(0)
+        else:
+            console.print(f"[bold red]Shared infrastructure failed: {result.error}[/]")
+            sys.exit(1)
+
+    from specforge.core.auto_fix_loop import AutoFixLoop
     from specforge.core.context_builder import ContextBuilder
     from specforge.core.contract_resolver import ContractResolver
     from specforge.core.quality_checker import QualityChecker
@@ -74,11 +101,17 @@ def implement(
     )
     task_runner = TaskRunner(project_root)
 
+    def _make_checker(root: Path, slug: str) -> QualityChecker:
+        return QualityChecker(root, slug)
+
+    checker_for_fix = QualityChecker(project_root, target)
+    auto_fix = AutoFixLoop(task_runner, checker_for_fix, max_attempts=max_fix_attempts)
+
     executor = SubAgentExecutor(
         context_builder=context_builder,
         task_runner=task_runner,
-        quality_checker_factory=QualityChecker,
-        auto_fix_loop=None,
+        quality_checker_factory=_make_checker,
+        auto_fix_loop=auto_fix,
         docker_manager=None,
         project_root=project_root,
     )
