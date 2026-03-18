@@ -5,18 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from specforge.core.result import Err, Ok
 from specforge.core.status_collector import (
     ManifestData,
-    ServiceRawState,
     collect_project_status,
     load_manifest,
     read_orchestration_state,
     read_service_states,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -549,7 +545,7 @@ class TestCollectProjectStatus:
         snap = result.value
         # Has execution state (even empty) → IN_PROGRESS? No — empty tasks means
         # _has_execution_activity returns False since len(tasks)==0.
-        # All pipeline phases complete + execution empty tasks + no quality → 
+        # All pipeline phases complete + execution empty tasks + no quality →
         # _is_all_complete checks pipeline (all complete ✓), execution (Ok but empty tasks → True), quality (None → no gate check → True)
         # So this should be COMPLETE.
         svc_record = snap.services[0]
@@ -565,7 +561,7 @@ class TestReadOrchestrationState:
                 {"index": 0, "status": "completed", "services": [{"slug": "auth", "status": "completed"}]},
             ],
         }
-        _write_json(tmp_path / ".specforge" / ".orchestration-state.json", orch)
+        _write_json(tmp_path / ".specforge" / "orchestration-state.json", orch)
 
         result = read_orchestration_state(tmp_path)
         assert isinstance(result, Ok)
@@ -579,7 +575,7 @@ class TestReadOrchestrationState:
     def test_read_orchestration_state_corrupt(self, tmp_path: Path) -> None:
         specforge_dir = tmp_path / ".specforge"
         specforge_dir.mkdir(parents=True)
-        (specforge_dir / ".orchestration-state.json").write_text("BAD", encoding="utf-8")
+        (specforge_dir / "orchestration-state.json").write_text("BAD", encoding="utf-8")
 
         result = read_orchestration_state(tmp_path)
         assert isinstance(result, Err)

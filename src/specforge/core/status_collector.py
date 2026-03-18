@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from specforge.core.config import (
@@ -27,7 +27,6 @@ from specforge.core.status_models import (
     ProjectStatusSnapshot,
     ServiceStatusRecord,
 )
-
 
 # ── Internal intermediate types ───────────────────────────────────────
 
@@ -145,7 +144,7 @@ def read_service_states(features_dir: Path, slug: str) -> ServiceRawState:
 
 def read_orchestration_state(project_root: Path) -> Result[dict, str] | None:
     """Read .specforge/.orchestration-state.json (project-level)."""
-    path = project_root / ".specforge" / ORCHESTRATION_STATE_FILENAME
+    path = project_root / ORCHESTRATION_STATE_FILENAME
     return _read_json_file(path)
 
 
@@ -196,7 +195,7 @@ def collect_project_status(
         quality=quality,
         graph=graph,
         warnings=tuple(warnings),
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         has_failures=has_failures,
     ))
 

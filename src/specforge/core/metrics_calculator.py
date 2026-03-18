@@ -12,11 +12,11 @@ from specforge.core.status_models import (
     PhaseProgressRecord,
     QualitySummaryRecord,
     ServicePhaseDetail,
+    ServiceStatusRecord,
 )
 
 if TYPE_CHECKING:
     from specforge.core.status_collector import ServiceRawState
-    from specforge.core.status_models import ServiceStatusRecord
 
 
 # ── Status derivation (priority waterfall) ───────────────────────────
@@ -294,7 +294,8 @@ def _service_composite(svc: ServiceStatusRecord) -> float:
         return 0.0
     impl = float(svc.lifecycle.impl_percent or 0)
     pipeline = _pipeline_score(svc.lifecycle)
-    quality = 100.0 if svc.lifecycle.tests_total and svc.lifecycle.tests_total > 0 else 0.0
+    has_tests = svc.lifecycle.tests_total and svc.lifecycle.tests_total > 0
+    quality = 100.0 if has_tests else 0.0
     return pipeline * 0.4 + impl * 0.5 + quality * 0.1
 
 
@@ -357,8 +358,7 @@ def _find_blocker(
 
 def _not_started(slug: str) -> ServiceStatusRecord:
     """Fallback record for unknown services."""
-    from specforge.core.status_models import ServiceStatusRecord as SSR
-    return SSR(
+    return ServiceStatusRecord(
         slug=slug, display_name=slug, features=(),
         lifecycle=LifecyclePhases(), overall_status="NOT_STARTED",
     )
