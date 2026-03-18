@@ -6,7 +6,6 @@ import pytest
 
 from specforge.plugins.stack_plugin_base import DockerConfig, PluginRule
 
-
 # ── PluginRule Tests ─────────────────────────────────────────────────
 
 

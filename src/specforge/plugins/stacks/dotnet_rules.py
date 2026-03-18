@@ -110,7 +110,8 @@ MONOLITH_BACKEND_RULES: list[PluginRule] = [
         thresholds={"min_handler_coverage": "80%"},
         example_correct=(
             "public record CreateOrderCommand : IRequest<OrderDto>;\n"
-            "public class CreateOrderHandler : IRequestHandler<CreateOrderCommand, OrderDto>"
+            "public class CreateOrderHandler : "
+            "IRequestHandler<CreateOrderCommand, OrderDto>"
         ),
         example_incorrect=(
             "public class OrderController {\n"
@@ -242,7 +243,10 @@ MONOLITH_DATABASE_RULES: list[PluginRule] = [
             "migration pipeline using EF Core migrations."
         ),
         thresholds={"migration_projects": "1"},
-        example_correct="dotnet ef migrations add AddOrders --project App.Infrastructure",
+        example_correct=(
+            "dotnet ef migrations add AddOrders "
+            "--project App.Infrastructure"
+        ),
         example_incorrect=(
             "Manual SQL scripts applied outside EF Core migration pipeline"
         ),
@@ -330,6 +334,9 @@ MONOLITH_CICD_RULES: list[PluginRule] = [
         ),
         thresholds={"test_scope": "solution"},
         example_correct="dotnet test App.sln --configuration Release",
-        example_incorrect="dotnet test App.Api.Tests.csproj  # misses other test projects",
+        example_incorrect=(
+            "dotnet test App.Api.Tests.csproj"
+            "  # misses other test projects"
+        ),
     ),
 ]

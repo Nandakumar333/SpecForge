@@ -12,7 +12,6 @@ from specforge.plugins.stack_plugin_base import (
     StackPlugin,
 )
 
-
 # ── Stub implementations for testing ────────────────────────────────
 
 

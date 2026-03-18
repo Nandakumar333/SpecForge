@@ -16,7 +16,7 @@ def _all_rules_flat(rules: dict[str, list[PluginRule]]) -> list[PluginRule]:
 def _assert_all_rules_valid(rules: dict[str, list[PluginRule]]) -> None:
     """Assert every rule has valid severity, non-empty fields, valid ID."""
     pattern = re.compile(r"^[A-Z]+-[A-Z0-9-]+$")
-    for domain, domain_rules in rules.items():
+    for _domain, domain_rules in rules.items():
         for rule in domain_rules:
             assert isinstance(rule, PluginRule)
             assert pattern.match(rule.rule_id), f"Bad rule_id: {rule.rule_id}"

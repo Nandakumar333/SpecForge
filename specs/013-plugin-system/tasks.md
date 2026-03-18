@@ -184,10 +184,10 @@
 
 **Independent Test**: Call `DotnetPlugin().get_build_commands("microservice")` and verify it includes multi-stage container build commands; call with `"monolithic"` and verify no container commands.
 
-- [ ] T051 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_dotnet_plugin.py`: test `get_build_commands("microservice")` includes `dotnet publish` + Docker build commands, test `get_build_commands("monolithic")` includes `dotnet build`/`dotnet run` without Docker, test `get_folder_structure("microservice")` shows per-service directories, test `get_folder_structure("monolithic")` shows single project structure
-- [ ] T052 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_python_plugin.py`: test microservice build includes Docker + pip/uv, test monolith build includes pip/uv without Docker, test folder structures differ by architecture
-- [ ] T053 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_nodejs_plugin.py`: test microservice build includes Docker + npm, test monolith build includes npm without Docker, test folder structures differ by architecture
-- [ ] T054 [US6] Verify all 3 stack plugins' `get_docker_config("microservice")` returns valid DockerConfig and `get_docker_config("monolithic")` returns None — add assertions to existing plugin tests if not already covered
+- [X] T051 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_dotnet_plugin.py`: test `get_build_commands("microservice")` includes `dotnet publish` + Docker build commands, test `get_build_commands("monolithic")` includes `dotnet build`/`dotnet run` without Docker, test `get_folder_structure("microservice")` shows per-service directories, test `get_folder_structure("monolithic")` shows single project structure
+- [X] T052 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_python_plugin.py`: test microservice build includes Docker + pip/uv, test monolith build includes pip/uv without Docker, test folder structures differ by architecture
+- [X] T053 [P] [US6] Write unit tests for build commands and folder structure in `tests/unit/test_nodejs_plugin.py`: test microservice build includes Docker + npm, test monolith build includes npm without Docker, test folder structures differ by architecture
+- [X] T054 [US6] Verify all 3 stack plugins' `get_docker_config("microservice")` returns valid DockerConfig and `get_docker_config("monolithic")` returns None — add assertions to existing plugin tests if not already covered
 
 **Checkpoint**: All stack plugins provide architecture-specific build, Docker, and folder structure guidance. Microservice configs include container tooling; monolith configs do not.
 
@@ -197,11 +197,11 @@
 
 **Purpose**: Final quality checks across all user stories
 
-- [ ] T055 [P] Run full test suite with `pytest --cov=specforge -q` and verify all tests pass with ≥90% coverage on new plugin modules
-- [ ] T056 [P] Run `ruff check src/specforge/plugins/ tests/unit/test_plugin* tests/unit/test_agent* tests/unit/test_dotnet* tests/unit/test_python_plugin* tests/unit/test_nodejs* tests/integration/test_init_with* tests/integration/test_custom* tests/integration/test_plugin*` and fix any linting issues
-- [ ] T057 Validate quickstart.md scenarios: execute the 3 example init commands from `specs/013-plugin-system/quickstart.md` in temp directories and verify expected output
-- [ ] T058 Verify `src/specforge/plugins/__init__.py` exports clean public API: `PluginManager`, `StackPlugin`, `AgentPlugin`, `PluginRule`, `DockerConfig`
-- [ ] T059 Run snapshot update `pytest --snapshot-update` for all 9 stack×arch rule snapshots and commit baseline snapshots
+- [X] T055 [P] Run full test suite with `pytest --cov=specforge -q` and verify all tests pass with ≥90% coverage on new plugin modules
+- [X] T056 [P] Run `ruff check src/specforge/plugins/ tests/unit/test_plugin* tests/unit/test_agent* tests/unit/test_dotnet* tests/unit/test_python_plugin* tests/unit/test_nodejs* tests/integration/test_init_with* tests/integration/test_custom* tests/integration/test_plugin*` and fix any linting issues
+- [X] T057 Validate quickstart.md scenarios: execute the 3 example init commands from `specs/013-plugin-system/quickstart.md` in temp directories and verify expected output
+- [X] T058 Verify `src/specforge/plugins/__init__.py` exports clean public API: `PluginManager`, `StackPlugin`, `AgentPlugin`, `PluginRule`, `DockerConfig`
+- [X] T059 Run snapshot update `pytest --snapshot-update` for all 9 stack×arch rule snapshots and commit baseline snapshots
 
 ---
 

@@ -234,8 +234,14 @@ MICROSERVICE_DATABASE_RULES: list[PluginRule] = [
             "independently of other services."
         ),
         thresholds={"migrations_per_service": "separate"},
-        example_correct="npx prisma migrate deploy --schema=order-service/prisma/schema.prisma",
-        example_incorrect="npx prisma migrate deploy --schema=shared/prisma/schema.prisma",
+        example_correct=(
+            "npx prisma migrate deploy "
+            "--schema=order-service/prisma/schema.prisma"
+        ),
+        example_incorrect=(
+            "npx prisma migrate deploy "
+            "--schema=shared/prisma/schema.prisma"
+        ),
     ),
 ]
 
@@ -342,6 +348,9 @@ MONOLITH_CICD_RULES: list[PluginRule] = [
         ),
         thresholds={"test_scope": "full"},
         example_correct="npm test  # runs all tests",
-        example_incorrect="npm test -- --testPathPattern=orders  # misses other modules",
+        example_incorrect=(
+            "npm test -- --testPathPattern=orders"
+            "  # misses other modules"
+        ),
     ),
 ]

@@ -6,7 +6,6 @@ from pathlib import Path
 
 from specforge.plugins.plugin_manager import PluginManager
 
-
 _CUSTOM_STACK_TEMPLATE = '''\
 from specforge.plugins.stack_plugin_base import StackPlugin, PluginRule, DockerConfig
 
