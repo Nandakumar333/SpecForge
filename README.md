@@ -32,10 +32,14 @@
 - [🤖 Supported AI Agents](#-supported-ai-agents)
 - [🔧 CLI Reference](#-cli-reference)
 - [📖 Slash Commands](#-slash-commands)
+- [🏗️ Architecture & Feature Overview](#️-architecture--feature-overview)
 - [🌟 Development Phases (Roadmap)](#-development-phases-roadmap)
 - [🎯 Feature Decomposition Example](#-feature-decomposition-example)
 - [🔒 Agent Instruction Prompts](#-agent-instruction-prompts)
 - [⚠️ Edge Cases as First-Class Citizens](#️-edge-cases-as-first-class-citizens)
+- [🧪 Quality Validation System](#-quality-validation-system)
+- [🤖 Sub-Agent Execution Engine](#-sub-agent-execution-engine)
+- [🔄 Implementation Orchestrator](#-implementation-orchestrator)
 - [🔧 Prerequisites](#-prerequisites)
 - [📋 Detailed Process](#-detailed-process)
 - [🔍 Troubleshooting](#-troubleshooting)
@@ -59,15 +63,15 @@ SpecForge is the engine that makes this workflow concrete at enterprise scale. O
          │
          ▼
   Per-Feature Pipeline (×12)
-  spec → research → data-model → plan → checklist → edge-cases → tasks
+  spec → research → data-model → edge-cases → plan → checklist → tasks
          │
          ▼
   Sub-Agent Executor (isolated per feature)
-  Implements, tests, auto-fixes, commits
+  Context-isolated prompts, auto-fix loop, quality gates, git commits
          │
          ▼
-  Integration Orchestrator
-  Merges features, resolves contracts, runs integration tests
+  Implementation Orchestrator
+  Phased execution, contract verification, integration validation
          │
          ▼
   Production-Ready Application
@@ -80,11 +84,15 @@ SpecForge is the engine that makes this workflow concrete at enterprise scale. O
 | Feature | Spec Kit | SpecForge |
 |---------|----------|-----------|
 | Feature identification | Manual — you define each feature | **Automatic** — one-line prompt → architecture decision gate → 8–15 domain-aware features → service mapping |
-| Sub-agent execution | Single agent, sequential | **Isolated sub-agents per feature** — no context window pollution, parallel execution |
-| Coding governance | Templates and guidelines | **7-domain governance prompts** — hard constraints with precedence rules, threshold conflict detection, stack-specific variants |
-| Edge cases | Listed in spec | **First-class artifact** — dedicated `edge-cases.md` per feature, analyzed before implementation |
+| Architecture awareness | Single mode | **Three architectures** — monolithic, microservice, modular monolith with architecture-specific artifacts at every phase |
+| Sub-agent execution | Single agent, sequential | **Isolated sub-agents per feature** — no context window pollution, context budget management (~100K tokens), dependency-ordered execution |
+| Coding governance | Templates and guidelines | **7-domain governance prompts** — hard constraints with precedence rules, threshold conflict detection, stack-specific variants, prompt-rule compliance checking |
+| Edge cases | Listed in spec | **First-class artifact** — architecture-aware `edge-cases.md` with YAML frontmatter, deterministic severity matrix, budget-capped analysis per service |
+| Quality validation | None | **11 pluggable checkers** — build, lint, test, coverage, line-limit, secrets, TODO scan, prompt-rule compliance, Docker, contract, and boundary checks |
+| Auto-fix loop | None | **Built-in** — error-categorized fix prompts → regression detection → revert on new failures (max 3 iterations before diagnostic report escalation) |
+| Task generation | Manual task lists | **Architecture-specific build sequences** — 14-step microservice / 7-step monolith, DAG-based dependency ordering, T-shirt effort estimates, governance rule references |
+| Multi-service orchestration | None | **Phased execution** — dependency-graph phases, inter-phase contract verification, docker-compose integration validation |
 | Industry standard bias | Follows common defaults | **Zero bias** — no assumptions about architecture, patterns, or libraries unless you define them |
-| Auto-fix loop | None | **Built-in** — tests fail → agent fixes → re-tests (max 3 iterations before escalation) |
 
 ---
 
@@ -147,7 +155,7 @@ Use **`specforge decompose`** to break your one-line description into bounded fe
 specforge decompose "Create a webapp for PersonalFinance"
 ```
 
-SpecForge asks your architecture preference (monolithic / microservice / modular monolith), then identifies 8–15 features using domain knowledge patterns. For microservice architecture, it intelligently groups features into services and generates a `manifest.json` with the full mapping.
+SpecForge asks your architecture preference (monolithic / microservice / modular monolith), then identifies 8–15 features using domain knowledge patterns. For microservice architecture, it intelligently groups features into services and generates a `manifest.json` with the full mapping, communication map, and event definitions.
 
 ---
 
@@ -156,13 +164,13 @@ SpecForge asks your architecture preference (monolithic / microservice / modular
 For each feature, run the full 7-phase pipeline:
 
 ```
-/specforge.specify  →  /specforge.clarify  →  /specforge.plan  →  /specforge.tasks  →  /specforge.implement
+/specforge.specify  →  /specforge.clarify  →  /specforge.research  →  /specforge.plan  →  /specforge.tasks  →  /specforge.implement
 ```
 
 Or let SpecForge orchestrate the entire pipeline automatically:
 
 ```bash
-specforge implement --all --parallel
+specforge implement --all
 ```
 
 ---
@@ -176,6 +184,9 @@ project-root/
 ├── .specforge/
 │   ├── config.json                        # Agent, stack, and project config
 │   ├── constitution.md                    # Project-wide governance principles
+│   ├── manifest.json                      # Architecture + feature→service mapping
+│   ├── communication-map.md               # Mermaid service dependency diagram
+│   ├── orchestration-state.json           # Project-level implementation progress
 │   ├── memory/
 │   │   ├── constitution.md                # Governance rules (AI-readable)
 │   │   └── decisions.md                   # Architecture Decision Records
@@ -189,28 +200,29 @@ project-root/
 │   │   └── cicd.prompts.md                # CI/CD pipeline rules
 │   ├── features/                          # Generated after `specforge decompose`
 │   │   ├── 001-authentication/
-│   │   │   ├── spec.md
-│   │   │   ├── research.md
-│   │   │   ├── data-model.md
-│   │   │   ├── plan.md
-│   │   │   ├── checklist.md
-│   │   │   ├── edge-cases.md
-│   │   │   └── tasks.md
+│   │   │   ├── spec.md                    # User stories, requirements, NFRs
+│   │   │   ├── research.md                # Technology options, library verification
+│   │   │   ├── data-model.md              # Entities, relationships, migrations
+│   │   │   ├── edge-cases.md              # Architecture-aware edge case analysis
+│   │   │   ├── plan.md                    # Architecture decisions, component blueprint
+│   │   │   ├── checklist.md               # Quality gate — must pass before implementation
+│   │   │   ├── tasks.md                   # Dependency-ordered TDD task list
+│   │   │   ├── contracts/                 # API specs, event schemas
+│   │   │   ├── .pipeline-state.json       # Spec pipeline phase tracking
+│   │   │   └── .execution-state.json      # Implementation execution tracking
 │   │   └── 002-accounts-wallets/
 │   │       └── (same artifact structure)
-│   ├── manifest.json                      # Architecture + feature→service mapping
-│   ├── communication-map.md               # Mermaid service dependency diagram
-│   ├── templates/                         # Rendered feature pipeline templates
-│   │   ├── spec-template.md
-│   │   ├── plan-template.md
-│   │   ├── tasks-template.md
-│   │   ├── checklist-template.md
-│   │   ├── research-template.md
-│   │   ├── datamodel-template.md
-│   │   └── edge-cases-template.md
-│   └── scripts/
-│       └── (agent-specific scripts)
-├── src/                                   # Generated application code (future)
+│   ├── cross-service-infra/               # Shared infrastructure tasks (microservice)
+│   │   └── tasks.md                       # Docker compose, gateway, message broker tasks
+│   └── templates/                         # Jinja2 feature pipeline templates
+│       ├── spec-template.md
+│       ├── plan-template.md
+│       ├── tasks-template.md
+│       ├── checklist-template.md
+│       ├── research-template.md
+│       ├── datamodel-template.md
+│       └── edge-cases-template.md
+├── src/                                   # Generated application code
 └── tests/
 ```
 
@@ -224,15 +236,23 @@ Every feature — regardless of complexity — goes through an identical 7-phase
 
 | Phase | Artifact | What It Contains |
 |-------|----------|-----------------|
-| 1 | `spec.md` | User stories (Given/When/Then), functional requirements, non-functional SLOs, explicit out-of-scope, edge case stubs |
-| 2 | `research.md` | Technology options with pros/cons, library version verification, third-party service evaluation, security considerations |
-| 3 | `data-model.md` | All entities with fields and types, relationships, value objects, index strategy, migration plan |
-| 4 | `plan.md` | Architecture decisions, component breakdown, API endpoint design, frontend tree, constitution compliance gate |
-| 5 | `checklist.md` | Quality gate — all items must pass before implementation begins |
-| 6 | `edge-cases.md` | Concurrency, network failure, data boundaries, state machine gaps, security edge cases, UI edge cases |
-| 7 | `tasks.md` | Dependency-ordered tasks with `[P]` parallel markers, test-before-implementation (TDD enforced), file paths per task |
+| 1 | `spec.md` | User stories (Given/When/Then), functional requirements, non-functional SLOs, explicit out-of-scope, edge case stubs, service-scoped context (microservice) |
+| 2 | `research.md` | Technology options with pros/cons, library version verification, structured finding statuses (RESOLVED/UNVERIFIED/BLOCKED/CONFLICTING), architecture-specific research extras |
+| 3 | `data-model.md` | All entities with fields and types, relationships, value objects, index strategy, migration plan — scoped by architecture (isolated per service / shared per module) |
+| 4 | `edge-cases.md` | Architecture-aware edge cases with YAML frontmatter, deterministic severity matrix, inter-service failure scenarios (microservice), interface contract violations (modular-monolith), standard categories (monolith), budget-capped analysis |
+| 5 | `plan.md` | Architecture decisions, component breakdown, API endpoint design, frontend tree, constitution compliance gate, architecture-specific sections via adapter |
+| 6 | `checklist.md` | Quality gate — all items must pass before implementation begins, architecture-specific checklist items |
+| 7 | `tasks.md` | Dependency-ordered tasks with `[P]` parallel markers, TDD enforced, file path hints, effort estimates (S/M/L/XL), governance rule references, conventional commit suggestions |
 
 > **Spec-First Rule**: No implementation begins until all 7 artifacts exist and the checklist gate passes.
+
+### Pipeline State Management
+
+The pipeline tracks phase completion in `.pipeline-state.json`, supporting:
+- **Resumable execution** — interrupt and resume from any phase
+- **Concurrent safety** — atomic lock files prevent parallel corruption
+- **Interrupted detection** — phases left in `in-progress` state are automatically reset on resume
+- **Force re-run** — `--force` flag resets all phases to pending
 
 ---
 
@@ -264,8 +284,15 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 | `specforge check` | Verify all required tools (`git`, `python`, `uv`, agent CLI) are installed | ✅ Implemented |
 | `specforge validate-prompts` | Validate governance prompt files for threshold conflicts across domains | ✅ Implemented |
 | `specforge decompose <description>` | Architecture decision gate → feature decomposition → service mapping → manifest | ✅ Implemented |
-| `specforge implement --all` | Execute all features respecting the dependency graph | 🔜 Planned |
-| `specforge status` | Show progress dashboard across all features | 🔜 Planned |
+| `specforge specify <target>` | Run the 7-phase spec generation pipeline for a service/module | ✅ Implemented |
+| `specforge clarify <target>` | Pattern-based ambiguity detection with interactive Q&A resolution | ✅ Implemented |
+| `specforge research <target>` | Enhanced research with structured finding statuses | ✅ Implemented |
+| `specforge edge-cases <target>` | Architecture-aware edge case analysis with YAML frontmatter | ✅ Implemented |
+| `specforge pipeline-status [target]` | Show pipeline phase status per service/module | ✅ Implemented |
+| `specforge implement <service>` | Execute all tasks for a service via isolated sub-agent | ✅ Implemented |
+| `specforge implement --shared-infra` | Build cross-service infrastructure before any service | ✅ Implemented |
+| `specforge implement --all` | Execute all services respecting the dependency graph with phased orchestration | ✅ Implemented |
+| `specforge implement --resume` | Resume from last completed task | ✅ Implemented |
 
 ---
 
@@ -283,16 +310,6 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 
 ---
 
-### `specforge validate-prompts` Options
-
-| Argument/Option | Type | Default | Description |
-|----------------|------|---------|-------------|
-| `--project` | Option | `.` | Path to the project root containing `.specforge/` |
-
-Exit codes: `0` = no conflicts, `1` = threshold conflicts found, `2` = project not initialized.
-
----
-
 ### `specforge decompose` Options
 
 | Argument/Option | Type | Default | Description |
@@ -302,10 +319,38 @@ Exit codes: `0` = no conflicts, `1` = threshold conflicts found, `2` = project n
 | `--remap` | Option | — | Re-map existing features to a new architecture without losing content |
 | `--no-warn` | Flag | `False` | Suppress over-engineering warnings (for scripted/CI usage) |
 
-The decompose flow executes a 3-step decision pipeline:
-1. **Architecture Decision Gate** — ask monolithic / microservice / modular monolith (unless `--arch` is given)
-2. **Feature Decomposition** — analyze description using 6 built-in domain patterns (finance, e-commerce, SaaS, social, healthcare, education) to produce 8–15 features
-3. **Service Mapping** (microservice only) — group features into services using affinity scoring, with interactive review
+---
+
+### `specforge specify` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `<target>` | Argument | — | Service slug or feature number to run the pipeline for |
+| `--force` | Flag | `False` | Reset all phases to pending and re-run |
+| `--from` | Option | — | Start from a specific phase (`spec`, `research`, `datamodel`, `edgecase`, `plan`, `checklist`, `tasks`) |
+
+---
+
+### `specforge clarify` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `<target>` | Argument | — | Service slug to clarify |
+| `--report` | Flag | `False` | Generate non-interactive report instead of interactive Q&A session |
+
+---
+
+### `specforge implement` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `<target>` | Argument | — | Service slug to implement. Required unless `--shared-infra` or `--all` |
+| `--shared-infra` | Flag | `False` | Build cross-service infrastructure first (microservice/modular-monolith only) |
+| `--all` | Flag | `False` | Implement all services via phased orchestration |
+| `--resume` | Flag | `False` | Resume from last completed task |
+| `--mode` | Option | `prompt-display` | Execution mode: `prompt-display` (show prompt for manual agent use) or `agent-call` (invoke agent directly) |
+| `--max-fix-attempts` | Option | `3` | Max auto-fix retry attempts per task |
+| `--to-phase` | Option | — | Stop after completing a specific phase (used with `--all`) |
 
 ---
 
@@ -333,9 +378,6 @@ specforge init PersonalFinance --agent claude --no-git
 # Check all prerequisites
 specforge check
 
-# Check prerequisites including a specific agent
-specforge check --agent claude
-
 # Validate governance prompt files for conflicts
 specforge validate-prompts
 
@@ -347,6 +389,43 @@ specforge decompose --arch microservice "Create a webapp for PersonalFinance"
 
 # Re-map existing features to a different architecture
 specforge decompose --remap modular-monolith
+
+# Run spec pipeline for a specific service
+specforge specify ledger-service
+
+# Run spec pipeline from a specific phase
+specforge specify ledger-service --from edgecase
+
+# Interactive clarification session
+specforge clarify ledger-service
+
+# Generate clarification report (non-interactive)
+specforge clarify ledger-service --report
+
+# Standalone research generation
+specforge research ledger-service
+
+# Architecture-aware edge case generation
+specforge edge-cases ledger-service
+
+# View pipeline status
+specforge pipeline-status
+specforge pipeline-status ledger-service
+
+# Implement a single service
+specforge implement ledger-service
+
+# Build shared infrastructure first (microservice)
+specforge implement --shared-infra
+
+# Implement all services with phased orchestration
+specforge implement --all
+
+# Resume interrupted implementation
+specforge implement ledger-service --resume
+
+# Use agent-call mode (invoke agent directly)
+specforge implement ledger-service --mode agent-call
 ```
 
 ---
@@ -360,11 +439,12 @@ After running `specforge init`, your AI agent has access to these slash commands
 | Command | Description |
 |---------|-------------|
 | `/specforge.constitution` | Create or update project governing principles — the foundational governance for all sub-agents |
-| `/specforge.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs |
-| `/specforge.clarify` | Identify and resolve underspecified areas before planning (recommended before `/specforge.plan`) |
-| `/specforge.plan` | Generate `plan.md` — technical blueprint with architecture decisions and constitution gate |
-| `/specforge.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list |
-| `/specforge.implement` | Execute all tasks for a feature via isolated sub-agent |
+| `/specforge.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs, service-scoped context |
+| `/specforge.clarify` | Identify and resolve underspecified areas — pattern-based ambiguity detection with boundary analysis |
+| `/specforge.research` | Generate `research.md` — structured findings with RESOLVED/UNVERIFIED/BLOCKED/CONFLICTING statuses |
+| `/specforge.plan` | Generate `plan.md` — technical blueprint with architecture decisions, governance compliance gate, and architecture-specific sections |
+| `/specforge.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list with effort estimates and governance rule references |
+| `/specforge.implement` | Execute all tasks for a feature via isolated sub-agent with auto-fix loop and quality gates |
 
 ### Quality & Validation Commands
 
@@ -372,27 +452,103 @@ After running `specforge init`, your AI agent has access to these slash commands
 |---------|-------------|
 | `/specforge.analyze` | Cross-artifact consistency and coverage analysis — run after `/specforge.tasks`, before `/specforge.implement` |
 | `/specforge.checklist` | Generate quality checklists that validate requirements completeness, clarity, and consistency |
+| `/specforge.edge-cases` | Generate architecture-aware edge case analysis with deterministic severity and YAML frontmatter |
+
+---
+
+## 🏗️ Architecture & Feature Overview
+
+SpecForge is built as 11 incrementally developed features, each fully specified, planned, and implemented following its own spec-first methodology.
+
+### Feature Map
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         SpecForge Feature Architecture                    │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                     │
+│  │ 001 CLI     │  │ 002 Template│  │ 003 Prompt  │   FOUNDATION         │
+│  │ Init/Check  │  │ Engine      │  │ Governance  │   (Phase 1 & 2)      │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                     │
+│         │                │                │                              │
+│  ┌──────▼──────┐         │                │                              │
+│  │ 004 Arch    │◄────────┘                │                              │
+│  │ Decomposer  │                          │                              │
+│  └──────┬──────┘                          │                              │
+│         │                                 │                              │
+│  ┌──────▼──────┐  ┌─────────────┐  ┌─────▼───────┐                     │
+│  │ 005 Spec    │  │ 006 Research│  │ 007 Edge    │   PIPELINE            │
+│  │ Pipeline    │◄─┤ & Clarify   │  │ Case Engine │   (Phase 3)           │
+│  └──────┬──────┘  └─────────────┘  └──────┬──────┘                     │
+│         │                                  │                             │
+│  ┌──────▼──────┐                           │                             │
+│  │ 008 Task    │◄──────────────────────────┘                             │
+│  │ Generation  │                                                         │
+│  └──────┬──────┘                                                         │
+│         │                                                                │
+│  ┌──────▼──────┐  ┌─────────────┐                                       │
+│  │ 009 Sub-    │◄─┤ 010 Quality │   EXECUTION                            │
+│  │ Agent Exec  │  │ Validation  │   (Phase 4)                            │
+│  └──────┬──────┘  └─────────────┘                                       │
+│         │                                                                │
+│  ┌──────▼──────┐                                                         │
+│  │ 011 Impl    │                    ORCHESTRATION                         │
+│  │ Orchestrator│                    (Phase 5)                             │
+│  └─────────────┘                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Feature Summaries
+
+| # | Feature | Purpose |
+|---|---------|---------|
+| 001 | **CLI Init & Scaffold** | `specforge init` with agent auto-detection, stack selection, dry-run preview, git integration, `specforge check` for prerequisites |
+| 002 | **Template Rendering Engine** | Jinja2-based template system with `TemplateRegistry` auto-discovery, 4-step resolution chain (user override → built-in), stack-specific variants, custom filters, variable validation |
+| 003 | **Agent Prompt Governance** | 7-domain governance prompts with precedence rules, stack-specific variants, `PromptLoader` with Result pattern, `PromptValidator` for threshold conflict detection, `PromptContextBuilder` for sub-agent context |
+| 004 | **Architecture Decomposer** | `specforge decompose` with 3-step flow: architecture decision gate → feature decomposition (6 domain patterns) → service mapping (affinity scoring), `manifest.json` with communication maps |
+| 005 | **Spec Generation Pipeline** | 6-phase pipeline generating 7 artifacts per service/module, `ArchitectureAdapter` pattern (microservice/monolith/modular-monolith), concurrent phase execution, pipeline state tracking |
+| 006 | **Research & Clarification Engine** | Pattern-based ambiguity detection, boundary analysis for cross-service concepts, interactive Q&A flow, architecture-change detection, structured research findings with 4 statuses |
+| 007 | **Edge Case Analysis Engine** | Architecture-aware edge cases from declarative YAML patterns, deterministic severity matrix, inter-service failure scenarios, budget-capped analysis (formula: `6+2N+E+2(F-1)`, cap 30), YAML frontmatter |
+| 008 | **Task Generation Engine** | Architecture-specific build sequences (14-step microservice / 7-step monolith), DAG-based dependency ordering, T-shirt effort estimates, governance rule references, cross-service infrastructure tasks |
+| 009 | **Sub-Agent Executor** | Per-service task execution with context isolation, Mode A (prompt-display) / Mode B (agent-call), auto-fix loop with regression detection, git commit per task, Docker verification (microservice) |
+| 010 | **Quality Validation System** | 11 pluggable checkers via `CheckerProtocol`, architecture-aware quality gates, error-categorized auto-fix prompts, diagnostic escalation reports, prompt-rule compliance checking |
+| 011 | **Implementation Orchestrator** | Multi-service phased execution from dependency graph, inter-phase contract verification, docker-compose integration validation, monolith single-app integration test, project-level state persistence |
 
 ---
 
 ## 🌟 Development Phases (Roadmap)
 
-SpecForge is built incrementally. Features 001–004 are complete.
+SpecForge is built incrementally across 5 phases.
 
 ### Phase 1 — Foundation ✅
 **Feature 001** — CLI Scaffold: `specforge init` with agent detection, stack selection, dry-run preview, git integration, `specforge check` for prerequisites.
 
-**Feature 002** — Template Rendering Engine: Jinja2-based template system with `TemplateRegistry` auto-discovery, stack-specific variants, custom filters, snapshot-tested output.
+**Feature 002** — Template Rendering Engine: Jinja2-based template system with `TemplateRegistry` auto-discovery, stack-specific variants, template inheritance, custom filters, variable validation, snapshot-tested output.
 
 ### Phase 2 — Governance & Intelligence ✅
 **Feature 003** — Agent Instruction Prompt System: 7-domain governance layer (`architecture`, `backend`, `frontend`, `database`, `security`, `testing`, `cicd`), stack-specific prompt variants, `PromptLoader` with Result pattern, `PromptValidator` for threshold conflict detection, `specforge validate-prompts` command, `PromptContextBuilder` for sub-agent context assembly.
 
-**Feature 004** — Architecture Decision Gate & Decomposer: `specforge decompose` with 3-step flow (architecture selection → feature decomposition → service mapping), 6 built-in domain patterns, affinity-based service mapper, interactive review/edit, `manifest.json` generation, communication map with Mermaid diagrams, `--arch`/`--remap`/`--no-warn` flags, crash-safe state persistence.
+**Feature 004** — Architecture Decision Gate & Decomposer: `specforge decompose` with 3-step flow (architecture selection → feature decomposition → service mapping), 6 built-in domain patterns (finance, e-commerce, SaaS, social, healthcare, education), affinity-based service mapper, interactive review/edit, `manifest.json` generation, communication map with Mermaid diagrams, `--arch`/`--remap`/`--no-warn` flags, crash-safe state persistence.
 
-### Phase 3 — Sub-Agent Engine 🔜
-Isolated sub-agent execution per feature, parallel feature implementation, auto-fix loop (tests fail → fix → re-test), quality gate, cross-feature integration orchestrator, real-time progress dashboard.
+### Phase 3 — Spec Pipeline ✅
+**Feature 005** — Spec Generation Pipeline: 6-phase pipeline generating 7 specification artifacts per service/module, `ArchitectureAdapter` pattern with three implementations (microservice/monolith/modular-monolith), concurrent pipeline execution via `ThreadPoolExecutor`, `.pipeline-state.json` state tracking, atomic file locking, `specforge specify` and `specforge pipeline-status` commands.
 
-### Phase 4 — Polish & Ecosystem 🔜
+**Feature 006** — Research & Clarification Engine: `specforge clarify` with pattern-based `AmbiguityScanner`, cross-service `BoundaryAnalyzer`, `QuestionGenerator` with ranked suggested answers, interactive Rich-based Q&A sessions, `ClarificationRecorder` for atomic spec.md updates. `specforge research` with `ResearchResolver` producing structured findings (RESOLVED/UNVERIFIED/BLOCKED/CONFLICTING), architecture-change detection via `previous_architecture` metadata.
+
+**Feature 007** — Edge Case Analysis Engine: Declarative YAML pattern files for 13 edge case categories, `MicroserviceEdgeCaseAnalyzer` reads communication maps and events to instantiate service-specific failure scenarios, `ArchitectureEdgeCaseFilter` removes irrelevant categories, deterministic severity via `SeverityMatrix`, `EdgeCaseBudget` with formula `6+2N+E+2(F-1)` capped at 30, YAML frontmatter for machine parseability.
+
+**Feature 008** — Task Generation Engine: `TaskGenerator` orchestrates `DependencyResolver` (DAG + topological sort + cycle detection), `ArchitectureTaskAdapter` (14-step microservice / 7-step monolith build sequences), `CrossServiceTaskGenerator` (shared contracts, Docker compose, message broker, API gateway, shared auth), `EffortEstimator` (T-shirt sizing with feature/dependency scaling), `GovernanceReader` (read-only prompt rule extraction), cross-service `XDEP` references, conditional step filtering.
+
+### Phase 4 — Execution Engine ✅
+**Feature 009** — Sub-Agent Executor: `SubAgentExecutor` processes `tasks.md` in dependency order with isolated `ExecutionContext` per task (constitution + governance + specs + contracts, ~100K token budget), `TaskRunner` with Mode A (prompt-display) and Mode B (agent-call with retry/fallback), `QualityChecker` (build + lint + test), `AutoFixLoop` with regression detection and selective revert, `SharedInfraExecutor` for cross-service infrastructure, `ContractResolver` for dependency contract loading, `DockerManager` for container build/health check/Pact contract tests (microservice only), crash-safe state with git-based committed task detection.
+
+**Feature 010** — Quality Validation System: Pluggable `CheckerProtocol` with 11 concrete checkers (build, lint, test, coverage, line-limit, secrets, TODO scan, prompt-rule compliance, Docker build, Docker service health, contract tests) plus architecture-specific checkers (hardcoded URL detection, proto/event schema validation for microservice; module boundary enforcement, shared migration safety for modular-monolith), `QualityGate` orchestrator selecting checkers by architecture, `AutoFixEngine` with error categorization and targeted fix prompts via Jinja2, `DiagnosticReporter` for structured escalation reports, `LanguageAnalyzerProtocol` with Python AST implementation.
+
+### Phase 5 — Orchestration ✅
+**Feature 011** — Implementation Orchestrator: `IntegrationOrchestrator` reads manifest dependency graph, computes phased execution plan via topological sort, executes `SharedInfraExecutor` → per-phase `PhaseExecutor` → `ContractEnforcer` verification → `IntegrationTestRunner` validation. Within-phase services execute sequentially (continue-then-halt on failure). Contract verification via published `.specforge/features/<slug>/contracts/` files. Auto-generated integration tests from contracts. Docker-compose integration validation for microservices. Single-app integration test for monoliths. Project-level state in `.specforge/orchestration-state.json`.
+
+### Phase 6 — Polish & Ecosystem 🔜
 Brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
 
 ---
@@ -494,16 +650,193 @@ Governance prompts adapt to your stack. Specify `--stack python` during `specfor
 
 ## ⚠️ Edge Cases as First-Class Citizens
 
-Every feature in SpecForge has a dedicated `edge-cases.md` — generated before implementation begins, not discovered after. Categories covered:
+Every feature in SpecForge has a dedicated `edge-cases.md` — generated before implementation begins, not discovered after. The edge case engine is **architecture-aware**, generating different categories based on your project architecture:
+
+### Standard Categories (All Architectures)
 
 - **Concurrency** — two users updating the same resource simultaneously
-- **Network failure** — API timeouts, partial writes, third-party service down
 - **Data boundaries** — empty lists, max values, special characters, encoding issues
 - **State machine gaps** — session expiry mid-flow, interrupted transactions
-- **Integration failures** — rate limiting, contract breaking changes, API deprecation
-- **Security edge cases** — token replay, CSRF, concurrent sessions, privilege escalation
-- **UI edge cases** — long text overflow, missing data, slow connections, keyboard navigation
-- **Recovery** — partial implementation recovery, circular dependency detection, context window overflow
+- **UI/UX** — long text overflow, missing data, slow connections, keyboard navigation
+- **Security** — token replay, CSRF, concurrent sessions, privilege escalation
+- **Data migration** — schema evolution, backward compatibility, rollback scenarios
+
+### Microservice-Specific Categories
+
+- **Service unavailability** — dependent service returns 503 during critical operations
+- **Network partition** — async message loss/delay between services
+- **Eventual consistency** — consumer data lags behind producer after event publication
+- **Distributed transactions** — multi-consumer coordination failures
+- **Version skew** — API/schema changes affecting dependent services
+- **Data ownership** — shared entity conflicts across service boundaries
+
+### Modular-Monolith Addition
+
+- **Interface contract violation** — module boundary violations, cross-module direct DB access
+
+### Deterministic Severity
+
+Edge case severity is determined by a **severity matrix** — not by LLM judgment:
+
+| Dependency Type | Pattern | Severity |
+|----------------|---------|----------|
+| Required | sync-rest / sync-grpc | **Critical** |
+| Required | async-event | **High** |
+| Optional | sync-rest / sync-grpc | **High** |
+| Optional | async-event | **Medium** |
+
+### Budget-Capped Analysis
+
+Edge cases are limited per service using the formula: `budget = 6 + (2 × deps) + events + (2 × max(0, features - 1))`, capped at **30 per service**. When over budget, cases are prioritized by severity × category priority before truncation.
+
+---
+
+## 🧪 Quality Validation System
+
+SpecForge includes a comprehensive **pluggable quality validation system** with 11 concrete checkers organized into standard and architecture-specific categories.
+
+### Standard Checkers (All Architectures)
+
+| Checker | What It Validates |
+|---------|------------------|
+| **Build** | Project compiles without errors |
+| **Lint** | Code passes ruff/eslint with structured output |
+| **Test** | All tests pass (pytest/dotnet test) |
+| **Coverage** | Meets threshold from `testing.prompts.md` (default: 80%, domain: 100%) |
+| **Line Limit** | Functions ≤30 lines, classes ≤200 lines (via AST analysis) |
+| **Secrets** | No hardcoded secrets (regex + entropy detection) |
+| **TODO Scan** | No unresolved TODO/FIXME/HACK markers |
+| **Prompt Rules** | Compliance with Feature 003 governance thresholds |
+
+### Architecture-Specific Checkers
+
+| Checker | Architecture | What It Validates |
+|---------|-------------|------------------|
+| **Docker Build** | Microservice | Docker image builds successfully |
+| **Docker Service** | Microservice | Container starts and passes health check |
+| **Contract Tests** | Microservice | Pact consumer tests pass against dependencies |
+| **URL Detection** | Microservice | No hardcoded service URLs (must use service discovery) |
+| **Interface Validation** | Microservice | Proto files compile, event schemas validate |
+| **Boundary** | Modular-monolith | No cross-module direct DB access or boundary violations |
+| **Migration Safety** | Modular-monolith | Shared migrations don't break module boundaries |
+
+### Auto-Fix with Error Categorization
+
+When quality checks fail, the `AutoFixEngine` generates **targeted fix prompts** based on error category — not generic "fix it" instructions. Regression detection prevents fixes from introducing new failures, with automatic `git checkout` revert when regressions are detected. After 3 failed attempts, a structured `DiagnosticReport` is generated for human review:
+
+```
+Fix Attempt Flow:
+  Quality Check → FAIL → Categorize Error → Generate Targeted Fix Prompt
+       → Agent Applies Fix → Re-Check
+           → PASS → Commit ✓
+           → REGRESSION → Revert Fix → Next Attempt
+           → SAME ERROR → Next Attempt (max 3)
+           → EXHAUSTED → Diagnostic Report → Halt
+```
+
+---
+
+## 🤖 Sub-Agent Execution Engine
+
+The sub-agent executor implements one service at a time by processing its `tasks.md` in dependency order with **strict context isolation**.
+
+### Context Assembly
+
+Each task gets an isolated `ExecutionContext` assembled from:
+
+| Context Section | Source | Priority (truncation order) |
+|----------------|--------|----------------------------|
+| Current task description | `tasks.md` | Highest (never truncated) |
+| Constitution | `constitution.md` | Highest (never truncated) |
+| Service spec | `spec.md` | High |
+| Governance prompts | `.specforge/prompts/` | High |
+| Implementation plan | `plan.md` | Medium |
+| Data model | `data-model.md` | Medium |
+| Dependency contracts | `contracts/` directories | Medium |
+| Architecture prompts | (microservice only) | Low |
+| Edge cases | `edge-cases.md` | Lowest (truncated first) |
+
+**Token budget**: ~100K tokens. When exceeded, lowest-priority sections are truncated first.
+
+**Isolation enforcement**: The context builder physically cannot read paths outside the allowlist (constitution, prompts, target service features, dependency contracts).
+
+### Execution Modes
+
+| Mode | Behavior |
+|------|----------|
+| **prompt-display** (default) | Renders the implementation prompt, displays it with Rich formatting, optionally copies to clipboard. User manually runs it in their agent and confirms completion. |
+| **agent-call** | Sends prompt directly to detected agent via subprocess. Retries 3 times with exponential backoff (1s, 2s, 4s), then falls back to prompt-display. |
+
+### Per-Task Workflow
+
+```
+For each pending task (in dependency order):
+  1. Update state → in-progress
+  2. Build ExecutionContext (context isolation enforced)
+  3. Generate ImplementPrompt from context
+  4. Execute via TaskRunner (Mode A or Mode B)
+  5. Run QualityChecker (build + lint + test)
+  6. If PASS → git commit (conventional commit) → save state → next task
+  7. If FAIL → AutoFixLoop (max 3 attempts)
+     → If fix succeeds → commit combined changes → next task
+     → If fix exhausted → save state → HALT
+```
+
+### Crash Recovery
+
+The engine handles crash scenarios between git commit and state save by checking `git log --grep="<task_id>"` on resume. If the commit exists, the task is marked completed without re-execution.
+
+---
+
+## 🔄 Implementation Orchestrator
+
+The orchestrator coordinates multi-service implementation through **phased execution** derived from the service dependency graph.
+
+### Microservice Orchestration Flow
+
+```
+manifest.json → Build Dependency Graph → Detect Cycles → Compute Phases
+    │
+    ▼
+Phase 0: SharedInfraExecutor
+    → Shared contracts, Docker compose, message broker, API gateway, shared auth
+    │
+    ▼
+Phase 1..N: PhaseExecutor (services with no unmet dependencies)
+    → SubAgentExecutor per service (sequential within phase)
+    → ContractEnforcer.verify() after each phase
+    → If contract verification fails → HALT
+    │
+    ▼
+Integration: IntegrationTestRunner
+    → docker-compose up → health checks → request flow → event propagation
+    │
+    ▼
+Report: IntegrationReporter
+    → Markdown integration report via Jinja2
+```
+
+### Monolith Orchestration Flow
+
+```
+manifest.json → Topological Module Ordering
+    │
+    ▼
+Phase 1..N: Sequential module implementation
+    → SubAgentExecutor per module
+    → Boundary verification after each phase (modular-monolith)
+    │
+    ▼
+Integration: Single-app integration test (no Docker)
+```
+
+### Failure Policy
+
+**Continue-then-halt**: When a service fails within a phase, remaining services in the same phase continue to completion (they have no mutual dependencies by definition). The orchestrator then halts before the next phase to prevent building on incomplete foundations.
+
+### State Persistence
+
+Project-level orchestration state is stored in `.specforge/orchestration-state.json`, separate from per-service execution state. Both use atomic writes (temp file + `os.replace()`) for crash safety.
 
 ---
 
@@ -514,6 +847,8 @@ Every feature in SpecForge has a dedicated `edge-cases.md` — generated before 
 - [uv](https://docs.astral.sh/uv/) — for package management and tool install
 - [Python 3.11+](https://www.python.org/downloads/)
 - [Git](https://git-scm.com/downloads)
+- [Docker](https://docs.docker.com/get-docker/) — required for microservice architecture (container build, health check, integration validation)
+- [docker-compose](https://docs.docker.com/compose/) — required for microservice integration testing
 
 Run `specforge check` at any time to verify your environment.
 
@@ -579,62 +914,64 @@ State is saved after each step — if interrupted, re-running resumes from where
 For each feature, work through the 7-phase pipeline:
 
 **Specify:**
+```bash
+specforge specify ledger-service
 ```
-/specforge.specify 001-authentication
-```
-Produces `spec.md` with user stories (Given/When/Then), functional requirements, NFR SLOs, and edge case stubs.
+Runs the full 6-phase pipeline producing `spec.md`, `research.md`, `data-model.md`, `edge-cases.md`, `plan.md`, `checklist.md`, and `tasks.md` — all scoped to the service's features and architecture.
 
-**Clarify:**
+**Clarify (optional, recommended):**
+```bash
+specforge clarify ledger-service
 ```
-/specforge.clarify
-```
-Resolves underspecified areas through structured Q&A — answers recorded directly in the spec.
+Pattern-based ambiguity scanner detects vague terms, undefined concepts, missing boundaries, and cross-service entity conflicts. Interactive Q&A session records answers directly in `spec.md`.
 
-**Plan:**
+**Research (optional):**
+```bash
+specforge research ledger-service
 ```
-/specforge.plan The backend uses ASP.NET Core 8 with PostgreSQL via EF Core. JWT authentication with refresh tokens.
-```
-Produces `plan.md`, `research.md`, `data-model.md`, `contracts/api-spec.json`, and `quickstart.md`.
+Generates enhanced research with structured findings. Scans for `NEEDS CLARIFICATION` markers, technology references, and architecture-specific topics.
 
-**Validate:**
+**Edge Cases (standalone):**
+```bash
+specforge edge-cases ledger-service
 ```
-/specforge.checklist 001-authentication
-```
-Generates and runs the quality gate. All items must pass before tasks are generated.
-
-**Generate tasks:**
-```
-/specforge.tasks
-```
-Produces `tasks.md` with TDD-ordered tasks, `[P]` parallel markers, exact file paths, and conventional commit labels per task.
+Generates architecture-aware edge cases with YAML frontmatter, deterministic severity, and budget-capped analysis.
 
 **Implement:**
+```bash
+specforge implement ledger-service
 ```
-/specforge.implement
-```
-The sub-agent loads constitution + applicable prompt files + this feature's spec artifacts — nothing else. It executes tasks in order, runs tests after each task, and auto-fixes failures (max 3 iterations).
+The sub-agent loads constitution + applicable prompt files + this service's spec artifacts — nothing else. It executes tasks in dependency order, runs quality checks after each task, and auto-fixes failures (max 3 iterations).
 
 ---
 
-### STEP 4: Run all features
+### STEP 4: Run all services
 
-Once all features are specified and planned, implement them respecting the dependency graph:
+Once all services are specified and planned, implement them respecting the dependency graph:
 
 ```bash
-specforge implement --all --parallel
+# Build shared infrastructure first (microservice/modular-monolith)
+specforge implement --shared-infra
+
+# Then implement all services with phased orchestration
+specforge implement --all
 ```
 
-Features in the same dependency phase run concurrently. The integration orchestrator merges them, resolves shared contracts, and runs end-to-end integration tests.
+The orchestrator computes dependency phases, implements services per phase, verifies contracts between phases, and runs integration tests at the end.
 
 ---
 
 ### STEP 5: Check progress
 
 ```bash
-specforge status
+# Per-service pipeline status
+specforge pipeline-status
+
+# Specific service
+specforge pipeline-status ledger-service
 ```
 
-Shows a real-time dashboard across all features: `specifying → planning → implementing → testing → complete`.
+Shows phase completion status across all services: `pending → in-progress → complete → failed`.
 
 </details>
 
@@ -688,7 +1025,44 @@ specforge init my-project --force
 
 ### Sub-agent violates prompt file rules
 
-Sub-agents that generate code violating agent instruction prompts (e.g., function exceeds 30 lines, missing type hints) have their output automatically flagged. The agent is instructed to regenerate the affected section. After 3 failed iterations, the task is escalated with a diagnostic report for human review.
+Sub-agents that generate code violating agent instruction prompts (e.g., function exceeds 30 lines, missing type hints) have their output automatically flagged. The quality validation system runs 11 checks including prompt-rule compliance. The agent is instructed to regenerate the affected section with a targeted fix prompt. After 3 failed iterations, a structured diagnostic report is generated for human review.
+
+---
+
+### Pipeline interrupted mid-execution
+
+All pipeline operations are resumable. State is saved after each phase/task:
+
+```bash
+# Resume spec pipeline
+specforge specify ledger-service  # auto-resumes from last completed phase
+
+# Resume implementation
+specforge implement ledger-service --resume
+
+# Resume multi-service orchestration
+specforge implement --all --resume
+```
+
+---
+
+### Contract verification fails between phases
+
+When inter-phase contract verification fails, the orchestrator halts and reports which service pairs have incompatible contracts. Fix the contracts in `.specforge/features/<slug>/contracts/` and re-run:
+
+```bash
+specforge implement --all --resume
+```
+
+---
+
+### Docker health check fails during verification
+
+Microservice post-implementation verification includes Docker image build, health check, and Pact contract tests. If the health check fails:
+
+1. Check the service's Dockerfile and health endpoint (convention: `GET /health`)
+2. Verify the service starts within the timeout (default: 30 seconds)
+3. The auto-fix loop will attempt to resolve build/health issues up to 3 times
 
 ---
 
