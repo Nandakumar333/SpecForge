@@ -1,13 +1,19 @@
-"""Unit tests for MetricsCalculator (Feature 012 — Phase 3)."""
+"""Unit tests for MetricsCalculator (Feature 012 — Phases 3-5)."""
 
 from __future__ import annotations
 
 from specforge.core.metrics_calculator import (
+    aggregate_quality,
     build_lifecycle,
+    calculate_phase_progress,
     derive_service_status,
 )
 from specforge.core.result import Err, Ok
 from specforge.core.status_collector import ServiceRawState
+from specforge.core.status_models import (
+    LifecyclePhases,
+    ServiceStatusRecord,
+)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────
@@ -326,3 +332,307 @@ class TestBuildLifecycle:
         lc = build_lifecycle(raw, "microservice")
         assert lc.tests_passed == 20
         assert lc.tests_total == 20
+
+
+# ── Helpers for Phase Progress + Quality tests ────────────────────────
+
+
+def _svc_record(
+    slug: str,
+    status: str,
+    impl_percent: int | None = None,
+    phase_index: int | None = None,
+    features: tuple[str, ...] = ("F001",),
+    tests_passed: int | None = None,
+    tests_total: int | None = None,
+) -> ServiceStatusRecord:
+    return ServiceStatusRecord(
+        slug=slug,
+        display_name=slug.title(),
+        features=features,
+        lifecycle=LifecyclePhases(impl_percent=impl_percent,
+                                  tests_passed=tests_passed,
+                                  tests_total=tests_total),
+        overall_status=status,
+        phase_index=phase_index,
+    )
+
+
+def _orch_data(phases: list[dict]) -> dict:
+    return {"architecture": "microservice", "status": "in-progress", "phases": phases}
+
+
+def _orch_phase(
+    index: int,
+    services: list[str],
+    label: str = "",
+) -> dict:
+    return {
+        "index": index,
+        "label": label or f"Phase {index}",
+        "services": [{"slug": s} for s in services],
+    }
+
+
+# ── T013: Phase progress tests ───────────────────────────────────────
+
+
+class TestCalculatePhaseProgress:
+    def test_calculate_phase_progress_all_complete(self) -> None:
+        orch = _orch_data([_orch_phase(0, ["svc-a", "svc-b"])])
+        statuses = {
+            "svc-a": _svc_record("svc-a", "COMPLETE"),
+            "svc-b": _svc_record("svc-b", "COMPLETE"),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        assert len(result) == 1
+        assert result[0].completion_percent == 100.0
+        assert result[0].status == "complete"
+
+    def test_calculate_phase_progress_partial(self) -> None:
+        orch = _orch_data([_orch_phase(0, ["svc-a", "svc-b"])])
+        statuses = {
+            "svc-a": _svc_record("svc-a", "COMPLETE"),
+            "svc-b": _svc_record("svc-b", "IN_PROGRESS", impl_percent=50),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        assert len(result) == 1
+        assert 0 < result[0].completion_percent < 100.0
+        assert result[0].status == "in-progress"
+
+    def test_calculate_phase_progress_blocked(self) -> None:
+        orch = _orch_data([
+            _orch_phase(0, ["svc-a"]),
+            _orch_phase(1, ["svc-b"]),
+        ])
+        statuses = {
+            "svc-a": _svc_record("svc-a", "IN_PROGRESS", impl_percent=50),
+            "svc-b": _svc_record("svc-b", "NOT_STARTED"),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        assert len(result) == 2
+        # Phase 1 should be blocked by phase 0
+        assert result[1].status == "blocked"
+        assert result[1].blocked_by == 0
+
+    def test_calculate_phase_progress_no_orchestration_state(self) -> None:
+        statuses = {"svc-a": _svc_record("svc-a", "COMPLETE")}
+        result = calculate_phase_progress(None, statuses)
+        assert result == ()
+
+    def test_calculate_phase_progress_monolith(self) -> None:
+        # Monolith: no phases in orch_data
+        orch = _orch_data([])
+        statuses = {"mono": _svc_record("mono", "COMPLETE")}
+        result = calculate_phase_progress(orch, statuses)
+        assert result == ()
+
+    def test_phase_service_details(self) -> None:
+        orch = _orch_data([_orch_phase(0, ["svc-a", "svc-b"])])
+        statuses = {
+            "svc-a": _svc_record("svc-a", "COMPLETE"),
+            "svc-b": _svc_record("svc-b", "IN_PROGRESS", impl_percent=60),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        details = result[0].service_details
+        assert len(details) == 2
+        slugs = {d.slug for d in details}
+        assert slugs == {"svc-a", "svc-b"}
+        for d in details:
+            if d.slug == "svc-b":
+                assert d.status == "IN_PROGRESS"
+                assert d.impl_percent == 60
+
+    def test_calculate_phase_progress_not_started_services_reduce_percent(
+        self,
+    ) -> None:
+        orch = _orch_data([_orch_phase(0, ["a", "b", "c"])])
+        statuses = {
+            "a": _svc_record("a", "COMPLETE"),
+            "b": _svc_record("b", "NOT_STARTED"),
+            "c": _svc_record("c", "NOT_STARTED"),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        # 1 complete (100) + 2 not started (0 each) → ~33%
+        assert 30.0 <= result[0].completion_percent <= 36.0
+
+    def test_calculate_phase_progress_multi_feature_service_no_double_count(
+        self,
+    ) -> None:
+        orch = _orch_data([_orch_phase(0, ["svc-a"])])
+        statuses = {
+            "svc-a": _svc_record(
+                "svc-a", "IN_PROGRESS",
+                impl_percent=50,
+                features=("F001", "F002", "F003"),
+            ),
+        }
+        result = calculate_phase_progress(orch, statuses)
+        # Only 1 service, counted once despite multiple features
+        assert len(result[0].services) == 1
+        assert len(result[0].service_details) == 1
+
+
+# ── T017: Quality aggregation tests ──────────────────────────────────
+
+
+class TestAggregateQuality:
+    def test_aggregate_quality_service_counts_by_status(self) -> None:
+        services = (
+            _svc_record("a", "COMPLETE"),
+            _svc_record("b", "IN_PROGRESS"),
+            _svc_record("c", "PLANNING"),
+            _svc_record("d", "NOT_STARTED"),
+            _svc_record("e", "BLOCKED"),
+            _svc_record("f", "FAILED"),
+            _svc_record("g", "UNKNOWN"),
+        )
+        q = aggregate_quality(services, "microservice", {})
+        assert q.services_total == 7
+        assert q.services_complete == 1
+        assert q.services_in_progress == 1
+        assert q.services_planning == 1
+        assert q.services_not_started == 1
+        assert q.services_blocked == 1
+        assert q.services_failed == 1
+        assert q.services_unknown == 1
+        total = (
+            q.services_complete + q.services_in_progress + q.services_planning
+            + q.services_not_started + q.services_blocked
+            + q.services_failed + q.services_unknown
+        )
+        assert total == q.services_total
+
+    def test_aggregate_quality_task_counts(self) -> None:
+        services = (_svc_record("a", "IN_PROGRESS"),)
+        raw_states = {
+            "a": ServiceRawState(
+                slug="a",
+                execution=Ok({"tasks": [
+                    {"task_id": "T1", "status": "completed"},
+                    {"task_id": "T2", "status": "completed"},
+                    {"task_id": "T3", "status": "failed"},
+                    {"task_id": "T4", "status": "in-progress"},
+                ]}),
+            ),
+        }
+        q = aggregate_quality(services, "microservice", raw_states)
+        assert q.tasks_total == 4
+        assert q.tasks_complete == 2
+        assert q.tasks_failed == 1
+
+    def test_aggregate_quality_coverage_average(self) -> None:
+        services = (
+            _svc_record("a", "COMPLETE"),
+            _svc_record("b", "IN_PROGRESS"),
+            _svc_record("c", "NOT_STARTED"),
+        )
+        raw_states = {
+            "a": ServiceRawState(
+                slug="a",
+                quality=Ok({"gate_result": {"check_results": [
+                    {"checker_name": "coverage_checker", "output": "Coverage: 80%"},
+                ]}}),
+            ),
+            "b": ServiceRawState(
+                slug="b",
+                quality=Ok({"gate_result": {"check_results": [
+                    {"checker_name": "coverage_checker", "output": "Coverage: 60%"},
+                ]}}),
+            ),
+            # c has no quality → excluded from avg
+        }
+        q = aggregate_quality(services, "microservice", raw_states)
+        assert q.coverage_avg == 70.0
+
+    def test_aggregate_quality_docker_metrics_microservice_only(self) -> None:
+        services = (_svc_record("a", "COMPLETE"), _svc_record("b", "COMPLETE"))
+        raw_states = {
+            "a": ServiceRawState(
+                slug="a",
+                quality=Ok({"gate_result": {"check_results": [
+                    {"checker_name": "docker_checker", "passed": True},
+                ]}}),
+            ),
+            "b": ServiceRawState(
+                slug="b",
+                quality=Ok({"gate_result": {"check_results": [
+                    {"checker_name": "docker_checker", "passed": False},
+                ]}}),
+            ),
+        }
+        q = aggregate_quality(services, "microservice", raw_states)
+        assert q.docker_total == 2
+        assert q.docker_built == 1
+        assert q.docker_failing == 1
+
+    def test_aggregate_quality_docker_metrics_none_for_monolith(self) -> None:
+        services = (_svc_record("a", "COMPLETE"),)
+        q = aggregate_quality(services, "monolithic", {})
+        assert q.docker_built is None
+        assert q.docker_total is None
+        assert q.docker_failing is None
+
+    def test_aggregate_quality_contract_results(self) -> None:
+        services = (_svc_record("a", "COMPLETE"),)
+        raw_states = {
+            "a": ServiceRawState(
+                slug="a",
+                quality=Ok({"gate_result": {"check_results": [
+                    {"checker_name": "contract_checker", "passed": True},
+                    {"checker_name": "contract_checker", "passed": True},
+                    {"checker_name": "contract_checker", "passed": False},
+                ]}}),
+            ),
+        }
+        q = aggregate_quality(services, "microservice", raw_states)
+        assert q.contract_total == 3
+        assert q.contract_passed == 2
+
+    def test_aggregate_quality_autofix_rate(self) -> None:
+        services = (_svc_record("a", "COMPLETE"),)
+        raw_states = {
+            "a": ServiceRawState(
+                slug="a",
+                execution=Ok({"tasks": [
+                    {"task_id": "T1", "status": "completed",
+                     "fix_attempts": [
+                         {"success": True},
+                         {"success": False},
+                         {"success": True},
+                     ]},
+                    {"task_id": "T2", "status": "completed",
+                     "fix_attempts": [{"success": True}]},
+                ]}),
+            ),
+        }
+        q = aggregate_quality(services, "microservice", raw_states)
+        # 3 success / 4 total = 0.75
+        assert q.autofix_success_rate == 0.75
+
+    def test_aggregate_quality_no_reports(self) -> None:
+        services = (_svc_record("a", "NOT_STARTED"),)
+        q = aggregate_quality(services, "microservice", {})
+        assert q.tasks_total == 0
+        assert q.tasks_complete == 0
+        assert q.tasks_failed == 0
+        assert q.coverage_avg is None
+        assert q.docker_built is None
+        assert q.docker_total is None
+        assert q.autofix_success_rate is None
+
+    def test_has_failures_true_when_any_failed(self) -> None:
+        services = (
+            _svc_record("a", "COMPLETE"),
+            _svc_record("b", "FAILED"),
+        )
+        q = aggregate_quality(services, "microservice", {})
+        assert q.services_failed > 0
+
+    def test_has_failures_false_when_none_failed(self) -> None:
+        services = (
+            _svc_record("a", "COMPLETE"),
+            _svc_record("b", "IN_PROGRESS"),
+        )
+        q = aggregate_quality(services, "microservice", {})
+        assert q.services_failed == 0

@@ -15,14 +15,15 @@ from specforge.core.config import (
     PIPELINE_STATE_FILENAME,
     QUALITY_REPORT_FILENAME,
 )
+from specforge.core.graph_builder import build_dependency_graph
 from specforge.core.metrics_calculator import (
+    aggregate_quality,
     build_lifecycle,
-    build_quality_summary,
+    calculate_phase_progress,
     derive_service_status,
 )
 from specforge.core.result import Err, Ok, Result
 from specforge.core.status_models import (
-    DependencyGraph,
     ProjectStatusSnapshot,
     ServiceStatusRecord,
 )
@@ -176,19 +177,24 @@ def collect_project_status(
     orch_result = read_orchestration_state(project_root)
     orch_data = _extract_orch_data(orch_result)
 
-    services, warnings = _build_service_records(
+    services, warnings, raw_map = _build_service_records(
         manifest, features_dir, orch_data,
     )
-    quality = build_quality_summary(services)
+    svc_tuple = tuple(services)
+    status_map = {s.slug: s for s in services}
+    phases = calculate_phase_progress(orch_data, status_map)
+    quality = aggregate_quality(svc_tuple, manifest.architecture, raw_map)
     has_failures = any(s.overall_status == "FAILED" for s in services)
+    service_statuses = {s.slug: s.overall_status for s in services}
+    graph = build_dependency_graph(manifest, service_statuses)
 
     return Ok(ProjectStatusSnapshot(
         project_name=manifest.project_name,
         architecture=manifest.architecture,
-        services=tuple(services),
-        phases=(),
+        services=svc_tuple,
+        phases=phases,
         quality=quality,
-        graph=DependencyGraph(nodes=()),
+        graph=graph,
         warnings=tuple(warnings),
         timestamp=datetime.now(timezone.utc).isoformat(),
         has_failures=has_failures,
@@ -208,15 +214,17 @@ def _build_service_records(
     manifest: ManifestData,
     features_dir: Path,
     orch_data: dict | None,
-) -> tuple[list[ServiceStatusRecord], list[str]]:
-    """Build service records and collect warnings."""
+) -> tuple[list[ServiceStatusRecord], list[str], dict[str, ServiceRawState]]:
+    """Build service records, collect warnings, and return raw states."""
     services: list[ServiceStatusRecord] = []
     warnings: list[str] = []
+    raw_map: dict[str, ServiceRawState] = {}
     for entry in manifest.services:
         raw = _enrich_raw_state(features_dir, entry.slug, orch_data)
+        raw_map[entry.slug] = raw
         _collect_warnings(raw, warnings)
         services.append(_build_one_record(entry, raw, manifest.architecture))
-    return services, warnings
+    return services, warnings, raw_map
 
 
 def _enrich_raw_state(
