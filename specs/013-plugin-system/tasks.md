@@ -55,7 +55,7 @@
 ### Rule Formatting Utility (TDD)
 
 - [ ] T012 Write unit tests for PluginRule → markdown formatting in `tests/unit/test_rule_formatter.py`: test single rule formats to correct `### RULE-ID: Title` block with severity, scope, rule, threshold, example_correct, example_incorrect fields; test multiple rules concatenated; test empty thresholds dict; test multiline examples
-- [ ] T013 Implement `format_plugin_rules(rules: list[PluginRule]) -> str` function in `src/specforge/plugins/rule_formatter.py` that converts PluginRule list to governance-compatible markdown rule blocks matching the existing `### RULE-ID: Title` format used in `.prompts.md` files
+- [ ] T013 Implement rule formatting via Jinja2 template: create `src/specforge/templates/base/governance/plugin_rule_block.md.j2` template that renders a list of PluginRule objects into governance-compatible `### RULE-ID: Title` markdown blocks. Implement `format_plugin_rules(rules: list[PluginRule]) -> str` in `src/specforge/plugins/rule_formatter.py` that renders the template via TemplateRenderer (constitution II compliance: no string concatenation for file content)
 
 ### PromptFileManager Integration (TDD)
 
@@ -75,17 +75,17 @@
 ### DotnetPlugin — Reference Implementation (TDD, most detailed)
 
 - [ ] T016 Write comprehensive unit tests for DotnetPlugin in `tests/unit/test_dotnet_plugin.py`: test `plugin_name` returns `"dotnet"`, test `supported_architectures` includes all 3 types, test `get_prompt_rules("microservice")` returns rules in `"backend"` domain containing per-service application patterns + multi-stage container build + gRPC proto compilation + MassTransit event handlers + per-service DbContext, test `get_prompt_rules("monolithic")` returns rules in `"backend"` domain containing single DbContext + MediatR module communication + NO container/gRPC/event bus rules, test `get_prompt_rules("modular-monolith")` returns monolith rules PLUS strict module boundary enforcement + interface contracts, test rules are in `"database"` and `"cicd"` domains too, test each rule has valid PluginRule fields (non-empty rule_id/title/severity/scope/description, correct severity values)
-- [ ] T017 Implement DotnetPlugin in `src/specforge/plugins/stacks/dotnet_plugin.py`: concrete StackPlugin subclass. Internal structure: `_base_dotnet_rules()` for stack-generic .NET rules, `_microservice_rules()` for per-service patterns/container build/gRPC/MassTransit/per-service DbContext, `_monolith_rules()` for single DbContext/MediatR/no containers, `_modular_monolith_rules()` extending monolith with boundary enforcement. Return rules keyed by domain (`backend`, `database`, `cicd`). `get_docker_config("microservice")` returns DockerConfig with `mcr.microsoft.com/dotnet/sdk` and `mcr.microsoft.com/dotnet/aspnet` stages. `get_docker_config("monolithic")` returns None. `get_test_commands()` returns `["dotnet test"]`. `get_build_commands(arch)` varies by architecture.
+- [ ] T017 Implement DotnetPlugin in `src/specforge/plugins/stacks/dotnet_plugin.py`: concrete StackPlugin subclass. Rule data MUST be extracted to a separate data module `src/specforge/plugins/stacks/dotnet_rules.py` to keep the plugin class under 200 lines (constitution III). The rules module defines `BASE_RULES`, `MICROSERVICE_RULES`, `MONOLITH_RULES`, `MODULAR_MONOLITH_RULES` as lists of PluginRule keyed by domain. Plugin class delegates: `_base_dotnet_rules()` loads from data module, `_microservice_rules()` for per-service patterns/container build/gRPC/MassTransit/per-service DbContext, `_monolith_rules()` for single DbContext/MediatR/no containers, `_modular_monolith_rules()` extending monolith with boundary enforcement. Return rules keyed by domain (`backend`, `database`, `cicd`). `get_docker_config("microservice")` returns DockerConfig with `mcr.microsoft.com/dotnet/sdk` and `mcr.microsoft.com/dotnet/aspnet` stages. `get_docker_config("monolithic")` returns None. `get_test_commands()` returns `["dotnet test"]`. `get_build_commands(arch)` varies by architecture.
 
 ### PythonPlugin (TDD, follows DotnetPlugin pattern)
 
 - [ ] T018 [P] [US1] Write unit tests for PythonPlugin in `tests/unit/test_python_plugin.py`: test `plugin_name` returns `"python"`, test microservice rules contain FastAPI per-service + Docker python:slim + Celery/Dramatiq events + SQLAlchemy per-service models, test monolith rules contain single-app + shared models + synchronous communication + NO container/event bus rules, test modular-monolith adds boundary enforcement, test rules span `backend`/`database`/`cicd` domains, test all rules have valid PluginRule fields
-- [ ] T019 [P] [US1] Implement PythonPlugin in `src/specforge/plugins/stacks/python_plugin.py`: concrete StackPlugin subclass following DotnetPlugin pattern. Python-specific: FastAPI, SQLAlchemy, Celery, Docker python:slim, pytest. `get_docker_config("microservice")` returns DockerConfig with `python:3.11-slim`. `get_test_commands()` returns `["pytest"]`.
+- [ ] T019 [P] [US1] Implement PythonPlugin in `src/specforge/plugins/stacks/python_plugin.py` with rule data in `src/specforge/plugins/stacks/python_rules.py` (200-line class limit compliance): concrete StackPlugin subclass following DotnetPlugin pattern. Python-specific: FastAPI, SQLAlchemy, Celery, Docker python:slim, pytest. `get_docker_config("microservice")` returns DockerConfig with `python:3.11-slim`. `get_test_commands()` returns `["pytest"]`.
 
 ### NodejsPlugin (TDD, follows DotnetPlugin pattern)
 
 - [ ] T020 [P] [US1] Write unit tests for NodejsPlugin in `tests/unit/test_nodejs_plugin.py`: test `plugin_name` returns `"nodejs"`, test microservice rules contain Express/Fastify per-service + Docker node:alpine + NATS/RabbitMQ event handlers + Prisma/TypeORM per-service schema, test monolith rules contain single-app + shared schema + NO container/event bus rules, test modular-monolith adds boundary enforcement, test rules span `backend`/`database`/`cicd` domains, test all rules have valid PluginRule fields
-- [ ] T021 [P] [US1] Implement NodejsPlugin in `src/specforge/plugins/stacks/nodejs_plugin.py`: concrete StackPlugin subclass following DotnetPlugin pattern. Node.js-specific: Express/Fastify, Prisma/TypeORM, NATS, Docker node:alpine. `get_docker_config("microservice")` returns DockerConfig with `node:20-alpine`. `get_test_commands()` returns `["npm test"]`.
+- [ ] T021 [P] [US1] Implement NodejsPlugin in `src/specforge/plugins/stacks/nodejs_plugin.py` with rule data in `src/specforge/plugins/stacks/nodejs_rules.py` (200-line class limit compliance): concrete StackPlugin subclass following DotnetPlugin pattern. Node.js-specific: Express/Fastify, Prisma/TypeORM, NATS, Docker node:alpine. `get_docker_config("microservice")` returns DockerConfig with `node:20-alpine`. `get_test_commands()` returns `["npm test"]`.
 
 ### Snapshot Tests
 
@@ -125,10 +125,10 @@
 - [ ] T033 [P] [US2] Implement WindsurfPlugin in `src/specforge/plugins/agents/windsurf_plugin.py`: SingleFileAgentPlugin, `.windsurfrules`
 - [ ] T034 [P] [US2] Implement CodexPlugin in `src/specforge/plugins/agents/codex_plugin.py`: SingleFileAgentPlugin, `AGENTS.md`
 - [ ] T035 [P] [US2] Implement KiroPlugin in `src/specforge/plugins/agents/kiro_plugin.py`: DirectoryAgentPlugin, `.kiro/rules.md`
-- [ ] T036 [P] [US2] Implement batch of single-file agent plugins — each is a SingleFileAgentPlugin subclass with agent-specific file path: `src/specforge/plugins/agents/amp_plugin.py` (AMP.md), `auggie_plugin.py` (AUGGIE.md), `codebuddy_plugin.py` (CODEBUDDY.md), `bob_plugin.py` (.bob/rules.md), `jules_plugin.py` (JULES.md), `kilocode_plugin.py` (.kilocode), `opencode_plugin.py` (OPENCODE.md), `pi_plugin.py` (PI.md), `qoder_plugin.py` (QODER.md), `qwen_plugin.py` (QWEN.md), `roocode_plugin.py` (.roo/rules.md), `shai_plugin.py` (SHAI.md), `tabnine_plugin.py` (TABNINE.md), `mistral_plugin.py` (MISTRAL.md), `kimi_plugin.py` (KIMI.md), `antigravity_plugin.py` (.agy/rules.md), `trae_plugin.py` (.trae/rules.md)
-- [ ] T037 [US2] Write unit tests for GenericPlugin in `tests/unit/test_generic_plugin.py`: test `agent_name()` returns `"generic"`, test `generate_config()` writes to user-specified directory, test fallback behavior when no directory is specified
-- [ ] T038 [US2] Implement GenericPlugin in `src/specforge/plugins/agents/generic_plugin.py`: direct AgentPlugin subclass that accepts `commands_dir` parameter and writes governance content to specified directory
-- [ ] T039 [US2] Write parametrized unit test in `tests/unit/test_agent_plugins.py` that iterates ALL 25+ agent plugins, verifies each: has non-empty `agent_name()`, has non-empty `config_files()`, `generate_config()` in a `tmp_path` produces files at expected paths with non-empty content
+- [ ] T036 [US2] Write parametrized unit test in `tests/unit/test_agent_plugins.py` that iterates ALL 25+ agent plugins, verifies each: has non-empty `agent_name()`, has non-empty `config_files()`, `generate_config()` in a `tmp_path` produces files at expected paths with non-empty content. This test MUST be written before T037 (TDD compliance — constitution IV).
+- [ ] T037 [P] [US2] Implement batch of single-file agent plugins — each is a SingleFileAgentPlugin subclass with agent-specific file path: `src/specforge/plugins/agents/amp_plugin.py` (AMP.md), `auggie_plugin.py` (AUGGIE.md), `codebuddy_plugin.py` (CODEBUDDY.md), `bob_plugin.py` (.bob/rules.md), `jules_plugin.py` (JULES.md), `kilocode_plugin.py` (.kilocode), `opencode_plugin.py` (OPENCODE.md), `pi_plugin.py` (PI.md), `qoder_plugin.py` (QODER.md), `qwen_plugin.py` (QWEN.md), `roocode_plugin.py` (.roo/rules.md), `shai_plugin.py` (SHAI.md), `tabnine_plugin.py` (TABNINE.md), `mistral_plugin.py` (MISTRAL.md), `kimi_plugin.py` (KIMI.md), `antigravity_plugin.py` (.agy/rules.md), `trae_plugin.py` (.trae/rules.md)
+- [ ] T038 [US2] Write unit tests for GenericPlugin in `tests/unit/test_generic_plugin.py`: test `agent_name()` returns `"generic"`, test `generate_config()` writes to user-specified directory, test fallback behavior when no directory is specified
+- [ ] T039 [US2] Implement GenericPlugin in `src/specforge/plugins/agents/generic_plugin.py`: direct AgentPlugin subclass that accepts `commands_dir` parameter and writes governance content to specified directory
 
 **Checkpoint**: All 25+ agent plugins produce correctly located configuration files. Each agent's config contains SpecForge governance content in the format that agent expects.
 
@@ -264,16 +264,18 @@ Both: T022 (snapshot all 9 combinations)
 ```text
 # After reference agents (T026-T031) are complete:
 
-# Launch all remaining agents in parallel:
+# Launch remaining reference agents in parallel:
 Worker A: T032 (GeminiPlugin)
 Worker B: T033 (WindsurfPlugin)
 Worker C: T034 (CodexPlugin)
 Worker D: T035 (KiroPlugin)
-Worker E: T036 (batch of 17 single-file agents)
 
-# Then Generic + full validation:
-T037-T038 (GenericPlugin)
-T039 (parametrized validation of all 25+ agents)
+# Then TDD: parametrized test before batch:
+T036 (parametrized test for all 25+ agents — TDD first)
+T037 (batch of 17 single-file agents)
+
+# Then Generic:
+T038-T039 (GenericPlugin test + implementation)
 ```
 
 ---

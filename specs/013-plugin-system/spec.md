@@ -13,7 +13,7 @@
 - Q: How many agent plugins ship in v1? → A: All supported agents (25+) including Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, Codex CLI, Kiro CLI, Amp, Auggie CLI, CodeBuddy CLI, IBM Bob, Jules, Kilo Code, opencode, Pi Coding Agent, Qoder CLI, Qwen Code, Roo Code, SHAI (OVHcloud), Tabnine CLI, Mistral Vibe, Kimi Code, Antigravity (agy), Trae, and a Generic fallback for unsupported agents.
 - Q: Should plugins version their prompt rules? → A: No versioning in v1. Rules evolve with SpecForge releases. Stack-version differentiation deferred.
 - Q: Should StackPlugin.get_prompt_rules() return full rules or rule overrides? → A: Rule overrides only, layered on top of base governance rules. Cross-cutting domains (security, testing, architecture) inherited from defaults; plugins provide stack-specific additions/overrides for domains like backend, database, cicd.
-- Q: How should the plugin system interact with Feature 003's PromptContextBuilder? → A: PromptContextBuilder is the consumer. Plugin registry feeds rule overrides into the existing builder, which handles merging base rules + overrides using governance precedence order. Plugins are decoupled from context assembly.
+- Q: How should the plugin system interact with Feature 003's PromptContextBuilder? → A: PromptContextBuilder is the downstream consumer — it remains UNCHANGED. Plugin rule overrides are fed into PromptFileManager, which appends formatted rules to governance files after template rendering. PromptContextBuilder reads the merged governance files and concatenates them in precedence order. Plugins are decoupled from context assembly.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -123,6 +123,7 @@ As a developer, I want stack plugins to provide not only prompt rules but also b
 - What happens when `--arch` is not provided? The system should default to the project's existing architecture (from manifest) or fall back to "monolithic" if no architecture is configured.
 - What happens when a stack plugin does not support container configuration (e.g., Go monolith)? The plugin returns no container configuration for that architecture, and the system omits container-related guidance from generated files.
 - What happens when multiple stack markers are detected (e.g., both `pyproject.toml` and `package.json` exist)? The existing stack detection priority order is respected, and the first match wins. An explicit `--stack` flag always overrides detection.
+- What happens when `specforge init` is re-run and agent config files already exist? The system should overwrite existing agent config files with a Rich warning indicating which files were replaced. Governance prompt files already handle this via checksum-based change detection.
 
 ## Requirements *(mandatory)*
 
@@ -132,25 +133,27 @@ As a developer, I want stack plugins to provide not only prompt rules but also b
 
 - **FR-001**: System MUST define a stack plugin interface with methods for retrieving prompt rules, build commands, container configuration, test commands, and folder structure — each parameterized by architecture type.
 - **FR-002**: System MUST define an agent plugin interface with methods for generating agent-specific configuration files and reporting which config files it produces.
-- **FR-003**: System MUST automatically discover and register all built-in stack plugins at startup without user configuration. In v1, built-in stack plugins are: .NET, Node.js, Python. Go and Java are deferred to v2.
-- **FR-004**: System MUST automatically discover and register all built-in agent plugins at startup without user configuration. v1 ships support for all 25+ agents: Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, Codex CLI, Kiro CLI, Amp, Auggie CLI, CodeBuddy CLI, IBM Bob, Jules, Kilo Code, opencode, Pi Coding Agent, Qoder CLI, Qwen Code, Roo Code, SHAI (OVHcloud), Tabnine CLI, Mistral Vibe, Kimi Code, Antigravity (agy), Trae, and a Generic fallback for unsupported agents.
+- **FR-003**: System MUST automatically discover and register all built-in stack plugins when plugin functionality is invoked (e.g., during `specforge init` or `specforge plugins list`) without user configuration. In v1, built-in stack plugins are: .NET, Node.js, Python. Go and Java are deferred to v2.
+- **FR-004**: System MUST automatically discover and register all built-in agent plugins when plugin functionality is invoked without user configuration. v1 ships support for all 25+ agents: Claude Code, GitHub Copilot, Cursor, Gemini CLI, Windsurf, Codex CLI, Kiro CLI, Amp, Auggie CLI, CodeBuddy CLI, IBM Bob, Jules, Kilo Code, opencode, Pi Coding Agent, Qoder CLI, Qwen Code, Roo Code, SHAI (OVHcloud), Tabnine CLI, Mistral Vibe, Kimi Code, Antigravity (agy), Trae, and a Generic fallback for unsupported agents.
 - **FR-005**: System MUST support loading custom stack plugins from a designated project-level plugin directory.
 - **FR-006**: System MUST give custom plugins precedence over built-in plugins when names conflict, displaying a warning to the user.
 
 #### Stack Plugins — Architecture-Aware Content
 
-- **FR-007**: Each stack plugin MUST return rule overrides (not full rule sets) based on the provided architecture type (monolithic, microservice, modular-monolith). Overrides are layered on top of base governance rules; cross-cutting domains (security, testing, architecture) are inherited from defaults.
+- **FR-007**: Each stack plugin MUST return rule overrides (not full rule sets) based on the provided architecture type (monolithic, microservice, modular-monolith). Overrides are layered on top of base governance rules; cross-cutting domains (security, testing, architecture) are inherited from defaults. Stack plugins provide overrides for at minimum the `backend` domain; they SHOULD also provide overrides for `database` and `cicd` domains where the stack×architecture combination has distinct patterns (e.g., per-service migrations for microservice, single pipeline for monolith).
 - **FR-008**: The .NET stack plugin MUST generate microservice-specific rules including per-service application patterns, multi-stage container build guidance with publish commands, inter-service communication via protocol buffer compilation, event handler patterns using message transport, and per-service data context isolation.
 - **FR-009**: The .NET stack plugin MUST generate monolith-specific rules including single data context with module-scoped schemas, intra-module communication via mediator pattern, and must NOT include container orchestration, protocol buffers, or event bus rules.
 - **FR-010**: The Python stack plugin MUST generate microservice-specific rules including per-service web framework patterns, container build with slim base images, event-driven task processing, and per-service data model isolation.
 - **FR-011**: The Python stack plugin MUST generate monolith-specific rules including single-application patterns, shared data models, synchronous internal communication, and must NOT include container orchestration or event bus rules.
 - **FR-012**: The Node.js stack plugin MUST generate microservice-specific rules including per-service web framework patterns, container build with Alpine-based images, message queue event handlers, and per-service schema isolation.
+- **FR-012a**: The Node.js stack plugin MUST generate monolith-specific rules including single-application patterns, shared schema configuration, synchronous internal communication, and must NOT include container orchestration or message queue event bus rules.
+- **FR-012b**: Each stack plugin (.NET, Node.js, Python) MUST generate modular-monolith rules that extend monolith-specific rules with strict module boundary enforcement and interface contract requirements. Modular-monolith rules inherit all monolith base rules and add boundary enforcement; they must NOT include microservice-specific patterns (containers, event bus, per-service schemas).
 - **FR-013**: The Go stack plugin MUST generate architecture-aware rules following the same microservice vs. monolith content differentiation pattern. *(Deferred to v2)*
 - **FR-014**: The Java stack plugin MUST generate architecture-aware rules following the same microservice vs. monolith content differentiation pattern. *(Deferred to v2)*
 
 #### Agent Plugins — Config File Generation
 
-- **FR-015**: Each agent plugin MUST generate configuration files in the correct location and format for that agent. The existing `AgentPlugin` base class defines the interface; concrete implementations produce agent-specific output (e.g., Claude → `CLAUDE.md`, Copilot → `.github/copilot-instructions.md` + `.github/prompts/`, Cursor → `.cursorrules`, Gemini → `.gemini/`, Windsurf → `.windsurfrules`, Codex → codex config, etc.).
+- **FR-015**: Each agent plugin MUST generate configuration files in the correct location and format for that agent. The `AgentPlugin.generate_config(target_dir, context)` method receives a context dict containing: `project_name` (str), `stack` (str), `architecture` (str), and `governance_summary` (str — concatenated governance rules from all generated `.prompts.md` files). Concrete implementations produce agent-specific output (e.g., Claude → `CLAUDE.md`, Copilot → `.github/copilot-instructions.md` + `.github/prompts/`, Cursor → `.cursorrules`, Gemini → `.gemini/`, Windsurf → `.windsurfrules`, Codex → `AGENTS.md`, Kiro → `.kiro/rules.md`, Roo Code → `.roo/rules.md`, Antigravity → `.agy/rules.md`, Trae → `.trae/rules.md`; remaining single-file agents write `<AGENT_NAME>.md` at project root). Full agent-to-path mapping is documented in research.md R-07.
 - **FR-016**: The system MUST include a Generic agent plugin that serves as a fallback for unsupported agents, accepting a user-specified config output directory.
 - **FR-017**: All 25+ agent plugins MUST implement the same `AgentPlugin` interface and be discoverable through the same registry mechanism as stack plugins.
 
@@ -162,7 +165,7 @@ As a developer, I want stack plugins to provide not only prompt rules but also b
 - **FR-021**: System MUST validate that the provided `--agent` value matches a registered agent plugin and display available plugins on mismatch.
 - **FR-022**: System MUST catch and report errors from custom plugin loading without crashing, logging the plugin file path and error details.
 - **FR-023**: System MUST default architecture to "monolithic" when `--arch` is not provided and no existing project architecture is configured.
-- **FR-024**: The plugin registry MUST feed stack plugin rule overrides into the existing PromptContextBuilder (Feature 003), which handles merging base governance rules + plugin overrides using the established governance precedence order. Plugins MUST NOT perform context assembly directly.
+- **FR-024**: The plugin registry MUST feed stack plugin rule overrides into PromptFileManager, which appends formatted rules to governance files after template rendering and before checksum computation. PromptContextBuilder (Feature 003) reads the merged governance files unchanged and handles context assembly using the established governance precedence order. Plugins MUST NOT perform context assembly directly.
 
 #### Plugin Metadata & Inspection
 
@@ -174,10 +177,9 @@ As a developer, I want stack plugins to provide not only prompt rules but also b
 
 - **Stack Plugin**: A component responsible for generating stack-specific prompt rules, build commands, container configuration, test commands, and folder structure — all parameterized by architecture type. Attributes: name, description, supported architectures.
 - **Agent Plugin**: A component responsible for generating agent-specific configuration files. Attributes: name, description, list of config files produced.
-- **Plugin Registry**: A singleton registry that discovers, validates, and stores references to all available stack and agent plugins. Provides lookup by name and listing capabilities.
+- **Plugin Manager**: The central orchestrator that discovers, validates, registers, and provides access to all available stack and agent plugins. Provides lookup by name, listing, and conflict resolution (custom overrides built-in). Implemented as `PluginManager` class.
 - **Architecture Type**: An enumeration of supported architecture patterns (monolithic, microservice, modular-monolith) that parameterizes stack plugin behavior.
-- **Prompt Rule Set**: The collection of governance rules a stack plugin produces for a given architecture. Contains domain-categorized rules with severity, scope, thresholds, and examples.
-- **Plugin Manifest**: Metadata describing a plugin's capabilities — used during discovery to validate completeness before registration.
+- **Plugin Rule**: A frozen dataclass representing a single governance rule override from a stack plugin. Contains: rule_id, title, severity, scope, description, thresholds, example_correct, example_incorrect. Grouped by governance domain in the dict returned by `StackPlugin.get_prompt_rules()`.
 
 ## Success Criteria *(mandatory)*
 

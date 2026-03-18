@@ -44,7 +44,7 @@ def _discover_built_in_stacks() -> dict[str, type[StackPlugin]]:
 **Merge algorithm**:
 1. PromptFileManager renders the base governance template (e.g., `backend.dotnet.md.j2`) → base content
 2. PluginManager calls `StackPlugin.get_prompt_rules(arch)` → `dict[str, list[PluginRule]]`
-3. For each domain, plugin rules are formatted as markdown rule blocks and appended to the rendered base content
+3. For each domain, plugin rules are formatted as markdown rule blocks via the `plugin_rule_block.md.j2` Jinja2 template (constitution II compliance: no string concatenation for file output) and appended to the rendered base content
 4. Checksum is recomputed over the complete content (base + plugin rules)
 5. Final merged file is written to `.specforge/prompts/`
 
@@ -134,14 +134,30 @@ Creating a class hierarchy reduces the ~25 agent implementations to mostly confi
 
 **Key agent config locations**:
 
-| Agent | Config Path | Format |
-|-------|------------|--------|
-| Claude Code | `CLAUDE.md` | Markdown with slash commands |
-| GitHub Copilot | `.github/copilot-instructions.md` + `.github/prompts/*.md` | Markdown |
-| Cursor | `.cursorrules` | Plain text rules |
-| Gemini CLI | `.gemini/settings.json` or `.gemini/style-guide.md` | JSON + Markdown |
-| Windsurf | `.windsurfrules` | Plain text rules |
-| Codex CLI | `AGENTS.md` or `codex.md` | Markdown |
-| Kiro CLI | `.kiro/rules.md` | Markdown |
-| Roo Code | `.roo/rules.md` | Markdown |
-| Generic | User-specified directory | Markdown |
+| Agent | Config Path | Format | Base Class |
+|-------|------------|--------|------------|
+| Claude Code | `CLAUDE.md` | Markdown with slash commands | SingleFile |
+| GitHub Copilot | `.github/copilot-instructions.md` + `.github/prompts/*.md` | Markdown | Directory |
+| Cursor | `.cursorrules` | Plain text rules | SingleFile |
+| Gemini CLI | `.gemini/style-guide.md` | Markdown | Directory |
+| Windsurf | `.windsurfrules` | Plain text rules | SingleFile |
+| Codex CLI | `AGENTS.md` | Markdown | SingleFile |
+| Kiro CLI | `.kiro/rules.md` | Markdown | Directory |
+| Amp | `AMP.md` | Markdown | SingleFile |
+| Auggie CLI | `AUGGIE.md` | Markdown | SingleFile |
+| CodeBuddy CLI | `CODEBUDDY.md` | Markdown | SingleFile |
+| IBM Bob | `.bob/rules.md` | Markdown | Directory |
+| Jules | `JULES.md` | Markdown | SingleFile |
+| Kilo Code | `.kilocode` | Plain text rules | SingleFile |
+| opencode | `OPENCODE.md` | Markdown | SingleFile |
+| Pi Coding Agent | `PI.md` | Markdown | SingleFile |
+| Qoder CLI | `QODER.md` | Markdown | SingleFile |
+| Qwen Code | `QWEN.md` | Markdown | SingleFile |
+| Roo Code | `.roo/rules.md` | Markdown | Directory |
+| SHAI (OVHcloud) | `SHAI.md` | Markdown | SingleFile |
+| Tabnine CLI | `TABNINE.md` | Markdown | SingleFile |
+| Mistral Vibe | `MISTRAL.md` | Markdown | SingleFile |
+| Kimi Code | `KIMI.md` | Markdown | SingleFile |
+| Antigravity (agy) | `.agy/rules.md` | Markdown | Directory |
+| Trae | `.trae/rules.md` | Markdown | Directory |
+| Generic | User-specified directory | Markdown | Direct subclass |
