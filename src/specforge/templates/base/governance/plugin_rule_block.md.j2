@@ -1,0 +1,12 @@
+{% for rule in rules %}
+
+### {{ rule.rule_id }}: {{ rule.title }}
+severity: {{ rule.severity }}
+scope: {{ rule.scope }}
+rule: {{ rule.description }}
+{% for key, value in rule.thresholds.items() %}threshold: {{ key }}={{ value }}
+{% endfor %}example_correct: |
+  {{ rule.example_correct | indent(2) }}
+example_incorrect: |
+  {{ rule.example_incorrect | indent(2) }}
+{% endfor %}

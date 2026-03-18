@@ -1,6 +1,6 @@
 # SpecForge Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-17
+Auto-generated from all feature plans. Last updated: 2026-03-18
 
 ## Active Technologies
 - Python 3.11+ + Jinja2 3.x (rendering engine), Click 8.x (existing CLI), Rich 13.x (existing output) (002-template-rendering-engine)
@@ -13,6 +13,15 @@ Auto-generated from all feature plans. Last updated: 2026-03-17
 - File system — `.specforge/features/<slug>/` directories; spec.md (read/write), research.md (write), clarifications-report.md (write), manifest.json (read-only) (006-research-clarification-engine)
 - Python 3.11+ + Click 8.x (CLI), Rich 13.x (output), Jinja2 3.x (template rendering), PyYAML (pattern file loading) — all existing (007-edge-case-engine)
 - File system — `.specforge/features/<slug>/edge-cases.md`, YAML pattern files bundled in package (007-edge-case-engine)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output), Jinja2 3.x (template rendering), PyYAML 6.x (pattern files) — all existing (008-task-generation-engine)
+- File system — `.specforge/manifest.json` (read), `.specforge/features/<slug>/` (write tasks.md) (008-task-generation-engine)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (prompt template rendering), GitPython 3.x (commit operations) — all existing (009-sub-agent-executor)
+- File system — `.specforge/manifest.json` (read), `.specforge/features/<slug>/` (read spec artifacts, write execution state), project source tree (write generated code) (009-sub-agent-executor)
+- File system — `.specforge/features/<slug>/` for quality reports; `.quality-report.json` per service (010-quality-validation-system)
+- Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing (011-implementation-orchestrator)
+- File system — `.specforge/orchestration-state.json` (project-level), `.specforge/manifest.json` (read), `.specforge/features/<slug>/` (per-service state, read/write) (011-implementation-orchestrator)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal rendering — Table, Panel, Progress, Tree), Jinja2 3.x (markdown report template) (012-project-status-dashboard)
+- File system — `.specforge/manifest.json`, `.specforge/features/<slug>/` state files, `.specforge/.orchestration-state.json` (012-project-status-dashboard)
 
 - **Language**: Python 3.11+
 - **CLI Framework**: Click 8.x — command groups, `@click.pass_context`, `CliRunner` for tests
@@ -97,9 +106,9 @@ uv run pytest --snapshot-update
 - Dependency flow: `cli` → `core` → stdlib only; `plugins` → `core`; never reverse
 
 ## Recent Changes
-- 007-edge-case-engine: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (output), Jinja2 3.x (template rendering), PyYAML (pattern file loading) — all existing
-- 006-research-clarification-engine: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (interactive prompts + terminal output), Jinja2 3.x (template rendering) — all existing
-- 005-spec-generation-pipeline: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output), Jinja2 3.x (template rendering) — all existing
+- 012-project-status-dashboard: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal rendering — Table, Panel, Progress, Tree), Jinja2 3.x (markdown report template)
+- 011-implementation-orchestrator: Added Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing
+- 011-implementation-orchestrator: Added Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing
 
 
 

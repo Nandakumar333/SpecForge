@@ -1,0 +1,279 @@
+# SPECFORGE CODEBASE EXPLORATION REPORT
+# =====================================
+# Prepared for: Feature 003 (Agent Instruction Prompt File System)
+# Date: 2026-03-15 13:45:57
+
+## KEY FILES SUMMARY
+
+### 1. PROJECT STRUCTURE & DEPENDENCIES
+- **Location**: C:\My code\my\SpecForge
+- **Package**: specforge v0.1.0
+- **Entry Point**: specforge.cli.main:cli
+- **Python**: 3.11+
+- **Key Dependencies**:
+  - Click 8.x (CLI framework)
+  - Jinja2 3.x (template rendering)
+  - Rich 13.x (terminal output)
+  - GitPython 3.x (git operations)
+  - pathlib (path operations, no os.path)
+
+### 2. CORE ARCHITECTURE
+
+#### Result[T, E] Pattern (result.py)
+- Ok[T] | Err[E] union type
+- Methods: .ok (bool), .map(), .bind(), .unwrap_or()
+- Used throughout core/ for recoverable errors
+
+#### Template System (TemplateType enum, template_models.py)
+- Types: constitution, prompt, feature, partial, governance
+- TemplateInfo: logical_name, template_type, source, template_path, stack, is_base
+- TemplateRegistry: 4-step resolution chain (user-override stack → user-override generic → built-in stack → built-in generic)
+
+#### Governance Constants (config.py - Feature 003)
+- GOVERNANCE_DOMAINS: [architecture, backend, frontend, database, security, testing, cicd]
+- PRECEDENCE_ORDER: [security(1), architecture(2), backend/frontend/database(3), testing(4), cicd(5)]
+- EQUAL_PRIORITY_DOMAINS: {backend, frontend, database}
+- AGNOSTIC_GOVERNANCE_DOMAINS: {architecture, security}
+- File patterns:
+  - Stack-specific: {domain}.{stack}.prompts.md (e.g., backend.python.prompts.md)
+  - Agnostic: {domain}.prompts.md (e.g., architecture.prompts.md)
+- SPECFORGE_CONFIG_FILE: .specforge/config.json
+
+### 3. GOVERNANCE SYSTEM (Feature 003 Implementation)
+
+#### PromptFileManager (prompt_manager.py)
+**Methods**:
+- __init__(project_root, registry): Constructor injection
+- esolve_path(domain, stack): Returns output file path per domain+stack
+- generate_one(domain, project_name, stack): Render 1 template, compute SHA-256 checksum, write to disk
+  - Process:
+    1. Render with empty checksum placeholder
+    2. Compute SHA-256 of rendered content
+    3. Inject checksum via regex substitution in ## Meta section
+    4. Write with Unix line endings (\n)
+- generate(project_name, stack): Generate all 7 domains, write config.json
+- is_customized(file_path, stack): Detect user modifications via checksum comparison
+  - Reads actual file and re-renders template
+  - Compares SHA-256 of actual vs canonical (re-rendered + checksum)
+  - Returns True if bytes differ (including appended content)
+
+**Context Variables**:
+- project_name, domain, stack, stack_hint, precedence, date, agent, checksum (empty string during generation)
+
+#### PromptLoader (prompt_loader.py)
+**Methods**:
+- __init__(project_root): Takes .specforge/config.json as source of truth
+- load_for_feature(feature_id): Load all 7 governance files into a PromptSet
+  - 2-step resolution per domain: try stack-specific, fallback to agnostic
+  - Returns Err if any domain file missing
+
+**Parsing** (structured via regex):
+1. Split on \n##  (section headers)
+2. Parse ## Meta: domain, stack, version, precedence, checksum (via regex)
+3. Parse ## Rules: Split on \n###  (rule headers), parse each rule block
+   - Rule block structure:
+     - Line 1: RULE-ID: Title
+     - Key-value pairs: severity, scope, rule (description), threshold, example_correct, example_incorrect
+   - Thresholds: "key1=val1, key2=val2" → tuple[PromptThreshold, ...]
+   - Example blocks: key: | followed by indented lines (dedented on parse)
+
+**Output**: PromptSet(files={domain: PromptFile, ...}, precedence=PRECEDENCE_ORDER, feature_id)
+
+#### PromptValidator (prompt_validator.py)
+**Methods**:
+- detect_conflicts(prompt_set): Scan all prompt files for threshold conflicts
+  - Builds index: threshold_key → [(domain, rule, threshold), ...]
+  - Compares all domain pairs sharing a threshold key
+  - For each conflict, determines winner by precedence
+  - Returns ConflictReport(conflicts=tuple[ConflictEntry, ...], has_conflicts=bool)
+
+**ConflictEntry**:
+- threshold_key, rule_id_a, domain_a, value_a, rule_id_b, domain_b, value_b
+- winning_domain: domain name or "AMBIGUOUS"
+- is_ambiguous: True if equal precedence
+- suggested_resolution: Human-readable fix suggestion
+
+#### validate-prompts CLI Command (validate_prompts_cmd.py)
+`ash
+specforge validate-prompts [--project PATH]
+`
+Exit codes:
+- 0: No conflicts
+- 1: Conflicts found (rendered as Rich table)
+- 2: Project not initialized (.specforge/ missing)
+
+### 4. TEMPLATE RENDERING
+
+#### TemplateRenderer (template_renderer.py)
+**Jinja2 Environment**:
+- Loaders (ChoiceLoader priority):
+  1. FileSystemLoader → .specforge/templates/ (user overrides)
+  2. _PackageLoader → specforge.templates.base (built-in)
+- Custom filters: snake_case, uppercase, pluralize, kebab_case
+- Options: keep_trailing_newline=True, trim_blocks=True, lstrip_blocks=True
+
+**Methods**:
+- ender(template_name, template_type, context, stack): Full pipeline
+  - Validate context against schema (if schema exists)
+  - Resolve template via registry
+  - Render and return
+- ender_raw(template_path, context): Direct path rendering (for decisions.md.j2, gitignore.j2)
+
+#### TemplateValidator (template_validator.py)
+Post-render checks:
+- Unresolved Jinja2 placeholders {{ ... }} outside code fences
+- Unclosed code blocks (odd count of `)
+- Heading hierarchy skips (H1 → H4 invalid)
+
+### 5. SCAFFOLD PIPELINE
+
+#### build_scaffold_plan (scaffold_builder.py)
+- Input: ProjectConfig
+- Creates SCAFFOLD_DIRS: .specforge/, .specforge/memory/, .specforge/features/, .specforge/prompts/, .specforge/scripts/, .specforge/templates/features/
+- Builds ScaffoldFile list:
+  1. constitution.md (two copies: root + memory/)
+  2. decisions.md (memory/)
+  3. Prompt files from registry (7 per-agent instruction templates)
+  4. Feature templates from registry (7 feature templates)
+  5. .gitignore (if not --no-git)
+- Returns ScaffoldPlan(config, files, directories)
+
+#### generate_governance_files (scaffold_builder.py)
+- Called AFTER write_scaffold to ensure target directory exists
+- Handles --force by detecting customized files via PromptFileManager.is_customized()
+- Skips regeneration of customized files when --force is used
+- Writes .specforge/config.json via _write_config_json()
+
+#### write_scaffold (scaffold_writer.py)
+- Input: ScaffoldPlan
+- Outputs: ScaffoldResult(written=list[Path], skipped=list[Path])
+- Renders templates via TemplateRenderer.render_raw()
+- Writes to disk with UTF-8 encoding
+
+#### ProjectConfig (project.py)
+Validated dataclass:
+- name, target_dir, agent, stack, no_git, force, dry_run, here
+- Factory: ProjectConfig.create() → Result
+
+### 6. DIRECTORY STRUCTURE
+
+`
+src/specforge/
+├── cli/
+│   ├── main.py           # @click.group root
+│   ├── init_cmd.py       # specforge init [NAME] [--here] [--agent] [--stack] [--force] [--no-git] [--dry-run]
+│   ├── check_cmd.py      # specforge check
+│   ├── decompose_cmd.py  # specforge decompose
+│   ├── validate_prompts_cmd.py  # specforge validate-prompts [--project]
+│   └── output.py         # Rich output helpers
+├── core/
+│   ├── config.py         # ALL CONSTANTS (governance, stacks, agents, paths)
+│   ├── result.py         # Result[T, E] monad
+│   ├── project.py        # ProjectConfig, ScaffoldPlan, ScaffoldFile, ScaffoldResult
+│   ├── template_models.py # TemplateType, TemplateInfo, TemplateVarSchema, ValidationReport
+│   ├── template_registry.py # TemplateRegistry (discovery + 4-step resolution)
+│   ├── template_renderer.py # TemplateRenderer (Jinja2 + filters)
+│   ├── template_validator.py # validate_context(), validate() (post-render checks)
+│   ├── scaffold_builder.py # build_scaffold_plan(), generate_governance_files()
+│   ├── scaffold_writer.py # write_scaffold()
+│   ├── prompt_manager.py # PromptFileManager (generate, detect customization)
+│   ├── prompt_loader.py # PromptLoader (parse governance files into PromptSet)
+│   ├── prompt_validator.py # PromptValidator (detect threshold conflicts)
+│   ├── prompt_models.py # PromptFile, PromptFileMeta, PromptRule, PromptSet, ConflictReport
+│   ├── agent_detector.py # detect_agent() → DetectionResult
+│   ├── stack_detector.py # StackDetector.detect(path)
+│   ├── git_ops.py        # init_repo(), is_git_available()
+│   ├── checker.py        # prerequisite checking
+│   └── __init__.py
+├── templates/
+│   ├── constitution.md.j2
+│   ├── decisions.md.j2
+│   ├── gitignore.j2
+│   └── base/
+│       ├── constitution.md.j2
+│       ├── governance/  # 7 domains × 6+ stacks = 20+ files
+│       │   ├── architecture.md.j2
+│       │   ├── backend.md.j2
+│       │   ├── backend.{python,nodejs,dotnet,java,go}.md.j2
+│       │   ├── frontend.md.j2
+│       │   ├── database.md.j2
+│       │   ├── testing.md.j2
+│       │   ├── testing.{python,nodejs,dotnet,java,go}.md.j2
+│       │   ├── cicd.md.j2
+│       │   ├── security.md.j2
+│       │   └── _base_governance.md.j2  # Template base for all governance files
+│       ├── prompts/  # 7 agent-instruction files
+│       │   ├── app-analyzer.md.j2
+│       │   ├── feature-specifier.md.j2
+│       │   ├── implementation-planner.md.j2
+│       │   ├── task-decomposer.md.j2
+│       │   ├── code-reviewer.md.j2
+│       │   ├── test-writer.md.j2
+│       │   ├── debugger.md.j2
+│       │   └── _base_prompt.md.j2
+│       ├── features/  # 7 feature templates
+│       │   ├── spec.md.j2
+│       │   ├── research.md.j2
+│       │   ├── datamodel.md.j2
+│       │   ├── plan.md.j2
+│       │   ├── checklist.md.j2
+│       │   ├── edge-cases.md.j2
+│       │   ├── tasks.md.j2
+│       │   └── (no base template)
+│       └── partials/
+│           ├── generation-header.md.j2
+│           └── out-of-scope.md.j2
+└── __init__.py (version = "0.1.0")
+
+tests/
+├── unit/
+├── integration/
+├── snapshots/
+└── __init__.py
+`
+
+### 7. GOVERNANCE FILE FORMAT
+
+**Generated file example**: ackend.python.prompts.md
+
+`markdown
+<!-- Generated by SpecForge — do not edit manually above the Rules section -->
+
+# Backend Governance Prompt
+
+## Meta
+domain: backend
+stack: python
+version: 1.0
+precedence: 3
+checksum: <SHA-256 hex>
+
+## Precedence
+This file occupies position 3 in the conflict-resolution hierarchy:
+\security (1) > architecture (2) > backend/frontend/database (3) > testing (4) > cicd (5)\
+
+When this file conflicts with a higher-precedence file, the higher-precedence
+value applies. When this file conflicts with an equal-priority file, the conflict
+is flagged as AMBIGUOUS and requires manual resolution.
+
+## Rules
+
+### RULE-ID: Title
+severity: ERROR|WARNING
+scope: scope description
+rule: Rule description
+threshold: key1=value1, key2=value2
+example_correct: |
+  code example
+example_incorrect: |
+  code example
+
+### RULE-ID2: Title 2
+...
+`
+
+**Customization Detection**:
+- File header (up to ## Rules): Generated by SpecForge — do not edit
+- Content after ## Rules: User customization zone (not checked)
+- SHA-256 checksum computed over entire rendered output (excluding final checksum value itself)
+

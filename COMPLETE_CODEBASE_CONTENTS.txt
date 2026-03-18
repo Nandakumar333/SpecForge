@@ -1,0 +1,1421 @@
+================================================================================
+                    SPECFORGE CODEBASE - COMPLETE FILE CONTENTS
+                 Feature 012 Phase 3 (StatusCollector + MetricsCalculator)
+================================================================================
+
+FILE 1: src/specforge/core/result.py
+================================================================================
+"""Result[T, E] monad — Ok and Err variants for recoverable errors."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Generic, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+T = TypeVar("T")
+E = TypeVar("E")
+U = TypeVar("U")
+
+
+@dataclass(frozen=True)
+class Ok(Generic[T]):
+    """Success variant carrying a value."""
+
+    value: T
+
+    @property
+    def ok(self) -> bool:
+        return True
+
+    def map(self, fn: Callable[[T], U]) -> Ok[U]:
+        return Ok(fn(self.value))
+
+    def bind(self, fn: Callable[[T], Result]) -> Result:
+        return fn(self.value)
+
+    def unwrap_or(self, default: T) -> T:
+        return self.value
+
+
+@dataclass(frozen=True)
+class Err(Generic[E]):
+    """Failure variant carrying an error."""
+
+    error: E
+
+    @property
+    def ok(self) -> bool:
+        return False
+
+    def map(self, fn: Callable) -> Err[E]:
+        return self
+
+    def bind(self, fn: Callable) -> Err[E]:
+        return self
+
+    def unwrap_or(self, default: T) -> T:
+        return default
+
+
+Result = Ok[T] | Err[E]
+
+================================================================================
+FILE 2: src/specforge/core/status_models.py
+================================================================================
+"""Frozen dataclasses for the Project Status Dashboard (Feature 012)."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class LifecyclePhases:
+    """Per-service spec/plan/tasks/impl/test/docker status."""
+
+    spec: str | None = None
+    plan: str | None = None
+    tasks: str | None = None
+    impl_percent: int | None = None
+    tests_passed: int | None = None
+    tests_total: int | None = None
+    docker: str | None = None
+    boundary_compliance: str | None = None
+
+
+@dataclass(frozen=True)
+class ServiceStatusRecord:
+    """One service's full status combining data from all state files."""
+
+    slug: str
+    display_name: str
+    features: tuple[str, ...]
+    lifecycle: LifecyclePhases
+    overall_status: str
+    phase_index: int | None = None
+
+
+@dataclass(frozen=True)
+class ServicePhaseDetail:
+    """Per-service status within a phase (used in phase progress notes)."""
+
+    slug: str
+    status: str
+    impl_percent: int | None = None
+
+
+@dataclass(frozen=True)
+class PhaseProgressRecord:
+    """Execution phase aggregate status."""
+
+    index: int
+    label: str
+    services: tuple[str, ...]
+    completion_percent: float
+    status: str
+    blocked_by: int | None = None
+    service_details: tuple[ServicePhaseDetail, ...] = ()
+
+
+@dataclass(frozen=True)
+class QualitySummaryRecord:
+    """Project-wide aggregated quality metrics."""
+
+    services_total: int
+    services_complete: int
+    services_in_progress: int
+    services_planning: int
+    services_not_started: int
+    services_blocked: int
+    services_failed: int
+    services_unknown: int
+    tasks_total: int
+    tasks_complete: int
+    tasks_failed: int
+    coverage_avg: float | None = None
+    docker_built: int | None = None
+    docker_total: int | None = None
+    docker_failing: int | None = None
+    contract_passed: int | None = None
+    contract_total: int | None = None
+    autofix_success_rate: float | None = None
+
+
+@dataclass(frozen=True)
+class GraphNode:
+    """Individual node in the dependency graph."""
+
+    slug: str
+    status: str
+    dependencies: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class DependencyGraph:
+    """Service dependency topology for graph visualization."""
+
+    nodes: tuple[GraphNode, ...]
+    phase_groups: tuple[tuple[str, ...], ...] = ()
+
+
+@dataclass(frozen=True)
+class ProjectStatusSnapshot:
+    """Top-level point-in-time capture of the entire project."""
+
+    project_name: str
+    architecture: str
+    services: tuple[ServiceStatusRecord, ...]
+    phases: tuple[PhaseProgressRecord, ...]
+    quality: QualitySummaryRecord
+    graph: DependencyGraph
+    warnings: tuple[str, ...]
+    timestamp: str
+    has_failures: bool
+
+================================================================================
+FILE 3: src/specforge/core/config.py (FULL - 20.7 KB)
+================================================================================
+"""Constants, type literals, and configuration for SpecForge core."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
+
+if TYPE_CHECKING:
+    from specforge.core.template_models import TemplateVarSchema
+
+AgentName = Literal[
+    "claude", "copilot", "gemini", "cursor", "windsurf", "codex", "agnostic"
+]
+
+StackName = Literal["dotnet", "nodejs", "python", "go", "java", "agnostic"]
+
+AGENT_PRIORITY: list[str] = [
+    "claude",
+    "copilot",
+    "gemini",
+    "cursor",
+    "windsurf",
+    "codex",
+]
+
+SUPPORTED_STACKS: list[str] = [
+    "dotnet",
+    "nodejs",
+    "python",
+    "go",
+    "java",
+]
+
+AGENT_EXECUTABLES: dict[str, list[str]] = {
+    "claude": ["claude"],
+    "copilot": ["copilot"],
+    "gemini": ["gemini"],
+    "cursor": ["cursor"],
+    "windsurf": ["windsurf"],
+    "codex": ["codex"],
+}
+
+PREREQUISITES: list[str] = ["git", "python", "uv"]
+
+# Scaffold directory structure (relative to .specforge/)
+SCAFFOLD_DIRS: list[str] = [
+    ".specforge",
+    ".specforge/memory",
+    ".specforge/features",
+    ".specforge/prompts",
+    ".specforge/scripts",
+    ".specforge/templates/features",
+]
+
+# Valid project name pattern
+PROJECT_NAME_PATTERN = r"^[a-zA-Z0-9_-]+$"
+
+# Default git commit message for scaffold
+INIT_COMMIT_MESSAGE = "chore: init specforge scaffold"
+
+# Stack hints for template rendering
+STACK_HINTS: dict[str, str] = {
+    "dotnet": "C#/.NET",
+    "nodejs": "Node.js/TypeScript",
+    "python": "Python",
+    "go": "Go",
+    "java": "Java",
+    "agnostic": "Language-agnostic",
+}
+
+# Install hints for prerequisites
+INSTALL_HINTS: dict[str, str] = {
+    "git": "https://git-scm.com/downloads",
+    "python": "https://python.org/downloads",
+    "uv": "https://docs.astral.sh/uv/getting-started/installation/",
+    "claude": "https://claude.ai/download",
+    "copilot": "https://github.com/features/copilot",
+    "gemini": "https://ai.google.dev/gemini-api/docs/downloads",
+    "cursor": "https://cursor.com",
+    "windsurf": "https://windsurf.com",
+    "codex": "https://github.com/openai/codex",
+}
+
+# ── Template Engine Constants (Feature 002) ──────────────────────────
+
+PROMPT_AGENT_NAMES: list[str] = [
+    "backend",
+    "frontend",
+    "database",
+    "security",
+    "testing",
+    "cicd",
+    "api-design",
+]
+
+FEATURE_TEMPLATE_NAMES: list[str] = [
+    "spec",
+    "research",
+    "datamodel",
+    "plan",
+    "checklist",
+    "edge-cases",
+    "tasks",
+]
+
+GENERATION_HEADER = "<!-- Generated by SpecForge — do not edit manually -->"
+
+
+# ── Governance Layer Constants (Feature 003) ──────────────────────────
+
+GOVERNANCE_DOMAINS: list[str] = [
+    "architecture",
+    "backend",
+    "frontend",
+    "database",
+    "security",
+    "testing",
+    "cicd",
+]
+
+PRECEDENCE_ORDER: list[str] = [
+    "security",
+    "architecture",
+    "backend",
+    "frontend",
+    "database",
+    "testing",
+    "cicd",
+]
+
+EQUAL_PRIORITY_DOMAINS: frozenset[str] = frozenset({"backend", "frontend", "database"})
+
+AGNOSTIC_GOVERNANCE_DOMAINS: frozenset[str] = frozenset({"architecture", "security"})
+
+GOVERNANCE_FILE_PATTERN: str = "{domain}.{stack}.prompts.md"
+GOVERNANCE_AGNOSTIC_FILE_PATTERN: str = "{domain}.prompts.md"
+
+SPECFORGE_CONFIG_FILE: str = ".specforge/config.json"
+
+
+# ── Architecture Decomposer Constants (Feature 004) ──────────────────
+
+ArchitectureType = Literal["monolithic", "microservice", "modular-monolith"]
+
+VALID_ARCHITECTURES: list[str] = ["monolithic", "microservice", "modular-monolith"]
+
+OVER_ENGINEERING_THRESHOLD: int = 5
+
+MANIFEST_PATH: str = ".specforge/manifest.json"
+
+STATE_PATH: str = ".specforge/decompose-state.json"
+
+COMMUNICATION_MAP_PATH: str = ".specforge/communication-map.md"
+
+FEATURES_DIR: str = ".specforge/features"
+
+FEATURE_CATEGORIES: list[str] = [
+    "foundation",
+    "core",
+    "supporting",
+    "integration",
+    "admin",
+]
+
+FEATURE_PRIORITIES: list[str] = ["P0", "P1", "P2", "P3"]
+
+COMMUNICATION_PATTERNS: list[str] = ["sync-rest", "sync-grpc", "async-event"]
+
+DECOMPOSITION_STEPS: list[str] = [
+    "architecture",
+    "decomposition",
+    "mapping",
+    "review",
+    "complete",
+]
+
+SCALING_PROFILE: dict[str, str] = {
+    "foundation": "low",
+    "core": "medium",
+    "supporting": "medium",
+    "integration": "high-variance",
+    "admin": "low",
+}
+
+FAILURE_MODE: dict[str, str] = {
+    "foundation": "infrastructure",
+    "core": "business-logic",
+    "supporting": "business-logic",
+    "integration": "external-dependency",
+    "admin": "operational",
+}
+
+MAX_FEATURES_PER_SERVICE: int = 4
+
+AFFINITY_SAME_CATEGORY: int = 3
+AFFINITY_SHARED_DATA: int = 2
+AFFINITY_DIFF_SCALING: int = -2
+AFFINITY_DIFF_FAILURE: int = -2
+AFFINITY_MERGE_THRESHOLD: int = 3
+
+SCHEMA_VERSION: str = "1.0"
+
+CLARIFICATION_QUESTIONS: list[str] = [
+    "What domain or industry is this application for?",
+    "Who are the primary users?",
+    "What is the core action users perform?",
+    "What scale do you expect (personal, team, enterprise)?",
+    "Are there any external integrations (payments, APIs, social login)?",
+]
+
+MIN_KEYWORD_SCORE: int = 2
+
+
+# ── Spec Generation Pipeline Constants (Feature 005) ─────────────────
+
+PIPELINE_STATE_FILENAME: str = ".pipeline-state.json"
+PIPELINE_LOCK_FILENAME: str = ".pipeline-lock"
+LOCK_STALE_THRESHOLD_MINUTES: int = 30
+
+PIPELINE_PHASE_STATUSES: list[str] = [
+    "pending",
+    "in-progress",
+    "complete",
+    "failed",
+]
+
+PIPELINE_PHASES: list[str] = [
+    "spec",
+    "research",
+    "datamodel",
+    "edgecase",
+    "plan",
+    "checklist",
+    "tasks",
+]
+
+SHARED_ENTITIES_PATH: str = ".specforge/shared_entities.md"
+CONTRACTS_DIR: str = "contracts"
+STUB_CONTRACT_SUFFIX: str = ".stub.json"
+INTERFACES_FILENAME: str = "interfaces.md"
+
+
+# ── Research & Clarification Engine Constants (Feature 006) ───────────
+
+
+AMBIGUITY_CATEGORIES: tuple[str, ...] = (
+    "domain",
+    "technical",
+    "service_boundary",
+    "communication",
+)
+
+FINDING_STATUSES: tuple[str, ...] = (
+    "RESOLVED",
+    "UNVERIFIED",
+    "BLOCKED",
+    "CONFLICTING",
+)
+
+VAGUE_TERM_PATTERNS: tuple[str, ...] = (
+    r"\bappropriate(ly)?\b",
+    r"\bas needed\b",
+    r"\bsuitable|suitably\b",
+    r"\bproper(ly)?\b",
+    r"\brelevant\b",
+    r"\betc\.\b",
+    r"\bvarious\b",
+    r"\brobust(ly|ness)?\b",
+    r"\bintuitive(ly)?\b",
+    r"\bflexible|flexibility\b",
+)
+
+CLARIFICATION_SECTION_HEADING: str = "## Clarifications"
+SESSION_HEADING_PREFIX: str = "### Session"
+CLARIFICATION_REPORT_FILENAME: str = "clarifications-report.md"
+
+IMPACT_PRIORITY: dict[str, int] = {
+    "service_boundary": 1,
+    "domain": 2,
+    "technical": 3,
+    "communication": 4,
+}
+
+BOUNDARY_STOP_WORDS: frozenset[str] = frozenset({
+    "the", "a", "an", "and", "or", "is", "are", "was", "were",
+    "in", "on", "at", "to", "for", "of", "with", "by", "from",
+    "as", "it", "its", "this", "that", "be", "has", "have", "had",
+    "not", "will", "can", "should", "must", "each", "all", "any",
+    "service", "system", "feature", "support", "manage", "management",
+    "provide", "handle", "allow", "enable", "include", "use",
+    "based", "using", "via", "also", "may", "which", "when",
+})
+
+ANSWER_TEMPLATES: dict[str, tuple[str, ...]] = {
+    "domain": (
+        "Define specific business rules for {concept}",
+        "Use industry-standard definition of {concept}",
+        "Defer to domain expert for {concept} requirements",
+        "Split {concept} into sub-categories with separate rules",
+    ),
+    "technical": (
+        "Use {concept} with default configuration",
+        "Evaluate alternatives to {concept} before committing",
+        "Use {concept} for MVP, revisit for production",
+    ),
+    "service_boundary": (
+        "{concept} owned by {service_a}",
+        "{concept} owned by {service_b}",
+        "Extract {concept} into shared library",
+        "Duplicate {concept} with eventual consistency",
+    ),
+    "communication": (
+        "Synchronous (REST/gRPC) for {concept}",
+        "Asynchronous (events/messages) for {concept}",
+        "Hybrid: sync for queries, async for commands",
+    ),
+}
+
+UBIQUITY_THRESHOLD: float = 0.6
+
+REMAP_QUESTION_TOPICS: tuple[str, ...] = (
+    "service boundaries",
+    "communication patterns",
+    "data ownership",
+    "shared state",
+    "eventual consistency",
+)
+
+MICROSERVICE_RESEARCH_TOPICS: tuple[dict[str, str], ...] = (
+    {
+        "topic": "Docker base image selection",
+        "description": "Evaluate base images for containerized deployment "
+        "(alpine, distroless, slim variants)",
+    },
+    {
+        "topic": "Health check endpoint design",
+        "description": "Liveness and readiness probes for "
+        "container orchestration",
+    },
+    {
+        "topic": "Message broker comparison",
+        "description": "Compare message brokers for async communication "
+        "(RabbitMQ, Kafka, Redis Streams)",
+    },
+)
+
+
+def get_constitution_vars() -> TemplateVarSchema:
+    """Variable schema for constitution templates."""
+    from specforge.core.template_models import TemplateVarSchema
+
+    return TemplateVarSchema(
+        required={
+            "project_name": str,
+            "agent": str,
+            "stack": str,
+            "date": str,
+            "stack_hint": str,
+        },
+    )
+
+
+def get_prompt_vars() -> TemplateVarSchema:
+    """Variable schema for prompt templates."""
+    from specforge.core.template_models import TemplateVarSchema
+
+    return TemplateVarSchema(
+        required={
+            "project_name": str,
+            "agent": str,
+            "stack": str,
+            "date": str,
+            "stack_hint": str,
+        },
+        optional={
+            "conventions": (str, ""),
+            "patterns": (str, ""),
+        },
+    )
+
+
+def get_feature_vars() -> TemplateVarSchema:
+    """Variable schema for feature templates."""
+    from specforge.core.template_models import TemplateVarSchema
+
+    return TemplateVarSchema(
+        required={
+            "project_name": str,
+            "date": str,
+        },
+        optional={
+            "feature_name": (str, ""),
+            "stack": (str, "agnostic"),
+            "stack_hint": (str, "Language-agnostic"),
+            # Pipeline context (Feature 005)
+            "service": (dict, {}),
+            "architecture": (str, ""),
+            "features": (list, []),
+            "dependencies": (list, []),
+            "capabilities": (list, []),
+            "entities": (list, []),
+            "adapter_sections": (list, []),
+            "adapter_tasks": (list, []),
+            "adapter_edge_cases": (list, []),
+            "adapter_checklist": (list, []),
+            "adapter_research_extras": (list, []),
+            "datamodel_context": (dict, {}),
+            "prompt_context": (str, ""),
+            "events": (list, []),
+            "communication_patterns": (list, []),
+            "input_artifacts": (dict, {}),
+        },
+    )
+
+# ── Feature 007: Edge Case Analysis Engine ────────────────────────────
+
+EDGE_CASE_MAX_PER_SERVICE: int = 30
+
+EDGE_CASE_BASE_COUNT: int = 6
+EDGE_CASE_PER_DEPENDENCY: int = 2
+EDGE_CASE_PER_EVENT: int = 1
+EDGE_CASE_PER_EXTRA_FEATURE: int = 2
+
+STANDARD_EDGE_CASE_CATEGORIES: tuple[str, ...] = (
+    "concurrency",
+    "data_boundary",
+    "state_machine",
+    "ui_ux",
+    "security",
+    "data_migration",
+)
+
+MICROSERVICE_EDGE_CASE_CATEGORIES: tuple[str, ...] = (
+    "service_unavailability",
+    "network_partition",
+    "eventual_consistency",
+    "distributed_transaction",
+    "version_skew",
+    "data_ownership",
+)
+
+MODULAR_MONOLITH_EXTRA_CATEGORIES: tuple[str, ...] = (
+    "interface_contract_violation",
+)
+
+SEVERITY_MATRIX_MICROSERVICE: dict[tuple[bool, str], str] = {
+    (True, "sync-rest"): "critical",
+    (True, "sync-grpc"): "critical",
+    (True, "async-event"): "high",
+    (False, "sync-rest"): "high",
+    (False, "sync-grpc"): "high",
+    (False, "async-event"): "medium",
+}
+
+SEVERITY_MATRIX_MONOLITH: dict[str, str] = {
+    "security": "high",
+    "concurrency": "high",
+    "data_boundary": "medium",
+    "state_machine": "medium",
+    "ui_ux": "low",
+    "data_migration": "low",
+}
+
+SEVERITY_DEFAULT_REQUIRED: str = "high"
+SEVERITY_DEFAULT_OPTIONAL: str = "medium"
+SEVERITY_DATA_OWNERSHIP: str = "high"
+SEVERITY_INTERFACE_CONTRACT: str = "high"
+
+EDGE_CASE_CATEGORY_PRIORITY: dict[str, int] = {
+    "service_unavailability": 1,
+    "distributed_transaction": 2,
+    "network_partition": 3,
+    "eventual_consistency": 4,
+    "data_ownership": 5,
+    "version_skew": 6,
+    "interface_contract_violation": 7,
+    "security": 8,
+    "concurrency": 9,
+    "data_boundary": 10,
+    "state_machine": 11,
+    "ui_ux": 12,
+    "data_migration": 13,
+}
+
+# ── Task Generation Constants (Feature 008) ──────────────────────────
+
+TASK_ID_PREFIX: str = "T"
+CROSS_SERVICE_TASK_PREFIX: str = "X-T"
+CROSS_SERVICE_TARGET: str = "cross-service-infra"
+MAX_TASKS_PER_SERVICE: int = 50
+
+EFFORT_SIZES: tuple[str, ...] = ("S", "M", "L", "XL")
+EFFORT_BUMP_THRESHOLD_FEATURES: int = 3
+EFFORT_BUMP_THRESHOLD_DEPS: int = 2
+
+CROSS_SERVICE_CATEGORIES: tuple[str, ...] = (
+    "shared_contracts",
+    "docker_compose",
+    "message_broker",
+    "api_gateway",
+    "shared_auth",
+)
+
+MICROSERVICE_STEP_COUNT: int = 14
+MONOLITH_STEP_COUNT: int = 7
+
+CONDITIONAL_STEPS: dict[str, str] = {
+    "communication_clients": "dependencies",
+    "event_handlers": "events",
+    "contract_tests": "dependencies",
+    "boundary_interface": "modular-monolith",
+    "database": "entities",
+}
+
+# Effort bump table: category → (base, 3-4 features, 5+ features)
+EFFORT_BUMP_TABLE: dict[str, tuple[str, str, str]] = {
+    "scaffolding": ("S", "S", "M"),
+    "domain_models": ("M", "L", "L"),
+    "database": ("L", "L", "XL"),
+    "repository": ("M", "L", "L"),
+    "service_layer": ("L", "L", "XL"),
+    "communication_clients": ("M", "L", "L"),
+    "controllers": ("M", "L", "L"),
+    "event_handlers": ("M", "M", "L"),
+    "health_checks": ("S", "S", "S"),
+    "contract_tests": ("L", "L", "XL"),
+    "unit_tests": ("L", "XL", "XL"),
+    "integration_tests": ("XL", "XL", "XL"),
+    "container_optimization": ("S", "S", "M"),
+    "gateway_config": ("S", "S", "M"),
+    "folder_structure": ("S", "S", "M"),
+    "repo_service": ("L", "L", "XL"),
+    "boundary_interface": ("M", "M", "L"),
+    "tests": ("L", "XL", "XL"),
+}
+
+# Plan.md required sections for validation (FR-015)
+PLAN_REQUIRED_SECTIONS: tuple[str, ...] = (
+    "Summary",
+    "Technical Context",
+    "Design Decisions",
+)
+
+# Governance scope-to-layer mapping for GovernanceReader
+GOVERNANCE_SCOPE_TO_LAYERS: dict[str, tuple[str, ...]] = {
+    "architecture": ("scaffolding", "domain_models", "service_layer"),
+    "backend": (
+        "service_layer", "repository", "controllers",
+        "communication_clients", "event_handlers",
+    ),
+    "frontend": (),
+    "database": ("database",),
+    "security": ("controllers", "shared_auth", "health_checks"),
+    "testing": ("unit_tests", "integration_tests", "contract_tests"),
+    "cicd": ("container_optimization", "gateway_config"),
+}
+
+# Cross-service categories by architecture
+CROSS_SERVICE_SCOPE: dict[str, tuple[str, ...]] = {
+    "microservice": (
+        "shared_contracts", "docker_compose",
+        "message_broker", "api_gateway", "shared_auth",
+    ),
+    "modular-monolith": ("shared_contracts", "shared_auth"),
+    "monolithic": (),
+}
+
+# ── Sub-Agent Executor Constants (Feature 009) ────────────────────────
+
+EXECUTION_STATE_FILENAME: str = ".execution-state.json"
+EXECUTION_LOCK_FILENAME: str = ".execution-lock"
+EXECUTION_LOCK_STALE_MINUTES: int = 60
+
+MAX_FIX_ATTEMPTS: int = 3
+CONTEXT_TOKEN_BUDGET: int = 100_000
+CHARS_PER_TOKEN_ESTIMATE: int = 4
+
+AGENT_RETRY_DELAYS: tuple[int, ...] = (1, 2, 4)
+HEALTH_CHECK_TIMEOUT: int = 30
+HEALTH_CHECK_ENDPOINT: str = "/health"
+
+DOCKER_COMPOSE_TEST_PROFILE: str = "test"
+
+IMPLEMENTATION_MODES: tuple[str, ...] = ("prompt-display", "agent-call")
+
+# Context priority order (lowest priority first — truncated first when over budget)
+CONTEXT_PRIORITY: tuple[str, ...] = (
+    "edge_cases",
+    "architecture_prompts",
+    "dependency_contracts",
+    "data_model",
+    "plan",
+    "governance_prompts",
+    "spec",
+    "constitution",
+    "current_task",
+)
+
+# ── Quality Validation Constants (Feature 010) ───────────────────────
+
+ERROR_CATEGORIES: tuple[str, ...] = (
+    "syntax", "logic", "type", "lint",
+    "coverage", "docker", "contract", "boundary", "security",
+)
+
+CONTAINER_RELEVANT_PATTERNS: frozenset[str] = frozenset({
+    "Dockerfile",
+    "Dockerfile.*",
+    "docker-compose*.yml",
+    "docker-compose*.yaml",
+    ".dockerignore",
+    "requirements.txt",
+    "package.json",
+    "*.csproj",
+})
+
+SECRET_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("aws_access_key", r"(?:^|[\"'\s=])AKIA[0-9A-Z]{16}(?:[\"'\s]|$)"),
+    ("aws_secret_key", r"(?:aws_secret_access_key|secret_key)\s*[:=]\s*[\"']?[A-Za-z0-9/+=]{40}"),
+    ("generic_api_key", r"(?:api[_-]?key|apikey)\s*[:=]\s*[\"']?[A-Za-z0-9_\-]{20,}"),
+    ("jwt_token", r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
+    ("private_key", r"-----BEGIN\s+(?:RSA|DSA|EC|OPENSSH)\s+PRIVATE\s+KEY-----"),
+    ("connection_string", r"(?:mongodb|postgres|mysql|redis)://[^\s\"']+:[^\s\"']+@"),
+    ("generic_secret", r"(?:secret|password|passwd|token)\s*[:=]\s*[\"'][^\s\"']{8,}[\"']"),
+    ("github_token", r"gh[ps]_[A-Za-z0-9_]{36,}"),
+)
+
+THRESHOLD_KEY_MAPPING: dict[str, str] = {
+    "max_function_lines": "line-limit:function",
+    "max_class_lines": "line-limit:class",
+    "min_coverage_percent": "coverage",
+    "max_lines": "line-limit:generic",
+}
+
+MAX_FUNCTION_LINES: int = 30
+MAX_CLASS_LINES: int = 200
+ENTROPY_THRESHOLD: float = 4.5
+
+TODO_PATTERNS: tuple[str, ...] = (
+    r"\bTODO\b",
+    r"\bFIXME\b",
+    r"\bHACK\b",
+    r"\bXXX\b",
+)
+
+TEST_FIXTURE_PATTERNS: frozenset[str] = frozenset({
+    "tests/",
+    "test_",
+    "conftest.py",
+    "fixtures/",
+    "**/testdata/",
+})
+
+# ── Integration Orchestrator Constants (Feature 011) ──────────────────
+
+ORCHESTRATION_STATE_FILENAME: str = ".specforge/orchestration-state.json"
+ORCHESTRATION_LOCK_FILENAME: str = ".specforge/.orchestration-lock"
+ORCHESTRATION_LOCK_STALE_MINUTES: int = 120
+INTEGRATION_REPORT_FILENAME: str = "integration-report.md"
+DOCKER_COMPOSE_UP_TIMEOUT: int = 120
+HEALTH_CHECK_POLL_INTERVAL: int = 2
+HEALTH_CHECK_MAX_RETRIES: int = 30
+
+ORCHESTRATION_PHASE_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "partial", "failed",
+)
+ORCHESTRATION_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "halted",
+)
+SHARED_INFRA_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "skipped",
+)
+VERIFICATION_SEVERITIES: tuple[str, ...] = ("error", "warning")
+REPORT_VERDICTS: tuple[str, ...] = ("pass", "fail", "partial")
+ORCHESTRATION_SCHEMA_VERSION: str = "1.0"
+
+# ── Feature 012: Project Status Dashboard ──────────────────────────────
+
+STATUS_REPORT_DIR: str = ".specforge/reports"
+STATUS_JSON_FILENAME: str = "status.json"
+STATUS_MD_FILENAME: str = "status.md"
+ORCHESTRATION_STATE_FILENAME: str = ".orchestration-state.json"
+EXECUTION_STATE_FILENAME: str = ".execution-state.json"
+QUALITY_REPORT_FILENAME: str = ".quality-report.json"
+PIPELINE_STATE_FILENAME: str = ".pipeline-state.json"
+
+ServiceOverallStatus = Literal[
+    "COMPLETE",
+    "IN_PROGRESS",
+    "PLANNING",
+    "NOT_STARTED",
+    "BLOCKED",
+    "FAILED",
+    "UNKNOWN",
+]
+
+SERVICE_STATUS_ALL: tuple[str, ...] = (
+    "COMPLETE",
+    "IN_PROGRESS",
+    "PLANNING",
+    "NOT_STARTED",
+    "BLOCKED",
+    "FAILED",
+    "UNKNOWN",
+)
+
+STATUS_DISPLAY_LABELS: dict[str, str] = {
+    "COMPLETE": "COMPLETE",
+    "IN_PROGRESS": "IN PROGRESS",
+    "PLANNING": "PLANNING",
+    "NOT_STARTED": "NOT STARTED",
+    "BLOCKED": "BLOCKED",
+    "FAILED": "FAILED",
+    "UNKNOWN": "UNKNOWN",
+}
+
+LIFECYCLE_PHASE_DISPLAY: tuple[str, ...] = ("DONE", "WIP")
+
+PIPELINE_TO_LIFECYCLE: dict[str, str] = {
+    "spec": "spec",
+    "plan": "plan",
+    "tasks": "tasks",
+}
+
+STATUS_SCHEMA_VERSION: str = "1.0"
+
+WATCH_DEFAULT_INTERVAL: int = 5
+
+================================================================================
+FILE 4: src/specforge/core/__init__.py
+================================================================================
+(EMPTY - No exports currently defined)
+================================================================================
+FILE 5: pyproject.toml
+================================================================================
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "specforge"
+version = "0.1.0"
+description = "AI-powered spec-driven development engine"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = [
+    "click>=8.0,<9.0",
+    "jinja2>=3.0,<4.0",
+    "rich>=13.0,<14.0",
+    "gitpython>=3.0,<4.0",
+    "pyyaml>=6.0,<7.0",
+]
+
+[project.scripts]
+specforge = "specforge.cli.main:cli"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "syrupy>=4.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/specforge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "syrupy>=4.0",
+]
+
+================================================================================
+FILE 6: tests/unit/conftest.py (Shared Test Fixtures)
+================================================================================
+"""Shared fixtures and factories for unit tests."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+
+from specforge.core.config import GOVERNANCE_DOMAINS
+
+
+def make_governance_fixtures(
+    tmp_path: Path,
+    stack: str,
+    domains: list[str] | None = None,
+) -> Path:
+    """Write minimal but structurally valid governance files + config.json to tmp_path.
+
+    Returns the project root (tmp_path).
+    Each governance file follows the canonical ## Meta / ## Precedence / ## Rules format
+    and is immediately parseable by PromptLoader._parse_prompt_file().
+    """
+    if domains is None:
+        domains = list(GOVERNANCE_DOMAINS)
+
+    prompts_dir = tmp_path / ".specforge" / "prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+
+    # Domain precedence values matching PRECEDENCE_ORDER
+    precedence_map: dict[str, int] = {
+        "security": 1,
+        "architecture": 2,
+        "backend": 3,
+        "frontend": 3,
+        "database": 3,
+        "testing": 4,
+        "cicd": 5,
+    }
+
+    # Agnostic domains always use flat filename
+    agnostic_domains = frozenset({"architecture", "security"})
+
+    for domain in domains:
+        if domain in agnostic_domains or stack == "agnostic":
+            filename = f"{domain}.prompts.md"
+        else:
+            filename = f"{domain}.{stack}.prompts.md"
+
+        precedence = precedence_map.get(domain, 3)
+        # Use domain-namespaced rule ID prefix
+        prefix = domain[:4].upper().rstrip("-")
+        rule_id = f"{prefix}-001"
+
+        content = f"""\
+<!-- Generated by SpecForge - do not edit manually above the Rules section -->
+
+# {domain.title()} Governance Prompt
+
+## Meta
+domain: {domain}
+stack: {stack}
+version: 1.0
+precedence: {precedence}
+checksum: abc123def456
+
+## Precedence
+This file occupies position {precedence} in the conflict-resolution hierarchy:
+`security (1) > architecture (2) > backend/frontend/db (3) > testing (4) > cicd (5)`
+
+When this file conflicts with a higher-precedence file, the higher-precedence
+value applies. When this file conflicts with an equal-priority file, the conflict
+is flagged as AMBIGUOUS and requires manual resolution.
+
+## Rules
+
+### {rule_id}: Test Rule
+severity: ERROR
+scope: all files
+rule: All code MUST follow the governance rules for {domain}.
+threshold: max_lines=100, min_coverage=80
+example_correct: |
+  # correct example for {domain}
+example_incorrect: |
+  # incorrect example for {domain}
+"""
+        (prompts_dir / filename).write_text(content, encoding="utf-8")
+
+    # Write config.json
+    config_dir = tmp_path / ".specforge"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config = {
+        "project_name": "test-project",
+        "stack": stack,
+        "version": "1.0",
+        "created_at": "2026-03-15",
+    }
+    (config_dir / "config.json").write_text(
+        json.dumps(config, indent=2), encoding="utf-8"
+    )
+
+    return tmp_path
+
+
+@pytest.fixture
+def governance_fixtures_dotnet(tmp_path: Path) -> Path:
+    """Convenience fixture: full dotnet governance project."""
+    return make_governance_fixtures(tmp_path, stack="dotnet")
+
+
+@pytest.fixture
+def governance_fixtures_agnostic(tmp_path: Path) -> Path:
+    """Convenience fixture: full agnostic governance project."""
+    return make_governance_fixtures(tmp_path, stack="agnostic")
+
+================================================================================
+FILE 7: tests/unit/test_result.py (Example Test Pattern)
+================================================================================
+"""Unit tests for Result[T, E] — Ok and Err variants."""
+
+from specforge.core.result import Err, Ok
+
+
+class TestOk:
+    def test_ok_creation(self) -> None:
+        result = Ok(42)
+        assert result.value == 42
+
+    def test_ok_property_is_true(self) -> None:
+        assert Ok("hello").ok is True
+
+    def test_ok_map_transforms_value(self) -> None:
+        result = Ok(5).map(lambda x: x * 2)
+        assert isinstance(result, Ok)
+        assert result.value == 10
+
+    def test_ok_bind_chains(self) -> None:
+        result = Ok(5).bind(lambda x: Ok(x + 1))
+        assert isinstance(result, Ok)
+        assert result.value == 6
+
+    def test_ok_bind_to_err(self) -> None:
+        result = Ok(5).bind(lambda _: Err("oops"))
+        assert isinstance(result, Err)
+        assert result.error == "oops"
+
+    def test_ok_unwrap_or_returns_value(self) -> None:
+        assert Ok(42).unwrap_or(0) == 42
+
+
+class TestErr:
+    def test_err_creation(self) -> None:
+        result = Err("something failed")
+        assert result.error == "something failed"
+
+    def test_err_property_is_false(self) -> None:
+        assert Err("fail").ok is False
+
+    def test_err_map_is_noop(self) -> None:
+        result = Err("fail").map(lambda x: x * 2)
+        assert isinstance(result, Err)
+        assert result.error == "fail"
+
+    def test_err_bind_is_noop(self) -> None:
+        result = Err("fail").bind(lambda x: Ok(x))
+        assert isinstance(result, Err)
+        assert result.error == "fail"
+
+    def test_err_unwrap_or_returns_default(self) -> None:
+        assert Err("fail").unwrap_or(99) == 99
+
+================================================================================
+FILE 8: tests/unit/test_status_models.py (Status Models Tests)
+================================================================================
+"""Unit tests for status data models (Feature 012)."""
+
+from __future__ import annotations
+
+import pytest
+
+from specforge.core.status_models import (
+    DependencyGraph,
+    GraphNode,
+    LifecyclePhases,
+    PhaseProgressRecord,
+    ProjectStatusSnapshot,
+    QualitySummaryRecord,
+    ServicePhaseDetail,
+    ServiceStatusRecord,
+)
+
+
+class TestLifecyclePhases:
+    def test_frozen(self) -> None:
+        lc = LifecyclePhases()
+        with pytest.raises(AttributeError):
+            lc.spec = "DONE"  # type: ignore[misc]
+
+    def test_all_fields_nullable(self) -> None:
+        lc = LifecyclePhases()
+        assert lc.spec is None
+        assert lc.plan is None
+        assert lc.tasks is None
+        assert lc.impl_percent is None
+        assert lc.tests_passed is None
+        assert lc.tests_total is None
+        assert lc.docker is None
+        assert lc.boundary_compliance is None
+
+    def test_with_values(self) -> None:
+        lc = LifecyclePhases(
+            spec="DONE",
+            plan="WIP",
+            tasks=None,
+            impl_percent=75,
+            tests_passed=10,
+            tests_total=15,
+            docker="OK",
+            boundary_compliance=None,
+        )
+        assert lc.spec == "DONE"
+        assert lc.plan == "WIP"
+        assert lc.impl_percent == 75
+        assert lc.docker == "OK"
+
+
+class TestServiceStatusRecord:
+    def test_frozen(self) -> None:
+        r = ServiceStatusRecord(
+            slug="svc",
+            display_name="Svc",
+            features=("001",),
+            lifecycle=LifecyclePhases(),
+            overall_status="NOT_STARTED",
+        )
+        with pytest.raises(AttributeError):
+            r.slug = "other"  # type: ignore[misc]
+
+    def test_fields(self) -> None:
+        r = ServiceStatusRecord(
+            slug="auth-service",
+            display_name="Auth Service",
+            features=("001", "002"),
+            lifecycle=LifecyclePhases(spec="DONE"),
+            overall_status="PLANNING",
+            phase_index=0,
+        )
+        assert r.slug == "auth-service"
+        assert r.display_name == "Auth Service"
+        assert r.features == ("001", "002")
+        assert r.lifecycle.spec == "DONE"
+        assert r.overall_status == "PLANNING"
+        assert r.phase_index == 0
+
+    def test_phase_index_defaults_none(self) -> None:
+        r = ServiceStatusRecord(
+            slug="s",
+            display_name="S",
+            features=(),
+            lifecycle=LifecyclePhases(),
+            overall_status="NOT_STARTED",
+        )
+        assert r.phase_index is None
+
+
+class TestServicePhaseDetail:
+    def test_fields(self) -> None:
+        d = ServicePhaseDetail(slug="auth", status="COMPLETE", impl_percent=100)
+        assert d.slug == "auth"
+        assert d.status == "COMPLETE"
+        assert d.impl_percent == 100
+
+    def test_impl_percent_default_none(self) -> None:
+        d = ServicePhaseDetail(slug="s", status="NOT_STARTED")
+        assert d.impl_percent is None
+
+
+class TestPhaseProgressRecord:
+    def test_fields(self) -> None:
+        detail = ServicePhaseDetail(slug="auth", status="COMPLETE", impl_percent=100)
+        p = PhaseProgressRecord(
+            index=0,
+            label="Phase 1",
+            services=("auth",),
+            completion_percent=100.0,
+            status="complete",
+            blocked_by=None,
+            service_details=(detail,),
+        )
+        assert p.index == 0
+        assert p.label == "Phase 1"
+        assert p.services == ("auth",)
+        assert p.completion_percent == 100.0
+        assert p.status == "complete"
+        assert p.blocked_by is None
+        assert len(p.service_details) == 1
+
+    def test_blocked(self) -> None:
+        p = PhaseProgressRecord(
+            index=1,
+            label="Phase 2",
+            services=("pay",),
+            completion_percent=0.0,
+            status="blocked",
+            blocked_by=0,
+        )
+        assert p.blocked_by == 0
+        assert p.service_details == ()
+
+
+class TestQualitySummaryRecord:
+    def test_all_14_fields(self) -> None:
+        q = QualitySummaryRecord(
+            services_total=8,
+            services_complete=2,
+            services_in_progress=1,
+            services_planning=1,
+            services_not_started=2,
+            services_blocked=1,
+            services_failed=1,
+            services_unknown=0,
+            tasks_total=100,
+            tasks_complete=50,
+            tasks_failed=3,
+            coverage_avg=82.5,
+            docker_built=2,
+            docker_total=8,
+            docker_failing=1,
+            contract_passed=3,
+            contract_total=5,
+            autofix_success_rate=78.0,
+        )
+        assert q.services_total == 8
+        total = (
+            q.services_complete
+            + q.services_in_progress
+            + q.services_planning
+            + q.services_not_started
+            + q.services_blocked
+            + q.services_failed
+            + q.services_unknown
+        )
+        assert total == q.services_total
+
+    def test_optional_defaults_none(self) -> None:
+        q = QualitySummaryRecord(
+            services_total=1,
+            services_complete=0,
+            services_in_progress=0,
+            services_planning=0,
+            services_not_started=1,
+            services_blocked=0,
+            services_failed=0,
+            services_unknown=0,
+            tasks_total=0,
+            tasks_complete=0,
+            tasks_failed=0,
+        )
+        assert q.coverage_avg is None
+        assert q.docker_built is None
+        assert q.docker_total is None
+        assert q.docker_failing is None
+        assert q.contract_passed is None
+        assert q.contract_total is None
+        assert q.autofix_success_rate is None
+
+
+class TestGraphNodeAndDependencyGraph:
+    def test_graph_node(self) -> None:
+        n = GraphNode(slug="auth", status="COMPLETE", dependencies=("db",))
+        assert n.slug == "auth"
+        assert n.dependencies == ("db",)
+
+    def test_graph_node_no_deps(self) -> None:
+        n = GraphNode(slug="auth", status="COMPLETE")
+        assert n.dependencies == ()
+
+    def test_dependency_graph(self) -> None:
+        n1 = GraphNode(slug="auth", status="COMPLETE")
+        n2 = GraphNode(slug="pay", status="IN_PROGRESS", dependencies=("auth",))
+        g = DependencyGraph(
+            nodes=(n1, n2), phase_groups=(("auth",), ("pay",))
+        )
+        assert len(g.nodes) == 2
+        assert g.phase_groups == (("auth",), ("pay",))
+
+    def test_dependency_graph_empty_groups(self) -> None:
+        g = DependencyGraph(nodes=())
+        assert g.phase_groups == ()
+
+
+class TestProjectStatusSnapshot:
+    def test_full_snapshot(self) -> None:
+        svc = ServiceStatusRecord(
+            slug="auth",
+            display_name="Auth",
+            features=("001",),
+            lifecycle=LifecyclePhases(spec="DONE"),
+            overall_status="PLANNING",
+        )
+        quality = QualitySummaryRecord(
+            services_total=1,
+            services_complete=0,
+            services_in_progress=0,
+            services_planning=1,
+            services_not_started=0,
+            services_blocked=0,
+            services_failed=0,
+            services_unknown=0,
+            tasks_total=0,
+            tasks_complete=0,
+            tasks_failed=0,
+        )
+        graph = DependencyGraph(nodes=())
+        snap = ProjectStatusSnapshot(
+            project_name="TestProject",
+            architecture="microservice",
+            services=(svc,),
+            phases=(),
+            quality=quality,
+            graph=graph,
+            warnings=("test warning",),
+            timestamp="2026-03-18T00:00:00Z",
+            has_failures=False,
+        )
+        assert snap.project_name == "TestProject"
+        assert snap.architecture == "microservice"
+        assert len(snap.services) == 1
+        assert snap.warnings == ("test warning",)
+        assert snap.has_failures is False
+
+    def test_frozen(self) -> None:
+        quality = QualitySummaryRecord(
+            services_total=0,
+            services_complete=0,
+            services_in_progress=0,
+            services_planning=0,
+            services_not_started=0,
+            services_blocked=0,
+            services_failed=0,
+            services_unknown=0,
+            tasks_total=0,
+            tasks_complete=0,
+            tasks_failed=0,
+        )
+        snap = ProjectStatusSnapshot(
+            project_name="P",
+            architecture="monolithic",
+            services=(),
+            phases=(),
+            quality=quality,
+            graph=DependencyGraph(nodes=()),
+            warnings=(),
+            timestamp="t",
+            has_failures=False,
+        )
+        with pytest.raises(AttributeError):
+            snap.project_name = "X"  # type: ignore[misc]
+

@@ -7,7 +7,10 @@ import json
 import re
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from specforge.plugins.stack_plugin_base import PluginRule
 
 from specforge.core.config import (
     AGNOSTIC_GOVERNANCE_DOMAINS,
@@ -58,6 +61,7 @@ class PromptFileManager:
         domain: str,
         project_name: str,
         stack: str,
+        extra_rules: list[PluginRule] | None = None,
     ) -> Result[Path, str]:
         """Render one governance template and write it to disk."""
         output_path = self.resolve_path(domain, stack)
@@ -78,6 +82,12 @@ class PromptFileManager:
             )
 
         rendered = render_result.value
+
+        # Append plugin rules if provided
+        if extra_rules:
+            from specforge.plugins.rule_formatter import format_plugin_rules
+
+            rendered += "\n" + format_plugin_rules(extra_rules)
 
         # Step 2: compute SHA-256 of the rendered content
         checksum = hashlib.sha256(rendered.encode("utf-8")).hexdigest()
@@ -100,11 +110,15 @@ class PromptFileManager:
         self,
         project_name: str,
         stack: str,
+        extra_rules_by_domain: dict[str, list[PluginRule]] | None = None,
     ) -> Result[list[Path], str]:
         """Generate all 7 governance files and write config.json."""
         paths: list[Path] = []
         for domain in GOVERNANCE_DOMAINS:
-            result = self.generate_one(domain, project_name, stack)
+            domain_rules = (extra_rules_by_domain or {}).get(domain)
+            result = self.generate_one(
+                domain, project_name, stack, extra_rules=domain_rules
+            )
             if not result.ok:
                 return Err(result.error)
             paths.append(result.value)

@@ -721,3 +721,14 @@ PIPELINE_TO_LIFECYCLE: dict[str, str] = {
 STATUS_SCHEMA_VERSION: str = "1.0"
 
 WATCH_DEFAULT_INTERVAL: int = 5
+
+
+# ── Plugin System Constants (Feature 013) ────────────────────────────
+
+CUSTOM_PLUGIN_DIR: str = ".specforge/plugins"
+
+PLUGIN_NAME_PATTERN: str = r"^[a-z][a-z0-9_-]*$"
+
+PLUGIN_SEVERITIES: frozenset[str] = frozenset({"ERROR", "WARNING"})
+
+ARCHITECTURE_DEFAULT: str = "monolithic"
