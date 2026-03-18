@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/your-org/specforge/actions/workflows/release.yml"><img src="https://github.com/your-org/specforge/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
-    <a href="https://github.com/your-org/specforge/stargazers"><img src="https://img.shields.io/github/stars/your-org/specforge?style=social" alt="GitHub stars"/></a>
-    <a href="https://github.com/your-org/specforge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/your-org/specforge" alt="License"/></a>
+    <a href="https://github.com/Nandakumar333/SpecForge/actions/workflows/release.yml"><img src="https://github.com/Nandakumar333/SpecForge/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
+    <a href="https://github.com/Nandakumar333/SpecForge/stargazers"><img src="https://img.shields.io/github/stars/Nandakumar333/SpecForge?style=social" alt="GitHub stars"/></a>
+    <a href="https://github.com/Nandakumar333/SpecForge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Nandakumar333/SpecForge" alt="License"/></a>
     <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"/>
     <img src="https://img.shields.io/badge/install%20with-uv-violet" alt="Install with uv"/>
     <img src="https://img.shields.io/badge/version-0.1.0--March%202026-orange" alt="Version 0.1.0"/>
@@ -40,6 +40,8 @@
 - [🧪 Quality Validation System](#-quality-validation-system)
 - [🤖 Sub-Agent Execution Engine](#-sub-agent-execution-engine)
 - [🔄 Implementation Orchestrator](#-implementation-orchestrator)
+- [📊 Project Status Dashboard](#-project-status-dashboard)
+- [🔌 Plugin System](#-plugin-system)
 - [🔧 Prerequisites](#-prerequisites)
 - [📋 Detailed Process](#-detailed-process)
 - [🔍 Troubleshooting](#-troubleshooting)
@@ -52,7 +54,7 @@
 
 Spec-Driven Development **flips the script** on traditional software development. For decades, code has been king — specifications were just scaffolding we built and discarded once the "real work" of coding began. Spec-Driven Development changes this: **specifications become executable**, directly generating working implementations rather than just guiding them.
 
-SpecForge is the engine that makes this workflow concrete at enterprise scale. One prompt. Twelve features. Every feature fully specified, planned, and implemented — independently, in parallel, with strict coding governance enforced at every step.
+SpecForge is the engine that makes this workflow concrete at enterprise scale. One prompt. Thirteen features. Every feature fully specified, planned, and implemented — independently, in parallel, with strict coding governance enforced at every step.
 
 ```
 "Create a webapp for PersonalFinance"
@@ -103,7 +105,7 @@ SpecForge is the engine that makes this workflow concrete at enterprise scale. O
 #### Option 1: Persistent Installation (Recommended)
 
 ```bash
-uv tool install specforge --from git+https://github.com/your-org/specforge.git
+uv tool install specforge --from git+https://github.com/Nandakumar333/SpecForge.git
 ```
 
 Then use the tool directly:
@@ -122,13 +124,13 @@ specforge check
 To upgrade:
 
 ```bash
-uv tool install specforge --force --from git+https://github.com/your-org/specforge.git
+uv tool install specforge --force --from git+https://github.com/Nandakumar333/SpecForge.git
 ```
 
 #### Option 2: One-time Usage
 
 ```bash
-uvx --from git+https://github.com/your-org/specforge.git specforge init <PROJECT_NAME>
+uvx --from git+https://github.com/Nandakumar333/SpecForge.git specforge init <PROJECT_NAME>
 ```
 
 ---
@@ -293,6 +295,8 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 | `specforge implement --shared-infra` | Build cross-service infrastructure before any service | ✅ Implemented |
 | `specforge implement --all` | Execute all services respecting the dependency graph with phased orchestration | ✅ Implemented |
 | `specforge implement --resume` | Resume from last completed task | ✅ Implemented |
+| `specforge status` | Show project-wide status dashboard with service progress, quality reports, and phase tracking | ✅ Implemented |
+| `specforge plugins` | List installed agent and stack plugins with configuration status | ✅ Implemented |
 
 ---
 
@@ -351,6 +355,23 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 | `--mode` | Option | `prompt-display` | Execution mode: `prompt-display` (show prompt for manual agent use) or `agent-call` (invoke agent directly) |
 | `--max-fix-attempts` | Option | `3` | Max auto-fix retry attempts per task |
 | `--to-phase` | Option | — | Stop after completing a specific phase (used with `--all`) |
+
+---
+
+### `specforge status` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `[target]` | Argument | — | Optional service slug to drill down into a specific service's status |
+
+---
+
+### `specforge plugins` Options
+
+| Argument/Option | Type | Default | Description |
+|----------------|------|---------|-------------|
+| `--agents` | Flag | `False` | List only agent plugins |
+| `--stacks` | Flag | `False` | List only stack plugins |
 
 ---
 
@@ -426,6 +447,12 @@ specforge implement ledger-service --resume
 
 # Use agent-call mode (invoke agent directly)
 specforge implement ledger-service --mode agent-call
+
+# View project-wide status dashboard
+specforge status
+
+# List installed plugins
+specforge plugins
 ```
 
 ---
@@ -458,7 +485,7 @@ After running `specforge init`, your AI agent has access to these slash commands
 
 ## 🏗️ Architecture & Feature Overview
 
-SpecForge is built as 11 incrementally developed features, each fully specified, planned, and implemented following its own spec-first methodology.
+SpecForge is built as 13 incrementally developed features, each fully specified, planned, and implemented following its own spec-first methodology.
 
 ### Feature Map
 
@@ -467,35 +494,35 @@ SpecForge is built as 11 incrementally developed features, each fully specified,
 │                         SpecForge Feature Architecture                    │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                     │
-│  │ 001 CLI     │  │ 002 Template│  │ 003 Prompt  │   FOUNDATION         │
-│  │ Init/Check  │  │ Engine      │  │ Governance  │   (Phase 1 & 2)      │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                     │
-│         │                │                │                              │
-│  ┌──────▼──────┐         │                │                              │
-│  │ 004 Arch    │◄────────┘                │                              │
-│  │ Decomposer  │                          │                              │
-│  └──────┬──────┘                          │                              │
-│         │                                 │                              │
-│  ┌──────▼──────┐  ┌─────────────┐  ┌─────▼───────┐                     │
-│  │ 005 Spec    │  │ 006 Research│  │ 007 Edge    │   PIPELINE            │
-│  │ Pipeline    │◄─┤ & Clarify   │  │ Case Engine │   (Phase 3)           │
-│  └──────┬──────┘  └─────────────┘  └──────┬──────┘                     │
-│         │                                  │                             │
-│  ┌──────▼──────┐                           │                             │
-│  │ 008 Task    │◄──────────────────────────┘                             │
-│  │ Generation  │                                                         │
-│  └──────┬──────┘                                                         │
-│         │                                                                │
-│  ┌──────▼──────┐  ┌─────────────┐                                       │
-│  │ 009 Sub-    │◄─┤ 010 Quality │   EXECUTION                            │
-│  │ Agent Exec  │  │ Validation  │   (Phase 4)                            │
-│  └──────┬──────┘  └─────────────┘                                       │
-│         │                                                                │
-│  ┌──────▼──────┐                                                         │
-│  │ 011 Impl    │                    ORCHESTRATION                         │
-│  │ Orchestrator│                    (Phase 5)                             │
-│  └─────────────┘                                                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │
+│  │ 001 CLI     │  │ 002 Template│  │ 003 Prompt  │  │ 013 Plugin  │   │
+│  │ Init/Check  │  │ Engine      │  │ Governance  │  │ System      │   │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘   │
+│         │                │                │                │  FOUNDATION │
+│  ┌──────▼──────┐         │                │                │            │
+│  │ 004 Arch    │◄────────┘                │                │            │
+│  │ Decomposer  │                          │                │            │
+│  └──────┬──────┘                          │                │            │
+│         │                                 │                │            │
+│  ┌──────▼──────┐  ┌─────────────┐  ┌─────▼───────┐       │            │
+│  │ 005 Spec    │  │ 006 Research│  │ 007 Edge    │       │  PIPELINE   │
+│  │ Pipeline    │◄─┤ & Clarify   │  │ Case Engine │       │            │
+│  └──────┬──────┘  └─────────────┘  └──────┬──────┘       │            │
+│         │                                  │               │            │
+│  ┌──────▼──────┐                           │               │            │
+│  │ 008 Task    │◄──────────────────────────┘               │            │
+│  │ Generation  │                                           │            │
+│  └──────┬──────┘                                           │            │
+│         │                                                  │            │
+│  ┌──────▼──────┐  ┌─────────────┐                         │            │
+│  │ 009 Sub-    │◄─┤ 010 Quality │◄────────────────────────┘  EXECUTION │
+│  │ Agent Exec  │  │ Validation  │                                      │
+│  └──────┬──────┘  └─────────────┘                                      │
+│         │                                                              │
+│  ┌──────▼──────┐  ┌─────────────┐                                      │
+│  │ 011 Impl    │  │ 012 Project │    ORCHESTRATION                      │
+│  │ Orchestrator│  │ Dashboard   │    & MONITORING                       │
+│  └─────────────┘  └─────────────┘                                      │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -514,12 +541,14 @@ SpecForge is built as 11 incrementally developed features, each fully specified,
 | 009 | **Sub-Agent Executor** | Per-service task execution with context isolation, Mode A (prompt-display) / Mode B (agent-call), auto-fix loop with regression detection, git commit per task, Docker verification (microservice) |
 | 010 | **Quality Validation System** | 11 pluggable checkers via `CheckerProtocol`, architecture-aware quality gates, error-categorized auto-fix prompts, diagnostic escalation reports, prompt-rule compliance checking |
 | 011 | **Implementation Orchestrator** | Multi-service phased execution from dependency graph, inter-phase contract verification, docker-compose integration validation, monolith single-app integration test, project-level state persistence |
+| 012 | **Project Status Dashboard** | Real-time project status view with `specforge status` — service progress, phase completion, quality reports, implementation metrics, Rich terminal rendering with color-coded indicators |
+| 013 | **Plugin System** | Extensible architecture with 25+ agent plugins (Claude, Copilot, Gemini, Cursor, Windsurf, Codex, and more) and 3 stack plugins (dotnet, nodejs, python) with unified `AgentPlugin` and `StackPlugin` interfaces |
 
 ---
 
 ## 🌟 Development Phases (Roadmap)
 
-SpecForge is built incrementally across 5 phases.
+SpecForge is built incrementally across 6 phases.
 
 ### Phase 1 — Foundation ✅
 **Feature 001** — CLI Scaffold: `specforge init` with agent detection, stack selection, dry-run preview, git integration, `specforge check` for prerequisites.
@@ -548,7 +577,12 @@ SpecForge is built incrementally across 5 phases.
 ### Phase 5 — Orchestration ✅
 **Feature 011** — Implementation Orchestrator: `IntegrationOrchestrator` reads manifest dependency graph, computes phased execution plan via topological sort, executes `SharedInfraExecutor` → per-phase `PhaseExecutor` → `ContractEnforcer` verification → `IntegrationTestRunner` validation. Within-phase services execute sequentially (continue-then-halt on failure). Contract verification via published `.specforge/features/<slug>/contracts/` files. Auto-generated integration tests from contracts. Docker-compose integration validation for microservices. Single-app integration test for monoliths. Project-level state in `.specforge/orchestration-state.json`.
 
-### Phase 6 — Polish & Ecosystem 🔜
+### Phase 6 — Observability & Ecosystem ✅
+**Feature 012** — Project Status Dashboard: `specforge status` command with Rich terminal rendering (Table, Panel, Progress, Tree). Real-time project overview showing architecture, domain, feature/service counts. Per-service status table with color-coded indicators (🟢 complete, 🟡 in-progress, 🔴 failed, ⚪ queued), task progress (N/M), quality pass/fail, and 7-phase completion tracking. Phase breakdown, quality summary, implementation progress, and integration test results. Drill-down into individual services. CI/CD-friendly summary reports.
+
+**Feature 013** — Plugin System: Extensible architecture for custom AI agents and technology stacks. 25+ agent plugins with unified `AgentPlugin` interface (Claude, Copilot, Gemini, Cursor, Windsurf, Codex, plus 19 additional agents and a generic fallback). 3 stack plugins (`dotnet`, `nodejs`, `python`) with `StackPlugin` interface providing `get_build_command()`, `get_lint_command()`, `get_test_command()`, `get_docker_base_image()`, and `get_rules()`. Runtime plugin discovery via `PluginManager`. Rule formatter for converting stack rules to governance prompt format. `specforge plugins` command for listing and configuration.
+
+### Phase 7 — Polish & Ecosystem 🔜
 Brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
 
 ---
@@ -840,6 +874,106 @@ Project-level orchestration state is stored in `.specforge/orchestration-state.j
 
 ---
 
+## 📊 Project Status Dashboard
+
+The `specforge status` command provides a comprehensive real-time view of your entire project's progress.
+
+### Dashboard Overview
+
+```bash
+specforge status
+```
+
+Displays:
+- **Project Overview** — Architecture, domain, feature count, service count, manifest path
+- **Service Table** — Per-service status with color-coded indicators:
+
+| Indicator | Meaning |
+|-----------|---------|
+| 🟢 | Service complete — all tasks done, quality passed |
+| 🟡 | Service in progress — actively being implemented |
+| 🔴 | Service failed — quality check or implementation error |
+| ⚪ | Service queued — waiting for dependencies |
+
+- **Phase Breakdown** — Which services are in which pipeline phase (spec → research → plan → checklist → tasks → datamodel → edgecase)
+- **Quality Summary** — Services passing vs failing quality checks, broken down by checker category
+- **Implementation Progress** — Per-service task progress (completed/total)
+- **Integration Test Results** — Cross-service test status
+
+### Per-Service Drill-Down
+
+```bash
+specforge pipeline-status ledger-service
+```
+
+Shows detailed phase completion for a specific service.
+
+---
+
+## 🔌 Plugin System
+
+SpecForge uses an extensible plugin architecture for AI agents and technology stacks. Plugins are discovered at runtime from `src/specforge/plugins/`.
+
+### Agent Plugins
+
+25+ agent plugins with a unified `AgentPlugin` interface:
+
+| Plugin | Agent | Description |
+|--------|-------|-------------|
+| `claude_plugin.py` | Claude | Anthropic Claude via API |
+| `copilot_plugin.py` | GitHub Copilot | GitHub Copilot CLI |
+| `gemini_plugin.py` | Gemini | Google Gemini CLI |
+| `cursor_plugin.py` | Cursor | Cursor IDE integration |
+| `windsurf_plugin.py` | Windsurf | Windsurf editor |
+| `codex_plugin.py` | Codex | OpenAI Codex CLI |
+| `generic_plugin.py` | Any | Fallback copy-paste flow for unsupported agents |
+
+Plus 19 additional plugins for agents like Mistral, Qwen, and others.
+
+### Stack Plugins
+
+Stack plugins define language-specific build, lint, and test commands:
+
+| Stack | Build | Lint | Test | Docker Base |
+|-------|-------|------|------|-------------|
+| **dotnet** | `dotnet build` | StyleCop | `dotnet test` | `mcr.microsoft.com/dotnet/aspnet:8` |
+| **nodejs** | `npm run build` | ESLint | `npm test` | `node:20-alpine` |
+| **python** | `python -m pytest` | Ruff | `pytest` | `python:3.11-slim` |
+
+Each stack plugin also provides stack-specific coding rules (e.g., C# PascalCase conventions, Python type hint requirements) via `get_rules()`.
+
+### Managing Plugins
+
+```bash
+# List installed agent and stack plugins
+specforge plugins
+```
+
+### Extending with Custom Plugins
+
+Implement the `AgentPlugin` or `StackPlugin` protocol:
+
+```python
+class AgentPlugin(ABC):
+    @abstractmethod
+    def execute_task(self, prompt: str, context: dict) -> str: ...
+
+    @abstractmethod
+    def configure(self) -> Result[str]: ...
+
+class StackPlugin(ABC):
+    @abstractmethod
+    def get_build_command(self) -> str: ...
+
+    @abstractmethod
+    def get_lint_command(self) -> str: ...
+
+    @abstractmethod
+    def get_test_command(self) -> str: ...
+```
+
+---
+
 ## 🔧 Prerequisites
 
 - **Linux / macOS / Windows**
@@ -964,11 +1098,17 @@ The orchestrator computes dependency phases, implements services per phase, veri
 ### STEP 5: Check progress
 
 ```bash
+# Project-wide status dashboard
+specforge status
+
 # Per-service pipeline status
 specforge pipeline-status
 
 # Specific service
 specforge pipeline-status ledger-service
+
+# List installed plugins
+specforge plugins
 ```
 
 Shows phase completion status across all services: `pending → in-progress → complete → failed`.
@@ -1076,7 +1216,7 @@ specforge init my-project --dry-run
 
 ## 💬 Support
 
-For support, please open a [GitHub issue](https://github.com/your-org/specforge/issues/new). Bug reports, feature requests, and questions about spec-driven development are all welcome.
+For support, please open a [GitHub issue](https://github.com/Nandakumar333/SpecForge/issues/new). Bug reports, feature requests, and questions about spec-driven development are all welcome.
 
 ---
 
