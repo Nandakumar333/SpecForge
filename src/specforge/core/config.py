@@ -649,3 +649,26 @@ TEST_FIXTURE_PATTERNS: frozenset[str] = frozenset({
     "fixtures/",
     "**/testdata/",
 })
+
+# ── Integration Orchestrator Constants (Feature 011) ──────────────────
+
+ORCHESTRATION_STATE_FILENAME: str = ".specforge/orchestration-state.json"
+ORCHESTRATION_LOCK_FILENAME: str = ".specforge/.orchestration-lock"
+ORCHESTRATION_LOCK_STALE_MINUTES: int = 120
+INTEGRATION_REPORT_FILENAME: str = "integration-report.md"
+DOCKER_COMPOSE_UP_TIMEOUT: int = 120
+HEALTH_CHECK_POLL_INTERVAL: int = 2
+HEALTH_CHECK_MAX_RETRIES: int = 30
+
+ORCHESTRATION_PHASE_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "partial", "failed",
+)
+ORCHESTRATION_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "halted",
+)
+SHARED_INFRA_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "skipped",
+)
+VERIFICATION_SEVERITIES: tuple[str, ...] = ("error", "warning")
+REPORT_VERDICTS: tuple[str, ...] = ("pass", "fail", "partial")
+ORCHESTRATION_SCHEMA_VERSION: str = "1.0"

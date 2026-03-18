@@ -45,6 +45,7 @@ class TestBuiltInDiscovery:
             "clarifications-report",
             "edge-cases",
             "tasks",
+            "integration-report",
         }
         assert expected == names
 
@@ -188,6 +189,6 @@ class TestListAndHas:
         features = registry.list(TemplateType.feature)
         consts = registry.list(TemplateType.constitution)
         assert len(consts) == 1
-        assert len(features) == 8
+        assert len(features) == 9
         # 7 generic + 3 stack variants
         assert len(prompts) == 10
