@@ -95,6 +95,7 @@ class PluginManager:
                 isinstance(attr, type)
                 and issubclass(attr, StackPlugin)
                 and attr is not StackPlugin
+                and getattr(attr, "__module__", None) == module.__name__
             ):
                 instance = attr()
                 self._stack_plugins[instance.plugin_name] = instance
@@ -107,6 +108,7 @@ class PluginManager:
                 isinstance(attr, type)
                 and issubclass(attr, AgentPlugin)
                 and attr is not AgentPlugin
+                and getattr(attr, "__module__", None) == module.__name__
             ):
                 instance = attr()
                 self._agent_plugins[instance.agent_name()] = instance
