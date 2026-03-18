@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 
 from specforge.core.agent_detector import detect_agent
-from specforge.core.config import AGENT_PRIORITY, SUPPORTED_STACKS
+from specforge.core.config import SUPPORTED_STACKS, VALID_ARCHITECTURES
 from specforge.core.git_ops import init_repo, is_git_available
 from specforge.core.project import ProjectConfig
 from specforge.core.scaffold_builder import (
@@ -28,7 +28,7 @@ from specforge.core.stack_detector import StackDetector
 )
 @click.option(
     "--agent",
-    type=click.Choice(AGENT_PRIORITY, case_sensitive=False),
+    type=str,
     default=None,
     help="AI agent to configure.",
 )
@@ -37,6 +37,12 @@ from specforge.core.stack_detector import StackDetector
     type=click.Choice(SUPPORTED_STACKS, case_sensitive=False),
     default=None,
     help="Technology stack.",
+)
+@click.option(
+    "--arch",
+    type=click.Choice(VALID_ARCHITECTURES, case_sensitive=False),
+    default="monolithic",
+    help="Architecture pattern (default: monolithic).",
 )
 @click.option(
     "--force",
@@ -50,6 +56,7 @@ def init(
     here: bool,
     agent: str | None,
     stack: str | None,
+    arch: str,
     force: bool,
     no_git: bool,
     dry_run: bool,
@@ -66,6 +73,7 @@ def init(
         here=here,
         agent=detection.agent,
         stack=resolved_stack,
+        architecture=arch,
         no_git=no_git,
         force=force,
         dry_run=dry_run,
@@ -86,13 +94,56 @@ def init(
     scaffold_result = write_result.value
     scaffold_result.agent_source = detection.source
 
+    # Plugin integration — stack rules for governance
+    extra_rules = _get_plugin_rules(resolved_stack, arch)
+
     # Generate governance prompt files after scaffold directories exist
-    gov_result = generate_governance_files(config)
+    gov_result = generate_governance_files(
+        config, extra_rules_by_domain=extra_rules,
+    )
     if not gov_result.ok:
         _fail(gov_result.error)
 
+    # Agent config generation via plugin
+    _generate_agent_config(detection.agent, config.target_dir, config)
+
     _handle_git(config, scaffold_result)
     _print_summary(scaffold_result)
+
+
+def _get_plugin_rules(
+    stack: str, arch: str,
+) -> dict[str, list] | None:
+    """Get stack plugin rules for the given architecture."""
+    from specforge.plugins.plugin_manager import PluginManager
+
+    mgr = PluginManager()
+    mgr.discover()
+    result = mgr.get_stack_plugin(stack)
+    if result.ok:
+        rules = result.value.get_prompt_rules(arch)
+        return rules if rules else None
+    return None
+
+
+def _generate_agent_config(
+    agent: str, target_dir: Path, config: ProjectConfig,
+) -> None:
+    """Generate agent-specific config files via plugin."""
+    from specforge.plugins.plugin_manager import PluginManager
+
+    mgr = PluginManager()
+    mgr.discover()
+    result = mgr.get_agent_plugin(agent)
+    if result.ok:
+        context = {
+            "project_name": config.name,
+            "stack": config.stack,
+            "architecture": config.architecture,
+            "governance_summary": "",
+            "agent_name": agent,
+        }
+        result.value.generate_config(target_dir, context)
 
 
 def _validate_args(name: str | None, here: bool) -> None:

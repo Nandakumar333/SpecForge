@@ -205,3 +205,28 @@ class TestPluginManagerProjectRoot:
 
         mgr = PluginManager()
         assert mgr._project_root is None
+
+
+class TestPluginManagerErrorMessages:
+    """Error messages list available plugins."""
+
+    def test_unknown_stack_lists_available(self) -> None:
+        from specforge.plugins.plugin_manager import PluginManager
+
+        pm = PluginManager()
+        pm.discover()
+        err = pm.get_stack_plugin("unknown")
+        assert not err.ok
+        assert "dotnet" in err.error
+        assert "nodejs" in err.error
+        assert "python" in err.error
+
+    def test_unknown_agent_lists_available(self) -> None:
+        from specforge.plugins.plugin_manager import PluginManager
+
+        pm = PluginManager()
+        pm.discover()
+        err = pm.get_agent_plugin("unknown")
+        assert not err.ok
+        assert "claude" in err.error
+        assert "cursor" in err.error

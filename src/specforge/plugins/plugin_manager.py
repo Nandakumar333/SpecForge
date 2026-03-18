@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import pkgutil
 from pathlib import Path
 
+from specforge.core.config import CUSTOM_PLUGIN_DIR
 from specforge.core.result import Err, Ok, Result
 from specforge.plugins.agents.base import AgentPlugin
 from specforge.plugins.stack_plugin_base import StackPlugin
@@ -20,10 +22,12 @@ class PluginManager:
         self._agent_plugins: dict[str, AgentPlugin] = {}
 
     def discover(self) -> Result[int, str]:
-        """Discover all built-in plugins. Return total count."""
+        """Discover all built-in and custom plugins. Return total count."""
         try:
             self._discover_built_in_stacks()
             self._discover_built_in_agents()
+            self._discover_custom_stacks()
+            self._discover_custom_agents()
             total = len(self._stack_plugins) + len(self._agent_plugins)
             return Ok(total)
         except Exception as exc:
@@ -87,6 +91,80 @@ class PluginManager:
             )
             self._register_agent_classes(module)
 
+    def _discover_custom_stacks(self) -> None:
+        """Load custom stack plugins from project .specforge/plugins/stacks/."""
+        if not self._project_root:
+            return
+        custom_dir = self._project_root / CUSTOM_PLUGIN_DIR / "stacks"
+        if not custom_dir.is_dir():
+            return
+        self._load_custom_plugins(
+            custom_dir, StackPlugin, self._stack_plugins, "plugin_name",
+        )
+
+    def _discover_custom_agents(self) -> None:
+        """Load custom agent plugins from project .specforge/plugins/agents/."""
+        if not self._project_root:
+            return
+        custom_dir = self._project_root / CUSTOM_PLUGIN_DIR / "agents"
+        if not custom_dir.is_dir():
+            return
+        self._load_custom_plugins(
+            custom_dir, AgentPlugin, self._agent_plugins, "agent_name",
+        )
+
+    def _load_custom_plugins(
+        self,
+        directory: Path,
+        base_class: type,
+        registry: dict,
+        name_attr: str,
+    ) -> None:
+        """Load plugins from directory using importlib.util."""
+        for path in sorted(directory.glob("*_plugin.py")):
+            self._try_load_plugin(path, base_class, registry, name_attr)
+
+    def _try_load_plugin(
+        self,
+        path: Path,
+        base_class: type,
+        registry: dict,
+        name_attr: str,
+    ) -> None:
+        """Attempt to load a single plugin file. Skip on error."""
+        try:
+            spec = importlib.util.spec_from_file_location(path.stem, path)
+            if spec is None or spec.loader is None:
+                return
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            self._register_custom_from_module(
+                module, base_class, registry, name_attr,
+            )
+        except Exception:
+            return
+
+    def _register_custom_from_module(
+        self,
+        module: object,
+        base_class: type,
+        registry: dict,
+        name_attr: str,
+    ) -> None:
+        """Register all subclasses of base_class found in module."""
+        for attr_name in dir(module):
+            attr = getattr(module, attr_name)
+            if not (
+                isinstance(attr, type)
+                and issubclass(attr, base_class)
+                and attr is not base_class
+            ):
+                continue
+            instance = attr()
+            name = _resolve_plugin_name(instance, name_attr)
+            if name:
+                registry[name] = instance
+
     def _register_stack_classes(self, module: object) -> None:
         """Find and register StackPlugin subclasses in a module."""
         for attr_name in dir(module):
@@ -112,3 +190,12 @@ class PluginManager:
             ):
                 instance = attr()
                 self._agent_plugins[instance.agent_name()] = instance
+
+
+def _resolve_plugin_name(instance: object, name_attr: str) -> str | None:
+    """Extract the plugin name from an instance."""
+    try:
+        value = getattr(instance, name_attr)
+        return value() if callable(value) else value
+    except Exception:
+        return None
