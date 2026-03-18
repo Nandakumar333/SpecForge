@@ -19,6 +19,7 @@ class ProjectConfig:
     target_dir: Path
     agent: str = "agnostic"
     stack: str = "agnostic"
+    architecture: str = "monolithic"
     no_git: bool = False
     force: bool = False
     dry_run: bool = False
@@ -30,6 +31,7 @@ class ProjectConfig:
         target_dir: Path,
         agent: str = "agnostic",
         stack: str = "agnostic",
+        architecture: str = "monolithic",
         no_git: bool = False,
         force: bool = False,
         dry_run: bool = False,
@@ -49,6 +51,7 @@ class ProjectConfig:
                     target_dir=target_dir,
                     agent=agent,
                     stack=stack,
+                    architecture=architecture,
                     no_git=no_git,
                     force=force,
                     dry_run=dry_run,
@@ -69,6 +72,7 @@ class ProjectConfig:
                 target_dir=target_dir,
                 agent=agent,
                 stack=stack,
+                architecture=architecture,
                 no_git=no_git,
                 force=force,
                 dry_run=dry_run,

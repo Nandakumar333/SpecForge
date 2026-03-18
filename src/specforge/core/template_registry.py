@@ -22,6 +22,7 @@ _EXCLUDED_FILES = {
     "gitignore.j2",
     "communication-map.md.j2",
     "manifest.json.j2",
+    "plugin_rule_block.md.j2",
 }
 
 # Directories that map to template types

@@ -119,7 +119,10 @@ def _build_files(config: ProjectConfig) -> list[ScaffoldFile]:
     return sorted(files, key=lambda f: str(f.relative_path))
 
 
-def generate_governance_files(config: ProjectConfig) -> Result:
+def generate_governance_files(
+    config: ProjectConfig,
+    extra_rules_by_domain: dict[str, list] | None = None,
+) -> Result:
     """Generate governance prompt files for a project.
 
     Called AFTER write_scaffold to ensure target directory exists first.
@@ -133,13 +136,20 @@ def generate_governance_files(config: ProjectConfig) -> Result:
     mgr = PromptFileManager(project_root=config.target_dir, registry=registry)
 
     if config.force:
-        return _generate_governance_with_force(mgr, config)
-    return mgr.generate(project_name=config.name, stack=config.stack)
+        return _generate_governance_with_force(
+            mgr, config, extra_rules_by_domain,
+        )
+    return mgr.generate(
+        project_name=config.name,
+        stack=config.stack,
+        extra_rules_by_domain=extra_rules_by_domain,
+    )
 
 
 def _generate_governance_with_force(
     mgr: PromptFileManager,
     config: ProjectConfig,
+    extra_rules_by_domain: dict[str, list] | None = None,
 ) -> Result:
     """Generate governance files for --force, skipping customized files."""
     from specforge.core.config import GOVERNANCE_DOMAINS
@@ -150,11 +160,12 @@ def _generate_governance_with_force(
         if file_path.exists():
             custom_result = mgr.is_customized(file_path, config.stack)
             if custom_result.ok and custom_result.value:
-                # File is customized — skip regeneration
                 paths.append(file_path)
                 continue
-        # Not customized or doesn't exist — regenerate
-        result = mgr.generate_one(domain, config.name, config.stack)
+        domain_rules = (extra_rules_by_domain or {}).get(domain)
+        result = mgr.generate_one(
+            domain, config.name, config.stack, extra_rules=domain_rules,
+        )
         if not result.ok:
             return Err(result.error)
         paths.append(result.value)
