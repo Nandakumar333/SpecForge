@@ -1,0 +1,80 @@
+# Integration Report
+
+**Architecture**: {{ architecture }}
+**Generated**: {{ created_at }}
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Total Phases | {{ total_phases }} |
+| Total Services | {{ total_services }} |
+| Succeeded | {{ succeeded_services }} |
+| Failed | {{ failed_services }} |
+| Skipped | {{ skipped_services }} |
+| **Verdict** | **{{ verdict | upper }}** |
+{% if elapsed_time %}
+| Elapsed Time | {{ elapsed_time }} |
+{% endif %}
+
+## Phase Results
+
+{% for phase in phase_results %}
+### Phase {{ phase.index }}
+
+| Service | Status | Tasks |
+|---------|--------|-------|
+{% for svc in phase.services %}
+| {{ svc.slug }} | {{ svc.status }} | {{ svc.tasks_completed }}/{{ svc.tasks_total }} |
+{% endfor %}
+
+{% endfor %}
+
+{% if verification_results %}
+## Verification Results
+
+{% for vr in verification_results %}
+### After Phase {{ vr.after_phase }}
+
+**Result**: {{ "✅ PASS" if vr.passed else "❌ FAIL" }}
+
+{% if vr.contract_results %}
+#### Contract Checks
+
+{% for cr in vr.contract_results %}
+- **{{ cr.consumer }}** ↔ **{{ cr.provider }}**: {{ "✅" if cr.passed else "❌" }}
+{% if not cr.passed %}
+{% for m in cr.mismatches %}
+  - Field: `{{ m.field }}` — Expected: `{{ m.expected }}`, Actual: `{{ m.actual }}`
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if vr.boundary_results %}
+#### Boundary Checks
+
+{% for br in vr.boundary_results %}
+- **{{ br.entity }}**: {{ br.violation_type }} — {{ br.details }}
+{% endfor %}
+{% endif %}
+
+{% endfor %}
+{% endif %}
+
+{% if integration_result %}
+## Integration Validation
+
+**Result**: {{ "✅ PASS" if integration_result.passed else "❌ FAIL" }}
+
+{% if integration_result.health_checks %}
+### Health Checks
+
+| Service | Status | Response Time |
+|---------|--------|--------------|
+{% for hc in integration_result.health_checks %}
+| {{ hc.service }} | {{ "✅" if hc.passed else "❌" }} | {{ hc.response_time_ms or "N/A" }}ms |
+{% endfor %}
+{% endif %}
+
+{% endif %}
