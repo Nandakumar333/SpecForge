@@ -1,0 +1,77 @@
+# Project Status: {{ project_name }}
+
+**Architecture**: {{ architecture | upper }}
+
+---
+
+## Services
+{% if services %}
+
+| Service | Status | Spec | Plan | Tasks | Impl% | Tests | Docker |
+|---------|--------|------|------|-------|-------|-------|--------|
+{% for svc in services %}
+| {{ svc.display_name }} | {{ svc.status }} | {{ svc.lifecycle.spec or "-" }} | {{ svc.lifecycle.plan or "-" }} | {{ svc.lifecycle.tasks or "-" }} | {{ svc.lifecycle.impl_percent if svc.lifecycle.impl_percent is not none else "-" }} | {{ "%d/%d" | format(svc.lifecycle.tests_passed, svc.lifecycle.tests_total) if svc.lifecycle.tests_total is not none else "-" }} | {{ svc.lifecycle.docker or "-" }} |
+{% endfor %}
+{% else %}
+
+_No services defined._
+{% endif %}
+
+---
+
+## Phase Progress
+{% if phases %}
+{% for phase in phases %}
+
+### Phase {{ phase.index }}: {{ phase.label }}
+
+{% set filled = (phase.completion_percent / 10) | int %}{% set empty = 10 - filled %}Status: **{{ phase.status }}** `[{{ "=" * filled }}{{ " " * empty }}] {{ phase.completion_percent | int }}%`
+{% if phase.service_details %}
+{% for sd in phase.service_details %}
+- {{ sd.slug }}: {{ sd.status }}{% if sd.impl_percent is not none %} ({{ sd.impl_percent }}%){% endif %}
+
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% else %}
+
+_No phases defined._
+{% endif %}
+
+---
+
+## Quality Summary
+
+| Metric | Value |
+|--------|-------|
+| Services Total | {{ quality.services_total }} |
+| Services Complete | {{ quality.services_complete }} |
+| Services In Progress | {{ quality.services_in_progress }} |
+| Services Planning | {{ quality.services_planning }} |
+| Services Not Started | {{ quality.services_not_started }} |
+| Services Blocked | {{ quality.services_blocked }} |
+| Services Failed | {{ quality.services_failed }} |
+| Tasks Total | {{ quality.tasks_total }} |
+| Tasks Complete | {{ quality.tasks_complete }} |
+| Tasks Failed | {{ quality.tasks_failed }} |
+{% if quality.coverage_avg is not none %}| Coverage Avg | {{ "%.1f" | format(quality.coverage_avg) }}% |
+{% endif %}
+{% if quality.docker_total is not none %}| Docker Built | {{ quality.docker_built }}/{{ quality.docker_total }} |
+{% endif %}
+{% if quality.contract_total is not none %}| Contracts Passed | {{ quality.contract_passed }}/{{ quality.contract_total }} |
+{% endif %}
+
+---
+
+_Generated: {{ timestamp }}_
+{% if has_failures %}
+
+⚠️ **Failures detected** — one or more services have status FAILED.
+{% endif %}
+{% if warnings %}
+
+### Warnings
+{% for w in warnings %}
+- {{ w }}
+{% endfor %}
+{% endif %}

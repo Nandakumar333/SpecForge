@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SpecForge Status Report",
+  "description": "Machine-readable project status output from 'specforge status --format json'",
+  "type": "object",
+  "required": ["schema_version", "project_name", "architecture", "timestamp", "has_failures", "services", "phases", "quality", "warnings"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^1\\.",
+      "description": "Semantic version (major.minor). Consumers should accept any 1.x version for backward compatibility."
+    },
+    "project_name": {
+      "type": "string"
+    },
+    "architecture": {
+      "type": "string",
+      "enum": ["microservice", "monolithic", "modular-monolith"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 generation timestamp"
+    },
+    "has_failures": {
+      "type": "boolean",
+      "description": "True if any service has status FAILED. Determines exit code."
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/service"
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/phase"
+      }
+    },
+    "quality": {
+      "$ref": "#/$defs/quality_summary"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Warnings from corrupted or missing state files"
+    }
+  },
+  "$defs": {
+    "service": {
+      "type": "object",
+      "required": ["slug", "display_name", "features", "status", "implementation_percent", "lifecycle"],
+      "properties": {
+        "slug": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["COMPLETE", "IN_PROGRESS", "PLANNING", "NOT_STARTED", "BLOCKED", "FAILED", "UNKNOWN"]
+        },
+        "implementation_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "phase_index": {
+          "type": ["integer", "null"]
+        },
+        "lifecycle": {
+          "$ref": "#/$defs/lifecycle"
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["spec", "plan", "tasks", "impl_percent", "tests_passed", "tests_total", "docker", "boundary_compliance"],
+      "description": "All fields are nullable. Services with no artifacts have all fields set to null.",
+      "properties": {
+        "spec": {
+          "type": ["string", "null"],
+          "enum": ["DONE", "WIP", null]
+        },
+        "plan": {
+          "type": ["string", "null"],
+          "enum": ["DONE", "WIP", null]
+        },
+        "tasks": {
+          "type": ["string", "null"],
+          "enum": ["DONE", "WIP", null]
+        },
+        "impl_percent": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "tests_passed": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "tests_total": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "docker": {
+          "type": ["string", "null"],
+          "enum": ["OK", "FAIL", null],
+          "description": "Only populated for microservice architecture"
+        },
+        "boundary_compliance": {
+          "type": ["string", "null"],
+          "enum": ["OK", "FAIL", null],
+          "description": "Only populated for modular-monolith architecture"
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "required": ["index", "label", "services", "completion_percent", "status"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string"
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completion_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "status": {
+          "type": "string",
+          "enum": ["complete", "in-progress", "blocked", "pending"]
+        },
+        "blocked_by": {
+          "type": ["integer", "null"]
+        },
+        "service_details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slug", "status"],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "impl_percent": {
+                "type": ["integer", "null"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "quality_summary": {
+      "type": "object",
+      "required": ["services_total", "services_complete", "services_in_progress", "services_planning", "services_not_started", "services_blocked", "services_failed", "services_unknown", "tasks_total", "tasks_complete", "tasks_failed"],
+      "properties": {
+        "services_total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Must equal sum of all services_* status counters"
+        },
+        "services_complete": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_in_progress": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_planning": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_not_started": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_blocked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "services_unknown": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tasks_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tasks_complete": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tasks_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage_avg": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "docker_built": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "docker_total": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "docker_failing": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "contract_passed": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "contract_total": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "autofix_success_rate": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  }
+}

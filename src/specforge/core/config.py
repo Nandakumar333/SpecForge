@@ -672,3 +672,52 @@ SHARED_INFRA_STATUSES: tuple[str, ...] = (
 VERIFICATION_SEVERITIES: tuple[str, ...] = ("error", "warning")
 REPORT_VERDICTS: tuple[str, ...] = ("pass", "fail", "partial")
 ORCHESTRATION_SCHEMA_VERSION: str = "1.0"
+
+# ── Feature 012: Project Status Dashboard ──────────────────────────────
+
+STATUS_REPORT_DIR: str = ".specforge/reports"
+STATUS_JSON_FILENAME: str = "status.json"
+STATUS_MD_FILENAME: str = "status.md"
+QUALITY_REPORT_FILENAME: str = ".quality-report.json"
+
+ServiceOverallStatus = Literal[
+    "COMPLETE",
+    "IN_PROGRESS",
+    "PLANNING",
+    "NOT_STARTED",
+    "BLOCKED",
+    "FAILED",
+    "UNKNOWN",
+]
+
+SERVICE_STATUS_ALL: tuple[str, ...] = (
+    "COMPLETE",
+    "IN_PROGRESS",
+    "PLANNING",
+    "NOT_STARTED",
+    "BLOCKED",
+    "FAILED",
+    "UNKNOWN",
+)
+
+STATUS_DISPLAY_LABELS: dict[str, str] = {
+    "COMPLETE": "COMPLETE",
+    "IN_PROGRESS": "IN PROGRESS",
+    "PLANNING": "PLANNING",
+    "NOT_STARTED": "NOT STARTED",
+    "BLOCKED": "BLOCKED",
+    "FAILED": "FAILED",
+    "UNKNOWN": "UNKNOWN",
+}
+
+LIFECYCLE_PHASE_DISPLAY: tuple[str, ...] = ("DONE", "WIP")
+
+PIPELINE_TO_LIFECYCLE: dict[str, str] = {
+    "spec": "spec",
+    "plan": "plan",
+    "tasks": "tasks",
+}
+
+STATUS_SCHEMA_VERSION: str = "1.0"
+
+WATCH_DEFAULT_INTERVAL: int = 5
