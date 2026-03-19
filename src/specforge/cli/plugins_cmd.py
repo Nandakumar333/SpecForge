@@ -1,4 +1,4 @@
-"""specforge plugins command — list and inspect plugins."""
+"""specforge plugins command — list available plugins."""
 
 from __future__ import annotations
 
@@ -7,14 +7,9 @@ from rich.console import Console
 from rich.table import Table
 
 
-@click.group()
+@click.command("plugins")
 def plugins() -> None:
-    """Manage SpecForge plugins."""
-
-
-@plugins.command(name="list")
-def list_plugins() -> None:
-    """List all available stack and agent plugins."""
+    """List available stack and agent plugins."""
     from specforge.plugins.plugin_manager import PluginManager
 
     console = Console()

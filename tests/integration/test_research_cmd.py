@@ -7,7 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from specforge.cli.main import cli
+from specforge.cli.research_cmd import research
 from specforge.core.config import PIPELINE_STATE_FILENAME
 
 
@@ -120,7 +120,7 @@ class TestResearchHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_TECH_REFS)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 0, result.output
 
     def test_research_creates_research_md(
@@ -130,7 +130,7 @@ class TestResearchHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_TECH_REFS)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         research_path = (
             tmp_path
@@ -148,7 +148,7 @@ class TestResearchHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_TECH_REFS)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         research_path = (
             tmp_path
@@ -169,7 +169,7 @@ class TestResearchHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_TECH_REFS)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         state_path = (
             tmp_path
@@ -193,7 +193,7 @@ class TestResearchHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_TECH_REFS)
         runner = CliRunner()
-        runner.invoke(cli, ["research", "ledger-service"])
+        runner.invoke(research, [ "ledger-service"])
         lock_path = tmp_path / ".specforge" / ".pipeline-lock"
         assert not lock_path.exists(), "Pipeline lock should be released"
 
@@ -206,7 +206,7 @@ class TestResearchErrorPaths:
     ) -> None:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 1
         assert "manifest" in result.output.lower()
 
@@ -216,7 +216,7 @@ class TestResearchErrorPaths:
         monkeypatch.chdir(tmp_path)
         _write_manifest(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "ledger-service"])
+        result = runner.invoke(research, [ "ledger-service"])
         assert result.exit_code == 1
         assert "spec.md" in result.output.lower()
 
@@ -226,6 +226,6 @@ class TestResearchErrorPaths:
         monkeypatch.chdir(tmp_path)
         _write_manifest(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["research", "nonexistent-service"])
+        result = runner.invoke(research, [ "nonexistent-service"])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()

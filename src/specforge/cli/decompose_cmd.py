@@ -35,60 +35,50 @@ console = Console()
     "--arch",
     type=click.Choice(VALID_ARCHITECTURES, case_sensitive=False),
     default=None,
-    help="Skip interactive architecture prompt.",
+    help="Architecture: monolithic, microservice, modular-monolith.",
+)
+@click.option(
+    "-i", "--interactive",
+    is_flag=True,
+    default=False,
+    hidden=True,
+    help="Enable interactive prompts (default: auto mode with parallel).",
 )
 @click.option(
     "--remap",
     type=click.Choice(VALID_ARCHITECTURES, case_sensitive=False),
     default=None,
+    hidden=True,
     help="Re-map existing features to new architecture.",
 )
 @click.option(
-    "--no-warn",
+    "--sequential",
     is_flag=True,
     default=False,
-    help="Suppress over-engineering warnings.",
+    hidden=True,
+    help="Run spec pipelines one at a time instead of in parallel.",
 )
 @click.option(
-    "--template-mode",
+    "--strict",
     is_flag=True,
     default=False,
-    help="Force rule-based decomposition (no LLM calls)",
+    help="Stop everything on first failure.",
 )
-@click.option(
-    "--dry-run-prompt",
-    is_flag=True,
-    default=False,
-    help="Write assembled prompt without calling LLM",
-)
-@click.option(
-    "--auto",
-    is_flag=True,
-    default=False,
-    help="Skip all interactive prompts (use LLM for all decisions)",
-)
-@click.option(
-    "--parallel",
-    is_flag=True,
-    default=False,
-    help="Run spec pipelines concurrently across all services",
-)
-@click.option(
-    "--max-parallel",
-    type=int,
-    default=None,
-    help="Override max concurrent workers (requires --parallel)",
-)
-@click.option(
-    "--fail-fast",
-    is_flag=True,
-    default=False,
-    help="Cancel all workers on first failure (requires --parallel)",
-)
+# ── Hidden power-user flags (still functional, not in --help) ─────
+@click.option("--no-warn", is_flag=True, default=False, hidden=True)
+@click.option("--template-mode", is_flag=True, default=False, hidden=True)
+@click.option("--dry-run-prompt", is_flag=True, default=False, hidden=True)
+@click.option("--auto", is_flag=True, default=False, hidden=True)
+@click.option("--parallel", is_flag=True, default=False, hidden=True)
+@click.option("--max-parallel", type=int, default=None, hidden=True)
+@click.option("--fail-fast", is_flag=True, default=False, hidden=True)
 def decompose(
     description: str,
     arch: str | None,
+    interactive: bool,
     remap: str | None,
+    sequential: bool,
+    strict: bool,
     no_warn: bool,
     template_mode: bool,
     dry_run_prompt: bool,
@@ -97,7 +87,23 @@ def decompose(
     max_parallel: int | None,
     fail_fast: bool,
 ) -> None:
-    """Decompose an application description into features."""
+    """Decompose an application description into features.
+
+    By default runs in auto mode: LLM-powered decomposition with parallel
+    spec generation across all services. Use -i for interactive prompts.
+
+    \b
+    Examples:
+      specforge decompose "Personal Finance App"
+      specforge decompose "E-commerce Platform" --arch microservice
+      specforge decompose "My App" -i            # interactive prompts
+      specforge decompose "My App" --sequential   # no parallel
+    """
+    # Resolve semantic flags → internal flags
+    is_auto = auto or not interactive
+    is_parallel = parallel or (not sequential and not template_mode)
+    is_fail_fast = fail_fast or strict
+
     if template_mode and dry_run_prompt:
         _exit_error("--template-mode and --dry-run-prompt are mutually exclusive.")
     if arch and remap:
@@ -116,13 +122,13 @@ def decompose(
         project_root,
         description,
         arch,
-        no_warn if not auto else True,
+        no_warn if not is_auto else True,
         template_mode=template_mode,
         dry_run_prompt=dry_run_prompt,
-        auto=auto,
-        parallel=parallel,
+        auto=is_auto,
+        parallel=is_parallel,
         max_parallel=max_parallel,
-        fail_fast=fail_fast,
+        fail_fast=is_fail_fast,
     )
 
 

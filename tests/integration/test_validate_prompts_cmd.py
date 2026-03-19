@@ -7,7 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from specforge.cli.main import cli
+from specforge.cli.validate_prompts_cmd import validate_prompts
 from specforge.core.config import GOVERNANCE_DOMAINS
 
 
@@ -102,7 +102,7 @@ class TestValidatePromptsNoConflicts:
 
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+            result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert result.exit_code == 0, result.output
 
@@ -111,7 +111,7 @@ class TestValidatePromptsNoConflicts:
         _write_all_governance_files(tmp_path, "agnostic")
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert result.exit_code == 0
         assert "No conflicts" in result.output or "no conflicts" in result.output.lower()
@@ -133,7 +133,7 @@ class TestValidatePromptsWithConflicts:
         )
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert result.exit_code == 1, result.output
 
@@ -149,7 +149,7 @@ class TestValidatePromptsWithConflicts:
         )
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert "max_class_lines" in result.output
 
@@ -165,7 +165,7 @@ class TestValidatePromptsWithConflicts:
         )
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert "architecture" in result.output
         assert "backend" in result.output
@@ -182,7 +182,7 @@ class TestValidatePromptsWithConflicts:
         )
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert result.exit_code == 1
         assert "max_class_lines" in result.output
@@ -200,7 +200,7 @@ class TestValidatePromptsWithConflicts:
         )
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         # Winning value is 50 (architecture has higher precedence)
         assert "50" in result.output
@@ -213,12 +213,12 @@ class TestValidatePromptsNotInitialized:
     def test_exit_2_when_no_specforge_dir(self, tmp_path: Path) -> None:
         # Empty directory — no .specforge/
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert result.exit_code == 2, result.output
 
     def test_error_message_suggests_init(self, tmp_path: Path) -> None:
         runner = CliRunner()
-        result = runner.invoke(cli, ["validate-prompts", "--project", str(tmp_path)])
+        result = runner.invoke(validate_prompts, ["--project", str(tmp_path)])
 
         assert "init" in result.output.lower() or "specforge init" in result.output

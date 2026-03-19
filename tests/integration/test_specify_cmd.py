@@ -8,6 +8,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from specforge.cli.main import cli
+from specforge.cli.pipeline_status_cmd import pipeline_status
 
 
 def _write_manifest(tmp_path: Path, arch: str = "microservice") -> None:
@@ -126,7 +127,7 @@ class TestPipelineStatusCommand:
     def test_no_state(self, tmp_path: Path, monkeypatch) -> None:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["pipeline-status"])
+        result = runner.invoke(pipeline_status, [])
         assert result.exit_code == 0
         assert "No pipeline state" in result.output
 
@@ -135,7 +136,7 @@ class TestPipelineStatusCommand:
         _write_manifest(tmp_path)
         runner = CliRunner()
         runner.invoke(cli, ["specify", "identity-service"])
-        result = runner.invoke(cli, ["pipeline-status"])
+        result = runner.invoke(pipeline_status, [])
         assert result.exit_code == 0
         assert "identity-service" in result.output
 
@@ -144,6 +145,6 @@ class TestPipelineStatusCommand:
         _write_manifest(tmp_path)
         runner = CliRunner()
         runner.invoke(cli, ["specify", "identity-service"])
-        result = runner.invoke(cli, ["pipeline-status", "identity-service"])
+        result = runner.invoke(pipeline_status, ["identity-service"])
         assert result.exit_code == 0
         assert "complete" in result.output

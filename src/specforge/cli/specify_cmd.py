@@ -15,26 +15,15 @@ from specforge.core.template_renderer import TemplateRenderer
 
 @click.command("specify")
 @click.argument("target")
-@click.option("--force", is_flag=True, help="Regenerate all artifacts")
+@click.option("--force", is_flag=True, help="Regenerate all artifacts.")
 @click.option(
-    "--from",
-    "from_phase",
-    type=click.Choice(PIPELINE_PHASES),
-    default=None,
-    help="Start from a specific phase",
+    "--from", "from_phase",
+    type=click.Choice(PIPELINE_PHASES), default=None,
+    help="Start from a specific phase.",
 )
-@click.option(
-    "--template-mode",
-    is_flag=True,
-    default=False,
-    help="Force Jinja2 template rendering (no LLM calls)",
-)
-@click.option(
-    "--dry-run-prompt",
-    is_flag=True,
-    default=False,
-    help="Write assembled prompts to .prompt.md without calling LLM",
-)
+# ── Hidden power-user flags ───────────────────────────────────────
+@click.option("--template-mode", is_flag=True, default=False, hidden=True)
+@click.option("--dry-run-prompt", is_flag=True, default=False, hidden=True)
 @click.pass_context
 def specify(
     ctx: click.Context,
