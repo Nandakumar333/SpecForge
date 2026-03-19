@@ -15,3 +15,11 @@ class CopilotPlugin(DirectoryAgentPlugin):
         self._file_specs = [
             ("copilot-instructions.md", "copilot-instructions.md.j2"),
         ]
+
+    @property
+    def commands_dir(self) -> str:
+        return ".github/prompts"
+
+    @property
+    def command_extension(self) -> str:
+        return ".prompt.md"

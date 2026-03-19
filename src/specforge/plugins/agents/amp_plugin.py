@@ -13,3 +13,7 @@ class AmpPlugin(SingleFileAgentPlugin):
         self._agent_id = "amp"
         self._file_path = "AMP.md"
         self._template_name = "generic.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".amp/commands"

@@ -13,3 +13,7 @@ class KilocodePlugin(SingleFileAgentPlugin):
         self._agent_id = "kilocode"
         self._file_path = ".kilocode/rules.md"
         self._template_name = "generic.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".kilocode/commands"

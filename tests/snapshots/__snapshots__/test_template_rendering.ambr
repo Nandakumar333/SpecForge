@@ -666,7 +666,7 @@
   # testproj Constitution
   
   **Project**: testproj
-  **Agent**: agnostic
+  **Agent**: generic
   **Stack**: agnostic
   **Created**: 2026-03-14
   

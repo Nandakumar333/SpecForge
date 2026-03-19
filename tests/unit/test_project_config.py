@@ -56,7 +56,7 @@ class TestProjectConfigValidation:
         config = ProjectConfig.create(name="test", target_dir=Path("/tmp/test"))
         assert config.ok is True
         val = config.value
-        assert val.agent == "agnostic"
+        assert val.agent == "generic"
         assert val.stack == "agnostic"
         assert val.no_git is False
         assert val.force is False

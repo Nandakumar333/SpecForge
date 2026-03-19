@@ -107,7 +107,7 @@ class TestInitCombined:
             assert "BACK-DOTNET-MS" in backend.read_text()
 
     def test_init_without_flags_still_works(self, tmp_path: Path) -> None:
-        """Existing behavior preserved — no flags = agnostic."""
+        """Existing behavior preserved — no flags = generic."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             result = runner.invoke(

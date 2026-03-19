@@ -1,0 +1,19 @@
+---
+description: Generate implementation tasks for a feature using SpecForge
+---
+
+Generate an actionable task breakdown for the following feature using SpecForge's task generation engine.
+
+## Input
+
+{{ arguments }}
+
+## Instructions
+
+1. Read plan.md and spec.md for the feature
+2. Break the implementation into ordered, dependency-aware tasks
+3. Mark parallel tasks with [P], include exact file paths per task
+4. Follow TDD: test tasks before implementation tasks in each phase
+
+Project: {{ project_name }}
+Stack: {{ stack }}

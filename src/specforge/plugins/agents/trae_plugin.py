@@ -13,3 +13,7 @@ class TraePlugin(SingleFileAgentPlugin):
         self._agent_id = "trae"
         self._file_path = ".trae/rules.md"
         self._template_name = "generic.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".trae/commands"

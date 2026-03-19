@@ -19,6 +19,11 @@ class DirectoryAgentPlugin(AgentPlugin):
     def agent_name(self) -> str:
         return self._agent_id
 
+    @property
+    def commands_dir(self) -> str:
+        """Derive commands dir from agent's config directory."""
+        return f"{self._dir_path}/commands"
+
     def config_files(self) -> list[str]:
         return [f"{self._dir_path}/{spec[0]}" for spec in self._file_specs]
 

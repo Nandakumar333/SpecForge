@@ -17,7 +17,7 @@ class ProjectConfig:
 
     name: str
     target_dir: Path
-    agent: str = "agnostic"
+    agent: str = "generic"
     stack: str = "agnostic"
     architecture: str = "monolithic"
     no_git: bool = False
@@ -29,7 +29,7 @@ class ProjectConfig:
     def create(
         name: str,
         target_dir: Path,
-        agent: str = "agnostic",
+        agent: str = "generic",
         stack: str = "agnostic",
         architecture: str = "monolithic",
         no_git: bool = False,
@@ -107,7 +107,10 @@ class ScaffoldResult:
     written: list[Path] = field(default_factory=list)
     skipped: list[Path] = field(default_factory=list)
     git_committed: bool = False
-    agent_source: Literal["explicit", "auto-detected", "agnostic"] = "agnostic"
+    agent_source: Literal[
+        "explicit", "auto-detected", "interactive", "generic"
+    ] = "generic"
+    commands_written: list[Path] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -115,7 +118,7 @@ class DetectionResult:
     """Result of agent auto-detection from PATH."""
 
     agent: str
-    source: Literal["explicit", "auto-detected", "agnostic"]
+    source: Literal["explicit", "auto-detected", "interactive", "generic"]
     executable: str | None = None
 
 

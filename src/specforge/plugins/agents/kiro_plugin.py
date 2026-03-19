@@ -15,3 +15,7 @@ class KiroPlugin(DirectoryAgentPlugin):
         self._file_specs = [
             ("rules.md", "kiro-rules.md.j2"),
         ]
+
+    @property
+    def commands_dir(self) -> str:
+        return ".kiro/commands"

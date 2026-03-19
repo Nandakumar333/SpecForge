@@ -75,3 +75,5 @@ class ProjectMeta:
     stack: str
     version: str
     created_at: str
+    agent: str = "generic"
+    commands_dir: str = "commands"

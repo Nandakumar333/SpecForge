@@ -1,0 +1,19 @@
+---
+description: Run quality checks on the project using SpecForge
+---
+
+Run SpecForge quality checks to validate code against governance rules, spec compliance, and constitution requirements.
+
+## Input
+
+{{ arguments }}
+
+## Instructions
+
+1. Read governance prompt files from .specforge/prompts/
+2. Run all configured quality checkers (lint, test, coverage, secrets, boundaries)
+3. Report findings grouped by severity (critical, high, medium, low)
+4. Suggest auto-fixes where applicable
+
+Project: {{ project_name }}
+Stack: {{ stack }}

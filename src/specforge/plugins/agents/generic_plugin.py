@@ -11,11 +11,15 @@ from specforge.plugins.agents.base import AgentPlugin
 class GenericPlugin(AgentPlugin):
     """Fallback agent plugin for unsupported agents."""
 
-    def __init__(self, commands_dir: str = ".specforge/agent") -> None:
+    def __init__(self, commands_dir: str = "commands") -> None:
         self._commands_dir = commands_dir
 
     def agent_name(self) -> str:
         return "generic"
+
+    @property
+    def commands_dir(self) -> str:
+        return self._commands_dir
 
     def config_files(self) -> list[str]:
         return [f"{self._commands_dir}/rules.md"]

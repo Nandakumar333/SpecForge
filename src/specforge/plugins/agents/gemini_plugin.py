@@ -15,3 +15,15 @@ class GeminiPlugin(DirectoryAgentPlugin):
         self._file_specs = [
             ("style-guide.md", "gemini-style-guide.md.j2"),
         ]
+
+    @property
+    def commands_dir(self) -> str:
+        return ".gemini/commands"
+
+    @property
+    def command_format(self) -> str:
+        return "toml"
+
+    @property
+    def command_extension(self) -> str:
+        return ".toml"

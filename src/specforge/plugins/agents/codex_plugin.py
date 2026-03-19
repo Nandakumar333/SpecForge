@@ -13,3 +13,7 @@ class CodexPlugin(SingleFileAgentPlugin):
         self._agent_id = "codex"
         self._file_path = "AGENTS.md"
         self._template_name = "codex.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".codex/commands"
