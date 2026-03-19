@@ -20,12 +20,13 @@ from specforge.core.config import WATCH_DEFAULT_INTERVAL
     default=["terminal"],
     help="Output format(s).",
 )
-@click.option("--graph", is_flag=True, help="Show dependency graph.")
-@click.option("--watch", is_flag=True, help="Auto-refresh terminal dashboard.")
+@click.option("--graph", is_flag=True, hidden=True, help="Show dependency graph.")
+@click.option("--watch", is_flag=True, hidden=True, help="Auto-refresh terminal dashboard.")
 @click.option(
     "--interval",
     type=int,
     default=WATCH_DEFAULT_INTERVAL,
+    hidden=True,
     help="Watch refresh interval in seconds.",
 )
 @click.pass_context

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from specforge.cli.main import cli
+from specforge.cli.edge_cases_cmd import edge_cases
 from specforge.core.config import PIPELINE_STATE_FILENAME
 
 
@@ -96,7 +96,7 @@ class TestEdgeCasesHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service")
         runner = CliRunner()
-        result = runner.invoke(cli, ["edge-cases", "ledger-service"])
+        result = runner.invoke(edge_cases, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         out_path = (
             tmp_path / ".specforge" / "features"
@@ -111,7 +111,7 @@ class TestEdgeCasesHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service")
         runner = CliRunner()
-        result = runner.invoke(cli, ["edge-cases", "ledger-service"])
+        result = runner.invoke(edge_cases, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         out_path = (
             tmp_path / ".specforge" / "features"
@@ -127,7 +127,7 @@ class TestEdgeCasesHappyPath:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service")
         runner = CliRunner()
-        result = runner.invoke(cli, ["edge-cases", "ledger-service"])
+        result = runner.invoke(edge_cases, [ "ledger-service"])
         assert result.exit_code == 0, result.output
         state_path = (
             tmp_path / ".specforge" / "features"
@@ -150,7 +150,7 @@ class TestEdgeCasesErrorPaths:
     ) -> None:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["edge-cases", "ledger-service"])
+        result = runner.invoke(edge_cases, [ "ledger-service"])
         assert result.exit_code == 1
         assert "manifest" in result.output.lower()
 
@@ -160,6 +160,6 @@ class TestEdgeCasesErrorPaths:
         monkeypatch.chdir(tmp_path)
         _write_manifest(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["edge-cases", "nonexistent-service"])
+        result = runner.invoke(edge_cases, [ "nonexistent-service"])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()

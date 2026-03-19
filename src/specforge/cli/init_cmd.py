@@ -50,8 +50,8 @@ from specforge.core.stack_detector import StackDetector
     is_flag=True,
     help="Allow scaffolding into an existing directory.",
 )
-@click.option("--no-git", is_flag=True, help="Skip git init.")
-@click.option("--dry-run", is_flag=True, help="Preview without writing.")
+@click.option("--no-git", is_flag=True, hidden=True, help="Skip git init.")
+@click.option("--dry-run", is_flag=True, hidden=True, help="Preview without writing.")
 def init(
     name: str | None,
     here: bool,

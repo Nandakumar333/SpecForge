@@ -41,18 +41,21 @@ console = Console()
     "-i", "--interactive",
     is_flag=True,
     default=False,
+    hidden=True,
     help="Enable interactive prompts (default: auto mode with parallel).",
 )
 @click.option(
     "--remap",
     type=click.Choice(VALID_ARCHITECTURES, case_sensitive=False),
     default=None,
+    hidden=True,
     help="Re-map existing features to new architecture.",
 )
 @click.option(
     "--sequential",
     is_flag=True,
     default=False,
+    hidden=True,
     help="Run spec pipelines one at a time instead of in parallel.",
 )
 @click.option(

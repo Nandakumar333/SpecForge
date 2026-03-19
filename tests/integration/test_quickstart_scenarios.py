@@ -91,22 +91,22 @@ class TestQuickstartInitScenarios:
             assert "BACK-NODEJS" in backend.read_text()
 
 
-class TestQuickstartPluginsList:
-    """Verify 'specforge plugins list' shows all plugins."""
+class TestQuickstartPlugins:
+    """Verify 'specforge plugins' shows all plugins."""
 
-    def test_plugins_list_shows_stack_plugins(
+    def test_plugins_shows_stack_plugins(
         self, runner: CliRunner,
     ) -> None:
-        result = runner.invoke(cli, ["plugins", "list"])
+        result = runner.invoke(cli, ["plugins"])
         assert result.exit_code == 0, result.output
         assert "dotnet" in result.output
         assert "python" in result.output
         assert "nodejs" in result.output
 
-    def test_plugins_list_shows_agent_plugins(
+    def test_plugins_shows_agent_plugins(
         self, runner: CliRunner,
     ) -> None:
-        result = runner.invoke(cli, ["plugins", "list"])
+        result = runner.invoke(cli, ["plugins"])
         assert result.exit_code == 0, result.output
         assert "claude" in result.output
         assert "copilot" in result.output

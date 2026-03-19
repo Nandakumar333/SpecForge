@@ -32,6 +32,7 @@ console = Console()
     "--sequential",
     is_flag=True,
     default=False,
+    hidden=True,
     help="Run services one at a time instead of in parallel.",
 )
 @click.option(

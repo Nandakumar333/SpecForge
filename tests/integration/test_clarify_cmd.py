@@ -7,7 +7,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from specforge.cli.main import cli
+from specforge.cli.clarify_cmd import clarify
 
 
 def _write_manifest(tmp_path: Path, manifest: dict | None = None) -> None:
@@ -132,8 +132,8 @@ class TestClarifyHappyPath:
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
         result = runner.invoke(
-            cli,
-            ["clarify", "ledger-service"],
+            clarify,
+            [ "ledger-service"],
             input="skip\nskip\nskip\nskip\nskip\n",
         )
         assert result.exit_code == 0, result.output
@@ -146,8 +146,8 @@ class TestClarifyHappyPath:
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
         result = runner.invoke(
-            cli,
-            ["clarify", "ledger-service"],
+            clarify,
+            [ "ledger-service"],
             input="skip\nskip\nskip\nskip\nskip\n",
         )
         assert result.exit_code == 0, result.output
@@ -161,8 +161,8 @@ class TestClarifyHappyPath:
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
         result = runner.invoke(
-            cli,
-            ["clarify", "002"],
+            clarify,
+            [ "002"],
             input="skip\nskip\nskip\nskip\nskip\n",
         )
         assert result.exit_code == 0, result.output
@@ -202,7 +202,7 @@ class TestClarifyHappyPath:
         _write_manifest(tmp_path, single_svc)
         _write_spec(tmp_path, "main-service", SPEC_CLEAN)
         runner = CliRunner()
-        result = runner.invoke(cli, ["clarify", "main-service"])
+        result = runner.invoke(clarify, [ "main-service"])
         assert result.exit_code == 0, result.output
         assert "no ambiguities" in result.output.lower()
 
@@ -214,8 +214,8 @@ class TestClarifyHappyPath:
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
         runner.invoke(
-            cli,
-            ["clarify", "ledger-service"],
+            clarify,
+            [ "ledger-service"],
             input="skip\nskip\nskip\nskip\nskip\n",
         )
         lock_path = tmp_path / ".specforge" / ".pipeline-lock"
@@ -230,7 +230,7 @@ class TestClarifyErrorPaths:
     ) -> None:
         monkeypatch.chdir(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["clarify", "ledger-service"])
+        result = runner.invoke(clarify, [ "ledger-service"])
         assert result.exit_code == 1
         assert "manifest" in result.output.lower()
 
@@ -241,7 +241,7 @@ class TestClarifyErrorPaths:
         _write_manifest(tmp_path)
         # No spec.md written — output_dir exists but spec.md does not
         runner = CliRunner()
-        result = runner.invoke(cli, ["clarify", "ledger-service"])
+        result = runner.invoke(clarify, [ "ledger-service"])
         assert result.exit_code == 1
         assert "spec.md" in result.output.lower()
 
@@ -251,7 +251,7 @@ class TestClarifyErrorPaths:
         monkeypatch.chdir(tmp_path)
         _write_manifest(tmp_path)
         runner = CliRunner()
-        result = runner.invoke(cli, ["clarify", "nonexistent-service"])
+        result = runner.invoke(clarify, [ "nonexistent-service"])
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
 
@@ -267,7 +267,7 @@ class TestClarifyReportMode:
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
         result = runner.invoke(
-            cli, ["clarify", "ledger-service", "--report"],
+            clarify, ["ledger-service", "--report"],
         )
         assert result.exit_code == 0, result.output
         report_path = (
@@ -290,7 +290,7 @@ class TestClarifyReportMode:
         original_content = spec_path.read_text(encoding="utf-8")
         runner = CliRunner()
         result = runner.invoke(
-            cli, ["clarify", "ledger-service", "--report"],
+            clarify, ["ledger-service", "--report"],
         )
         assert result.exit_code == 0, result.output
         assert spec_path.read_text(encoding="utf-8") == original_content
@@ -302,6 +302,6 @@ class TestClarifyReportMode:
         _write_manifest(tmp_path)
         _write_spec(tmp_path, "ledger-service", SPEC_WITH_AMBIGUITIES)
         runner = CliRunner()
-        runner.invoke(cli, ["clarify", "ledger-service", "--report"])
+        runner.invoke(clarify, [ "ledger-service", "--report"])
         lock_path = tmp_path / ".specforge" / ".pipeline-lock"
         assert not lock_path.exists(), "Pipeline lock should be released"
