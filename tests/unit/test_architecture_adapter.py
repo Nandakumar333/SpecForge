@@ -119,6 +119,16 @@ class TestMicroserviceAdapter:
         items = adapter.get_checklist_extras()
         assert len(items) >= 2
 
+    def test_serialize_for_prompt_contains_architecture_terms(self) -> None:
+        adapter = MicroserviceAdapter()
+        result = adapter.serialize_for_prompt()
+        assert "## Architecture: Microservice" in result
+        assert "Docker container" in result
+        assert "health check endpoint" in result
+        assert "gRPC" in result
+        assert "circuit breaker" in result
+        assert "service discovery" in result
+
 
 class TestMonolithAdapter:
     """Tests for MonolithAdapter."""
@@ -167,6 +177,14 @@ class TestMonolithAdapter:
         items = adapter.get_checklist_extras()
         assert len(items) >= 1
 
+    def test_serialize_for_prompt_contains_architecture_terms(self) -> None:
+        adapter = MonolithAdapter()
+        result = adapter.serialize_for_prompt()
+        assert "## Architecture: Monolithic" in result
+        assert "Shared database" in result
+        assert "No Docker" in result
+        assert "internal module imports" in result
+
 
 class TestModularMonolithAdapter:
     """Tests for ModularMonolithAdapter."""
@@ -211,3 +229,12 @@ class TestModularMonolithAdapter:
         sections = adapter.get_plan_sections()
         titles = [s["title"] for s in sections]
         assert "Containerization" not in titles
+
+    def test_serialize_for_prompt_contains_architecture_terms(self) -> None:
+        adapter = ModularMonolithAdapter()
+        result = adapter.serialize_for_prompt()
+        assert "## Architecture: Modular Monolith" in result
+        assert "Strict module boundaries" in result
+        assert "interface contracts" in result
+        assert "No Docker" in result
+        assert "schema boundaries per module" in result

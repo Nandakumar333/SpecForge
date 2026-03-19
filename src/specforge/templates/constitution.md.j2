@@ -9,22 +9,73 @@
 
 ### I. Spec-First Development
 
-No code is written until `spec.md`, `plan.md`, and `tasks.md` exist for the feature.
+No code MUST be written until `spec.md`, `plan.md`, and `tasks.md` exist for the feature. Specifications are the primary artifact; code is the output. Edge cases are first-class citizens and MUST be addressed in the spec before implementation begins.
+
+**Rationale**: Late specification leads to rework and misaligned implementations. Front-loading clarity is cheaper than back-loading correctness. Every task in `tasks.md` must be traceable to a requirement in `spec.md`.
 
 ### II. Architecture
 
-{{ project_name }} follows Clean Architecture.{% if stack != "agnostic" %} Stack: {{ stack_hint }}.{% endif %}
+{{ project_name }} follows Clean Architecture.{% if stack != "agnostic" %} Stack: {{ stack_hint }}.{% endif %} A plugin system provides multi-agent support and tech-stack adapters. All file generation MUST use Jinja2 templates — string concatenation for output files is prohibited.
+
+**Rationale**: Clean Architecture boundaries ensure the core is testable in isolation. Plugin boundaries allow the tool to evolve without coupling the domain to any specific AI provider or framework.
 
 ### III. Code Quality
 
 - Strict type hints on every function signature
-- Functions ≤ 30 lines; classes ≤ 200 lines
+- Functions MUST NOT exceed 30 lines; classes MUST NOT exceed 200 lines
 - 100% unit test coverage for core domain logic
+- Magic strings are prohibited; all paths and constants MUST live in config or enums
+- Functions MUST return `Result[T]` instead of raising exceptions for recoverable errors
+
+**Rationale**: Size limits enforce single-responsibility. The Result pattern makes error paths explicit and composable.
 
 ### IV. Testing
 
-Test files created before implementation files (TDD enforced).
+Test files MUST be created before implementation files (TDD enforced, non-negotiable). Unit tests are required for all domain logic. Integration tests MUST cover CLI commands. Snapshot tests MUST cover template rendering output.
 
-## Version
+**Rationale**: Tests written after the fact verify existing behavior rather than specifying intended behavior. Writing tests first surfaces design problems before code is committed.
 
-**Version**: 1.0.0 | **Ratified**: {{ date }}
+### V. Governance Hierarchy
+
+This constitution supersedes all prompt files, agent instructions, and per-feature conventions. When conflicts arise, the resolution priority order is:
+
+1. Security concerns
+2. This constitution
+3. Feature specifications (`spec.md`)
+4. Implementation plans (`plan.md`)
+
+**Guiding axioms**: Explicit > implicit. Verbose > clever. Readable > concise.
+
+**Rationale**: A single authoritative source of truth prevents conflicting guidance across agents and documents. The priority ladder makes conflict resolution deterministic.
+
+### VI. Communication
+
+- Commit messages MUST follow Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`
+- One commit per completed task from `tasks.md`
+- Every PR MUST reference the feature spec and pass all quality gates before merge
+
+**Rationale**: Atomic, traceable commits make bisecting regressions fast and keep the git history meaningful.
+
+### VII. Continuous Improvement
+
+Amendments require: (1) a written rationale, (2) a version bump, and (3) propagation to all affected templates. All PRs and spec reviews MUST verify compliance with this constitution. Violations that cannot be avoided MUST be documented with justification.
+
+**Rationale**: A living constitution stays relevant. Structured amendments prevent drift without blocking evolution.
+
+## Governance Files
+
+The following governance prompt files define coding standards for the target application:
+
+| Domain | File | Purpose |
+|--------|------|---------|
+| Architecture | `architecture.prompts.md` | System design patterns and layer boundaries |
+| Backend | `backend.prompts.md` | Server-side conventions and API patterns |
+| Frontend | `frontend.prompts.md` | UI component patterns and state management |
+| Database | `database.prompts.md` | Data modeling and query conventions |
+| Security | `security.prompts.md` | Authentication, authorization, and data protection |
+| Testing | `testing.prompts.md` | Test strategy, coverage targets, and frameworks |
+| CI/CD | `cicd.prompts.md` | Build pipelines, deployment, and release processes |
+
+## Governance
+
+**Version**: 1.0.0 | **Ratified**: {{ date }} | **Last Amended**: {{ date }}

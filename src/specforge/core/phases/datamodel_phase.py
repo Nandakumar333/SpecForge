@@ -49,6 +49,47 @@ class DatamodelPhase(BasePhase):
             "input_artifacts": input_artifacts,
         }
 
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for data model generation."""
+        dm_ctx = adapter.get_datamodel_context(service_ctx)
+        scope = dm_ctx.get("scope", "isolated")
+
+        feature_nouns = ", ".join(
+            f.display_name for f in service_ctx.features
+        )
+        spec_content = input_artifacts.get("spec", "")
+        entity_hint = (
+            f"Extract entities from the spec for: {feature_nouns}. "
+            f"Spec length: {len(spec_content)} chars."
+            if spec_content
+            else f"Derive entities from feature names: {feature_nouns}."
+        )
+
+        return {
+            "entity_extraction_hints": entity_hint,
+            "boundary_scope": (
+                f"Data model scope: {scope}\n"
+                f"Architecture: {service_ctx.architecture}\n"
+                f"Service '{service_ctx.service_name}' owns its data "
+                f"boundaries under '{scope}' scoping rules."
+            ),
+            "cross_service_context": (
+                "Cross-service references: "
+                + (
+                    ", ".join(
+                        d.target_name for d in service_ctx.dependencies
+                    )
+                    if service_ctx.dependencies
+                    else "none"
+                )
+            ),
+        }
+
     def _post_render(
         self, service_ctx: ServiceContext, artifact_path: Path
     ) -> None:

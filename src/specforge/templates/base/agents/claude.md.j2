@@ -1,15 +1,42 @@
 # CLAUDE.md — SpecForge Governance for {{ project_name }}
 
-## Project Context
+Read `.specforge/constitution.md` before making any changes. The constitution is the highest authority after security concerns.
+
+## Active Technologies
+
 - Stack: {{ stack }}
 - Architecture: {{ architecture }}
 
-## Governance Rules
+## Project Structure
+
+Refer to `.specforge/constitution.md` § II. Architecture for layer boundaries. All modules MUST be placed in the directory matching their architectural layer.
+
+## Slash Commands
+
+Workflow follows the spec-driven development pipeline:
+
+1. `specforge spec <feature>` — Generate feature specification (`spec.md`)
+2. `specforge plan <feature>` — Generate implementation plan (`plan.md`)
+3. `specforge tasks <feature>` — Generate task breakdown (`tasks.md`)
+4. `specforge implement <feature>` — Execute implementation from tasks
+5. `specforge check` — Run prerequisite checks
+
+## Code Style
 
 {{ governance_summary }}
 
-## Slash Commands
-- `/spec` — Show feature specification
-- `/plan` — Show implementation plan
-- `/tasks` — Show task list
-- `/check` — Run prerequisite checks
+## Governance Rules
+
+The 7 governance domains are defined in `.specforge/prompts/`:
+
+- `architecture.prompts.md` — System design and layer boundaries
+- `backend.prompts.md` — Server-side conventions
+- `frontend.prompts.md` — UI patterns and state management
+- `database.prompts.md` — Data modeling conventions
+- `security.prompts.md` — Auth and data protection
+- `testing.prompts.md` — Test strategy and coverage
+- `cicd.prompts.md` — Build and deployment pipelines
+
+## Recent Changes
+
+_Refer to git log for recent changes._

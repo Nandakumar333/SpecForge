@@ -739,3 +739,75 @@ PLUGIN_NAME_PATTERN: str = r"^[a-z][a-z0-9_-]*$"
 PLUGIN_SEVERITIES: frozenset[str] = frozenset({"ERROR", "WARNING"})
 
 ARCHITECTURE_DEFAULT: str = "monolithic"
+
+
+# ── Pure AI Generation Engine Constants (Feature 015) ─────────────────
+
+LLM_DEFAULT_TIMEOUT: int = 120
+"""Default subprocess timeout in seconds for LLM CLI calls."""
+
+LLM_DEFAULT_MAX_RETRIES: int = 3
+"""Maximum retry count for transient LLM errors."""
+
+LLM_DEFAULT_BACKOFF_BASE: float = 1.0
+"""Exponential backoff base in seconds between retries."""
+
+LLM_DEFAULT_MAX_BACKOFF: float = 16.0
+"""Maximum backoff delay in seconds."""
+
+MAX_OUTPUT_CHARS: int = 200_000
+"""Default max combined output characters from LLM (initial + continuations)."""
+
+MAX_CONTINUATIONS: int = 3
+"""Max continuation calls per phase when output is truncated."""
+
+CLEAN_MARKDOWN_INSTRUCTION: str = (
+    "Output ONLY the Markdown document content. "
+    "Do not include any preamble, explanations, commentary, "
+    "or conversational text before or after the document."
+)
+"""Shared instruction prepended to all phase system prompts."""
+
+GOVERNANCE_PHASE_MAP: dict[str, list[str]] = {
+    "spec": list(GOVERNANCE_DOMAINS),
+    "research": list(GOVERNANCE_DOMAINS),
+    "datamodel": ["database", "backend", "security"],
+    "edgecase": ["security", "testing", "backend"],
+    "plan": list(GOVERNANCE_DOMAINS),
+    "checklist": list(GOVERNANCE_DOMAINS),
+    "tasks": ["architecture", "testing", "cicd", "security"],
+    "decompose": list(GOVERNANCE_DOMAINS),
+}
+"""Maps each pipeline phase to its relevant governance domain subset."""
+
+PHASE_REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
+    "spec": (
+        "User Scenarios & Testing",
+        "Requirements",
+        "Success Criteria",
+    ),
+    "research": ("R1:",),
+    "datamodel": ("Entity Diagram", "Entities"),
+    "edgecase": ("Edge Cases",),
+    "plan": (
+        "Summary",
+        "Technical Context",
+        "Constitution Check",
+        "Project Structure",
+    ),
+    "checklist": ("CHK-",),
+    "tasks": ("Phase 1",),
+    "decompose": ("features",),
+}
+"""Per-phase required heading strings for output validation."""
+
+PREAMBLE_PATTERNS: tuple[str, ...] = (
+    "Here's the",
+    "Sure,",
+    "Based on",
+    "I'll generate",
+    "Below is",
+    "Certainly!",
+    "Of course!",
+)
+"""Known LLM preamble prefixes (for logging, not matching)."""

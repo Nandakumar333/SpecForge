@@ -73,6 +73,43 @@ class EdgecasePhase(BasePhase):
             ctx["edge_cases"] = edge_cases
         return ctx
 
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for edge case generation."""
+        extras = adapter.get_edge_case_extras()
+        scenario_lines = "\n".join(
+            f"- {e.get('category', e.get('title', ''))}: "
+            f"{e.get('description', e.get('detail', ''))}"
+            for e in extras
+        ) if extras else "No architecture-specific failure scenarios."
+
+        dep_names = [d.target_name for d in service_ctx.dependencies]
+        security_hint = (
+            f"Consider security edge cases for '{service_ctx.service_name}' "
+            f"including authentication failures, authorization bypass, "
+            f"and input validation on all external boundaries."
+        )
+        failure_hint = (
+            f"Consider failure scenarios involving dependencies: "
+            f"{', '.join(dep_names)}."
+            if dep_names
+            else "Consider internal failure scenarios: resource exhaustion, "
+            "invalid state transitions, and concurrency conflicts."
+        )
+
+        return {
+            "security_scenarios": security_hint,
+            "failure_scenarios": failure_hint,
+            "adapter_edge_cases": (
+                f"Architecture-specific edge cases "
+                f"({service_ctx.architecture}):\n{scenario_lines}"
+            ),
+        }
+
     def _analyzer_edge_cases(
         self,
         service_ctx: ServiceContext,

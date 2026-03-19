@@ -41,3 +41,37 @@ class ChecklistPhase(BasePhase):
             "adapter_checklist": adapter.get_checklist_extras(),
             "input_artifacts": input_artifacts,
         }
+
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for checklist generation."""
+        extras = adapter.get_checklist_extras()
+        checklist_lines = "\n".join(
+            f"- {e.get('title', e.get('name', ''))}: "
+            f"{e.get('description', e.get('detail', ''))}"
+            for e in extras
+        ) if extras else "No architecture-specific checklist items."
+
+        artifact_names = ", ".join(
+            sorted(input_artifacts.keys())
+        ) if input_artifacts else "none"
+
+        return {
+            "quality_gate_criteria": (
+                f"Quality gates for '{service_ctx.service_name}' "
+                f"({service_ctx.architecture}):\n"
+                f"- Verify all generated artifacts are consistent\n"
+                f"- Validate architecture constraints are respected\n"
+                f"- Confirm feature coverage is complete"
+            ),
+            "adapter_checklist_extras": (
+                f"Architecture-specific checklist items:\n{checklist_lines}"
+            ),
+            "artifact_coverage": (
+                f"Artifacts to validate: {artifact_names}"
+            ),
+        }

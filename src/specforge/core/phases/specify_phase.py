@@ -48,6 +48,37 @@ class SpecifyPhase(BasePhase):
         ctx.update(adapter.get_context(service_ctx))
         return ctx
 
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for spec generation."""
+        feature_lines = "\n".join(
+            f"- {f.display_name}: {f.description}"
+            for f in service_ctx.features
+        )
+        criteria_lines = "\n".join(
+            f"- [{f.priority}] {f.display_name}" for f in service_ctx.features
+        )
+        return {
+            "feature_descriptions": (
+                f"Service '{service_ctx.service_name}' includes these features:\n"
+                f"{feature_lines}"
+            ),
+            "service_identity": (
+                f"Service: {service_ctx.service_name} "
+                f"(slug: {service_ctx.service_slug})\n"
+                f"Architecture: {service_ctx.architecture}\n"
+                f"Domain: {service_ctx.domain}"
+            ),
+            "acceptance_criteria_hints": (
+                "Prioritized features for acceptance criteria:\n"
+                f"{criteria_lines}"
+            ),
+        }
+
 
 def _group_capabilities(
     features: tuple[FeatureInfo, ...],

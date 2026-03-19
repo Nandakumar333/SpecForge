@@ -47,13 +47,29 @@ console = Console()
     default=False,
     help="Suppress over-engineering warnings.",
 )
+@click.option(
+    "--template-mode",
+    is_flag=True,
+    default=False,
+    help="Force rule-based decomposition (no LLM calls)",
+)
+@click.option(
+    "--dry-run-prompt",
+    is_flag=True,
+    default=False,
+    help="Write assembled prompt without calling LLM",
+)
 def decompose(
     description: str,
     arch: str | None,
     remap: str | None,
     no_warn: bool,
+    template_mode: bool,
+    dry_run_prompt: bool,
 ) -> None:
     """Decompose an application description into features."""
+    if template_mode and dry_run_prompt:
+        _exit_error("--template-mode and --dry-run-prompt are mutually exclusive.")
     if arch and remap:
         _exit_error(
             "Cannot use --arch and --remap together. "
@@ -64,7 +80,14 @@ def decompose(
     if remap:
         _handle_remap(project_root, description, remap, no_warn)
         return
-    _handle_decompose(project_root, description, arch, no_warn)
+    _handle_decompose(
+        project_root,
+        description,
+        arch,
+        no_warn,
+        template_mode=template_mode,
+        dry_run_prompt=dry_run_prompt,
+    )
 
 
 def _handle_decompose(
@@ -72,6 +95,9 @@ def _handle_decompose(
     description: str,
     arch: str | None,
     no_warn: bool,
+    *,
+    template_mode: bool = False,
+    dry_run_prompt: bool = False,
 ) -> None:
     """Main decompose flow: gate -> analyze -> map -> review -> write."""
     state_path = root / STATE_PATH
@@ -86,6 +112,13 @@ def _handle_decompose(
     if manifest_path.exists():
         _handle_existing_manifest(root, description, arch, no_warn)
         return
+
+    if not template_mode:
+        llm_result = _try_llm_decompose(
+            root, description, arch, dry_run_prompt=dry_run_prompt
+        )
+        if llm_result:
+            return
 
     _run_fresh_decompose(root, description, arch, no_warn)
 
@@ -155,9 +188,7 @@ def _prompt_architecture() -> str:
         choices=["1", "2", "3"],
         default="1",
     )
-    return {"1": "monolithic", "2": "microservice", "3": "modular-monolith"}[
-        choice
-    ]
+    return {"1": "monolithic", "2": "microservice", "3": "modular-monolith"}[choice]
 
 
 def _run_clarification(
@@ -245,8 +276,13 @@ def _finalize_monolith(
     result = mapper.map_features(features, architecture)
     services = result.value if result.ok else []
     _write_manifest_and_dirs(
-        root, description, architecture, domain_match,
-        features, services, events=[],
+        root,
+        description,
+        architecture,
+        domain_match,
+        features,
+        services,
+        events=[],
     )
 
 
@@ -277,15 +313,17 @@ def _finalize_services(
     cycles = planner.detect_cycles(services)
     if cycles:
         for cycle in cycles:
-            console.print(
-                f"[yellow]Circular dependency: "
-                f"{' -> '.join(cycle)}[/yellow]"
-            )
+            console.print(f"[yellow]Circular dependency: {' -> '.join(cycle)}[/yellow]")
 
     _write_comm_map(root, architecture, services, events, planner)
     _write_manifest_and_dirs(
-        root, description, architecture, domain_match,
-        features, services, events,
+        root,
+        description,
+        architecture,
+        domain_match,
+        features,
+        services,
+        events,
     )
 
 
@@ -319,8 +357,7 @@ def _interactive_review(
 
     while True:
         cmd = Prompt.ask(
-            "\nEdit mapping "
-            "(combine/split/rename/add/remove/override/done)",
+            "\nEdit mapping (combine/split/rename/add/remove/override/done)",
             default="done",
         )
         if cmd.strip().lower() == "done":
@@ -382,9 +419,7 @@ def _cmd_combine(services: list, slug1: str, slug2: str) -> list | None:
     return result
 
 
-def _cmd_split(
-    services: list, slug: str, feature_id: str
-) -> list | None:
+def _cmd_split(services: list, slug: str, feature_id: str) -> list | None:
     """Split a feature out of a service into a new one."""
     from specforge.core.service_mapper import Service
 
@@ -447,9 +482,7 @@ def _cmd_add(services: list, name: str) -> list | None:
     return [*services, new_svc]
 
 
-def _cmd_remove(
-    services: list, slug: str, features: list
-) -> list | None:
+def _cmd_remove(services: list, slug: str, features: list) -> list | None:
     """Remove a service and reassign its features."""
     svc = _find_service(services, slug)
     if not svc:
@@ -481,9 +514,7 @@ def _cmd_remove(
     return [updated if s.slug == target_slug else s for s in other]
 
 
-def _cmd_override(
-    services: list, slug: str, target: str, pattern: str
-) -> list | None:
+def _cmd_override(services: list, slug: str, target: str, pattern: str) -> list | None:
     """Override communication pattern between services."""
     from specforge.core.config import COMMUNICATION_PATTERNS
 
@@ -559,16 +590,13 @@ def _write_comm_map(
 
         registry = TemplateRegistry()
         renderer = TemplateRenderer(registry)
-        result = renderer.render_raw(
-            "base/features/communication-map.md.j2", context
-        )
+        result = renderer.render_raw("base/features/communication-map.md.j2", context)
         if result.ok:
             comm_path = root / COMMUNICATION_MAP_PATH
             comm_path.parent.mkdir(parents=True, exist_ok=True)
             comm_path.write_text(result.value, encoding="utf-8")
             console.print(
-                f"[green]Communication map written to "
-                f"{COMMUNICATION_MAP_PATH}[/green]"
+                f"[green]Communication map written to {COMMUNICATION_MAP_PATH}[/green]"
             )
     except Exception:
         pass
@@ -602,12 +630,9 @@ def _write_manifest_and_dirs(
     val_result = writer.validate(manifest_path)
     if not val_result.ok:
         console.print(
-            f"[yellow]Manifest validation warning: "
-            f"{val_result.error}[/yellow]"
+            f"[yellow]Manifest validation warning: {val_result.error}[/yellow]"
         )
-    console.print(
-        f"\n[green]Manifest written to {MANIFEST_PATH}[/green]"
-    )
+    console.print(f"\n[green]Manifest written to {MANIFEST_PATH}[/green]")
     _create_feature_dirs(root, features)
     _cleanup_state(root)
     console.print("[green]Done![/green]")
@@ -622,15 +647,10 @@ def _create_feature_dirs(root: Path, features: list) -> None:
         slug = f"{f.id}-{f.name}"
         feat_dir = features_dir / slug
         feat_dir.mkdir(parents=True, exist_ok=True)
-    console.print(
-        f"[green]Feature directories created under "
-        f"{FEATURES_DIR}/[/green]"
-    )
+    console.print(f"[green]Feature directories created under {FEATURES_DIR}/[/green]")
 
 
-def _save_arch_state(
-    root: Path, description: str, architecture: str
-) -> None:
+def _save_arch_state(root: Path, description: str, architecture: str) -> None:
     """Save state after architecture selection."""
     state = DecompositionState(
         step="architecture",
@@ -649,8 +669,7 @@ def _save_decomp_state(
 ) -> None:
     """Save state after feature decomposition."""
     feature_dicts = tuple(
-        {"id": f.id, "name": f.name, "description": f.description}
-        for f in features
+        {"id": f.id, "name": f.name, "description": f.description} for f in features
     )
     state = DecompositionState(
         step="decomposition",
@@ -672,8 +691,7 @@ def _save_mapping_state(
 ) -> None:
     """Save state after service mapping."""
     feature_dicts = tuple(
-        {"id": f.id, "name": f.name, "description": f.description}
-        for f in features
+        {"id": f.id, "name": f.name, "description": f.description} for f in features
     )
     service_dicts = tuple(
         {"name": s.name, "slug": s.slug, "feature_ids": list(s.feature_ids)}
@@ -706,8 +724,7 @@ def _handle_resume(
 ) -> None:
     """Handle resuming from a saved state."""
     console.print(
-        f"\n[yellow]Existing decomposition state found "
-        f"(step: {state.step}).[/yellow]"
+        f"\n[yellow]Existing decomposition state found (step: {state.step}).[/yellow]"
     )
     choice = Prompt.ask(
         "Resume or start fresh?",
@@ -729,8 +746,7 @@ def _handle_existing_manifest(
 ) -> None:
     """Handle existing manifest.json on re-run."""
     console.print(
-        "\n[yellow]Existing decomposition found "
-        "(.specforge/manifest.json).[/yellow]"
+        "\n[yellow]Existing decomposition found (.specforge/manifest.json).[/yellow]"
     )
     choice = Prompt.ask(
         "Start fresh (overwrites existing)?",
@@ -761,10 +777,13 @@ def _handle_remap(
 
     features = [
         Feature(
-            id=f["id"], name=f["name"],
+            id=f["id"],
+            name=f["name"],
             display_name=f.get("display_name", f["name"]),
-            description=f["description"], priority=f["priority"],
-            category=f["category"], always_separate=False,
+            description=f["description"],
+            priority=f["priority"],
+            category=f["category"],
+            always_separate=False,
             data_keywords=(),
         )
         for f in data["features"]
@@ -795,3 +814,136 @@ def _exit_gibberish() -> None:
         '  specforge decompose "Build an e-commerce platform"\n'
         '  specforge decompose "Create a social media app"'
     )
+
+
+def _try_llm_decompose(
+    root: Path,
+    description: str,
+    arch: str | None,
+    *,
+    dry_run_prompt: bool = False,
+) -> bool:
+    """Attempt LLM-based decomposition. Returns True if successful."""
+
+    try:
+        from specforge.core.llm_provider import ProviderFactory
+        from specforge.core.output_postprocessor import OutputPostprocessor
+        from specforge.core.phase_prompts import PHASE_PROMPTS
+    except ImportError:
+        return False
+
+    config_path = root / ".specforge" / "config.json"
+    factory_result = ProviderFactory.create(config_path)
+    if not factory_result.ok:
+        console.print(
+            f"[yellow]Warning:[/yellow] {factory_result.error}. "
+            "Falling back to rule-based decomposition."
+        )
+        return False
+
+    provider = factory_result.value
+    phase_prompt = PHASE_PROMPTS["decompose"]
+    architecture = arch or "microservice"
+
+    from specforge.core.architecture_adapter import create_adapter
+
+    adapter = create_adapter(architecture)
+
+    system_parts = [
+        phase_prompt.clean_markdown_instruction,
+        phase_prompt.system_instructions,
+        f"Target architecture: {architecture}",
+        adapter.serialize_for_prompt(),
+    ]
+    system_prompt = "\n\n".join(system_parts)
+    user_prompt = (
+        f"Decompose this application into features and services:\n\n"
+        f"{description}\n\n"
+        f"Architecture: {architecture}\n\n"
+        f"Output format:\n{phase_prompt.skeleton}"
+    )
+
+    if dry_run_prompt:
+        prompt_dir = root / ".specforge"
+        prompt_dir.mkdir(parents=True, exist_ok=True)
+        prompt_path = prompt_dir / "decompose.prompt.md"
+        content = (
+            f"# System Prompt\n\n{system_prompt}\n\n"
+            f"---\n\n# User Prompt\n\n{user_prompt}\n"
+        )
+        prompt_path.write_text(content, encoding="utf-8")
+        console.print(f"[green]Dry run:[/green] Prompt written to {prompt_path}")
+        return True
+
+    console.print("[dim]Calling LLM for feature decomposition...[/dim]")
+    call_result = provider.call(system_prompt, user_prompt)
+    if not call_result.ok:
+        console.print(
+            f"[yellow]Warning:[/yellow] LLM call failed: "
+            f"{call_result.error}. Falling back to rule-based."
+        )
+        return False
+
+    raw_output = OutputPostprocessor.strip_preamble(call_result.value)
+    parsed = _parse_llm_decompose(raw_output)
+    if parsed is None:
+        console.print(
+            "[yellow]Warning:[/yellow] Could not parse LLM output. "
+            "Falling back to rule-based decomposition."
+        )
+        return False
+
+    _write_llm_manifest(root, parsed, architecture, description)
+    return True
+
+
+def _parse_llm_decompose(raw: str) -> dict | None:
+    """Parse LLM decompose output as JSON."""
+    import json as _json
+    import re
+
+    json_match = re.search(r"\{[\s\S]*\}", raw)
+    if not json_match:
+        return None
+    try:
+        data = _json.loads(json_match.group())
+        if "features" in data:
+            return data
+    except _json.JSONDecodeError:
+        pass
+    return None
+
+
+def _write_llm_manifest(
+    root: Path,
+    data: dict,
+    architecture: str,
+    description: str,
+) -> None:
+    """Write manifest.json from LLM decompose output."""
+    import json as _json
+
+    from specforge.core.config import FEATURES_DIR, MANIFEST_PATH, SCHEMA_VERSION
+
+    manifest = {
+        "schema_version": SCHEMA_VERSION,
+        "architecture": architecture,
+        "project_description": description,
+        "features": data.get("features", []),
+        "services": data.get("services", []),
+        "events": data.get("events", []),
+    }
+    manifest_path = root / MANIFEST_PATH
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest_path.write_text(_json.dumps(manifest, indent=2), encoding="utf-8")
+    console.print(
+        f"[green]LLM decomposition complete.[/green] "
+        f"{len(manifest['features'])} features across "
+        f"{len(manifest['services'])} services."
+    )
+
+    features_dir = root / FEATURES_DIR
+    for svc in manifest.get("services", []):
+        slug = svc.get("slug", "")
+        if slug:
+            (features_dir / slug).mkdir(parents=True, exist_ok=True)

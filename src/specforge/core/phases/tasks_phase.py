@@ -65,6 +65,46 @@ class TasksPhase(BasePhase):
             "input_artifacts": input_artifacts,
         }
 
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for task generation."""
+        extras = adapter.get_task_extras()
+        task_type_lines = "\n".join(
+            f"- {e.get('title', e.get('name', ''))}: "
+            f"{e.get('description', e.get('detail', ''))}"
+            for e in extras
+        ) if extras else "No architecture-specific task types."
+
+        feature_count = len(service_ctx.features)
+
+        return {
+            "task_generation_context": (
+                f"Generate implementation tasks for "
+                f"'{service_ctx.service_name}' covering {feature_count} "
+                f"feature(s) under {service_ctx.architecture} architecture.\n"
+                f"Architecture-specific task types:\n{task_type_lines}"
+            ),
+            "tdd_ordering_hints": (
+                "Follow TDD ordering: write failing tests first, then "
+                "implement production code, then refactor.\n"
+                "Task order: data layer → domain logic → API/interface → "
+                "integration tests → infrastructure/deployment."
+            ),
+            "dependency_context": (
+                "Inter-service dependencies:\n"
+                + "\n".join(
+                    f"- {d.target_name}: {d.description}"
+                    for d in service_ctx.dependencies
+                )
+                if service_ctx.dependencies
+                else "No inter-service dependencies."
+            ),
+        }
+
     @staticmethod
     def _task_to_dict(task: Any) -> dict[str, Any]:
         """Convert a TaskItem to a template-friendly dict."""
