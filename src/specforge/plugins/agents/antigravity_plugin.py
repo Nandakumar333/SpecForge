@@ -13,3 +13,7 @@ class AntigravityPlugin(SingleFileAgentPlugin):
         self._agent_id = "antigravity"
         self._file_path = ".agy/rules.md"
         self._template_name = "generic.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".agy/commands"

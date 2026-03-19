@@ -102,12 +102,17 @@ class PromptLoader:
                 "Expected keys: project_name, stack, version, created_at."
             )
 
+        raw_agent = data.get("agent", "generic")
+        agent = "generic" if raw_agent == "agnostic" else raw_agent
+
         return Ok(
             ProjectMeta(
                 project_name=data.get("project_name", ""),
                 stack=data["stack"],
                 version=data.get("version", "1.0"),
                 created_at=data.get("created_at", ""),
+                agent=agent,
+                commands_dir=data.get("commands_dir", "commands"),
             )
         )
 

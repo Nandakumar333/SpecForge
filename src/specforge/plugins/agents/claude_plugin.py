@@ -13,3 +13,7 @@ class ClaudePlugin(SingleFileAgentPlugin):
         self._agent_id = "claude"
         self._file_path = "CLAUDE.md"
         self._template_name = "claude.md.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".claude/commands"

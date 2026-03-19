@@ -13,3 +13,7 @@ class CursorPlugin(SingleFileAgentPlugin):
         self._agent_id = "cursor"
         self._file_path = ".cursorrules"
         self._template_name = "cursor.rules.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".cursor/commands"

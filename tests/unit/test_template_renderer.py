@@ -179,7 +179,7 @@ class TestRendererRender:
         renderer = TemplateRenderer(registry)
         ctx = {
             "project_name": "Test",
-            "agent": "agnostic",
+            "agent": "generic",
             "stack": "agnostic",
             "date": "2026-01-01",
             "stack_hint": "Language-agnostic",

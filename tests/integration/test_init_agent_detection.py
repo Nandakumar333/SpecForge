@@ -22,7 +22,7 @@ class TestInitAgentDetection:
             assert "claude" in result.output.lower()
             assert "auto-detected" in result.output.lower()
 
-    def test_no_agents_detects_agnostic(self, tmp_path: Path) -> None:
+    def test_no_agents_detects_generic(self, tmp_path: Path) -> None:
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             with patch(
@@ -31,7 +31,7 @@ class TestInitAgentDetection:
             ):
                 result = runner.invoke(cli, ["init", "myapp", "--no-git"])
             assert result.exit_code == 0, result.output
-            assert "agnostic" in result.output.lower()
+            assert "generic" in result.output.lower()
 
     def test_multiple_agents_first_in_priority(self, tmp_path: Path) -> None:
         runner = CliRunner()

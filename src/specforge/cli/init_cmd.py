@@ -11,6 +11,7 @@ from specforge.core.agent_detector import detect_agent
 from specforge.core.config import SUPPORTED_STACKS, VALID_ARCHITECTURES
 from specforge.core.git_ops import init_repo, is_git_available
 from specforge.core.project import ProjectConfig
+from specforge.core.result import Result
 from specforge.core.scaffold_builder import (
     build_scaffold_plan,
     generate_governance_files,
@@ -65,13 +66,19 @@ def init(
     _validate_args(name, here)
     target_dir = _resolve_target(name, here)
     _check_existing(target_dir, name, here, force, dry_run)
-    detection = detect_agent(explicit=agent)
+
+    # Resolve agent: explicit flag > interactive prompt > auto-detect
+    resolved_agent, agent_source = _resolve_agent(agent)
+    commands_dir_override: str | None = None
+    if resolved_agent == "generic" and agent_source == "interactive":
+        commands_dir_override = _prompt_commands_dir()
+
     resolved_stack = stack or StackDetector.detect(target_dir)
     config_result = ProjectConfig.create(
         name=name or "",
         target_dir=target_dir,
         here=here,
-        agent=detection.agent,
+        agent=resolved_agent,
         stack=resolved_stack,
         architecture=arch,
         no_git=no_git,
@@ -85,14 +92,19 @@ def init(
     if not plan_result.ok:
         _fail(plan_result.error)
     plan = plan_result.value
+
+    # Get the agent plugin for commands registration
+    agent_plugin = _get_agent_plugin(resolved_agent, commands_dir_override)
+
     if dry_run:
-        _print_dry_run(plan)
+        _print_dry_run(plan, agent_plugin)
         return
+
     write_result = write_scaffold(plan)
     if not write_result.ok:
         _fail(write_result.error)
     scaffold_result = write_result.value
-    scaffold_result.agent_source = detection.source
+    scaffold_result.agent_source = agent_source
 
     # Plugin integration — stack rules for governance
     extra_rules = _get_plugin_rules(resolved_stack, arch)
@@ -105,10 +117,142 @@ def init(
         _fail(gov_result.error)
 
     # Agent config generation via plugin
-    _generate_agent_config(detection.agent, config.target_dir, config)
+    _generate_agent_config(resolved_agent, config.target_dir, config)
+
+    # Register command files for the selected agent
+    commands_dir = agent_plugin.commands_dir if agent_plugin else "commands"
+    cmd_result = _register_commands(
+        agent_plugin, config, force,
+    )
+    if cmd_result and cmd_result.ok:
+        scaffold_result.commands_written = cmd_result.value
+
+    # Write extended config.json with agent + commands_dir
+    _write_extended_config(config, resolved_agent, commands_dir)
 
     _handle_git(config, scaffold_result)
-    _print_summary(scaffold_result)
+    _print_summary(scaffold_result, resolved_agent, agent_source, commands_dir)
+
+
+def _resolve_agent(explicit: str | None) -> tuple[str, str]:
+    """Resolve agent via explicit flag, interactive prompt, or auto-detect."""
+    if explicit:
+        return explicit, "explicit"
+
+    if sys.stdin.isatty():
+        return _prompt_agent_selection()
+
+    detection = detect_agent()
+    return detection.agent, detection.source
+
+
+def _prompt_agent_selection() -> tuple[str, str]:
+    """Present interactive agent selection prompt."""
+    from rich.prompt import Prompt
+
+    from specforge.plugins.plugin_manager import PluginManager
+
+    mgr = PluginManager()
+    mgr.discover()
+    plugins = mgr.list_agent_plugins()
+    agent_names = [p.agent_name() for p in plugins if p.agent_name() != "generic"]
+    agent_names.sort()
+    agent_names.append("generic")
+
+    try:
+        selected = Prompt.ask(
+            "Which AI agent do you want to use?",
+            choices=agent_names,
+            default="generic",
+        )
+    except KeyboardInterrupt:
+        click.echo("\nAborted.", err=True)
+        sys.exit(1)
+
+    return selected, "interactive"
+
+
+def _prompt_commands_dir() -> str:
+    """Prompt for custom commands directory when generic is selected."""
+    from rich.prompt import Prompt
+
+    while True:
+        try:
+            path = Prompt.ask("Commands directory", default="commands")
+        except KeyboardInterrupt:
+            click.echo("\nAborted.", err=True)
+            sys.exit(1)
+
+        validation = _validate_commands_dir(path)
+        if validation.ok:
+            return validation.value
+        click.echo(f"Error: {validation.error}", err=True)
+
+
+def _validate_commands_dir(path: str) -> Result[str, str]:
+    """Validate a custom commands directory path."""
+    from specforge.core.result import Err, Ok
+
+    if not path or not path.strip():
+        return Err("Commands directory must not be empty.")
+    normalized = path.strip().replace("\\", "/")
+    if Path(normalized).is_absolute() or normalized.startswith("/"):
+        return Err("Commands directory must be a relative path.")
+    if ".." in Path(normalized).parts:
+        return Err(
+            "Commands directory must not traverse outside project root."
+        )
+    return Ok(normalized)
+
+
+def _get_agent_plugin(
+    agent: str, commands_dir_override: str | None = None,
+) -> object | None:
+    """Get agent plugin instance, optionally with custom commands dir."""
+    from specforge.plugins.agents.generic_plugin import GenericPlugin
+    from specforge.plugins.plugin_manager import PluginManager
+
+    if agent == "generic" and commands_dir_override:
+        return GenericPlugin(commands_dir=commands_dir_override)
+
+    mgr = PluginManager()
+    mgr.discover()
+    result = mgr.get_agent_plugin(agent)
+    return result.value if result.ok else None
+
+
+def _register_commands(
+    agent_plugin: object | None,
+    config: ProjectConfig,
+    force: bool,
+) -> Result | None:
+    """Register command files for the selected agent."""
+    if agent_plugin is None:
+        return None
+
+    from specforge.core.command_registrar import CommandRegistrar
+
+    registrar = CommandRegistrar()
+    context = {
+        "project_name": config.name,
+        "stack": config.stack,
+        "architecture": config.architecture,
+    }
+    return registrar.register_commands(
+        agent_plugin, config.target_dir, context, force=force,
+    )
+
+
+def _write_extended_config(
+    config: ProjectConfig, agent: str, commands_dir: str,
+) -> None:
+    """Write config.json with agent and commands_dir fields."""
+    from specforge.core.prompt_manager import _write_config_json
+
+    _write_config_json(
+        config.target_dir, config.name, config.stack,
+        agent=agent, commands_dir=commands_dir,
+    )
 
 
 def _get_plugin_rules(
@@ -202,21 +346,48 @@ def _handle_git(config: ProjectConfig, result: object) -> None:
         result.git_committed = True
 
 
-def _print_dry_run(plan: object) -> None:
+def _print_dry_run(plan: object, agent_plugin: object | None = None) -> None:
     """Print the dry-run tree preview."""
     from specforge.cli.output import console, render_dry_run_tree
 
     tree = render_dry_run_tree(plan)
+
+    # Add command files to dry-run preview
+    if agent_plugin is not None:
+        from specforge.core.command_registrar import CommandRegistrar
+
+        registrar = CommandRegistrar()
+        context = {
+            "project_name": plan.config.name,
+            "stack": plan.config.stack,
+            "architecture": plan.config.architecture,
+        }
+        cmd_files = registrar.build_command_files(agent_plugin, context)
+
+        cmd_branch = tree.add(f"[bold]{agent_plugin.commands_dir}/[/bold]")
+        for cf in cmd_files:
+            cmd_branch.add(f"[dim]{cf.filename}[/dim]")
+
     console.print("\n[bold yellow][DRY RUN][/bold yellow] Would create:")
     console.print(tree)
     console.print("No files were written.")
 
 
-def _print_summary(result: object) -> None:
+def _print_summary(
+    result: object,
+    agent: str = "generic",
+    agent_source: str = "generic",
+    commands_dir: str = "commands",
+) -> None:
     """Print the Rich summary."""
     from specforge.cli.output import render_summary
 
     render_summary(result)
+
+    from specforge.cli.output import console
+
+    console.print(f"  ✓ Agent: {agent} ({agent_source})")
+    console.print(f"  ✓ Commands directory: {commands_dir}")
 
 
 def _fail(message: str) -> None:

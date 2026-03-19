@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from specforge.core.template_models import TemplateVarSchema
 
 AgentName = Literal[
-    "claude", "copilot", "gemini", "cursor", "windsurf", "codex", "agnostic"
+    "claude", "copilot", "gemini", "cursor", "windsurf", "codex", "generic"
 ]
 
 StackName = Literal["dotnet", "nodejs", "python", "go", "java", "agnostic"]
@@ -40,6 +40,13 @@ AGENT_EXECUTABLES: dict[str, list[str]] = {
 }
 
 PREREQUISITES: list[str] = ["git", "python", "uv"]
+
+# Pipeline stages — the 8 command files generated per agent
+PIPELINE_STAGES: list[str] = [
+    "decompose", "specify", "research", "plan",
+    "tasks", "implement", "status", "check",
+]
+COMMAND_PREFIX: str = "specforge"
 
 # Scaffold directory structure (relative to .specforge/)
 SCAFFOLD_DIRS: list[str] = [

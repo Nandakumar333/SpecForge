@@ -13,3 +13,7 @@ class WindsurfPlugin(SingleFileAgentPlugin):
         self._agent_id = "windsurf"
         self._file_path = ".windsurfrules"
         self._template_name = "windsurf.rules.j2"
+
+    @property
+    def commands_dir(self) -> str:
+        return ".windsurf/commands"

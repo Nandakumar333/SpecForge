@@ -220,6 +220,8 @@ class PromptFileManager:
         self,
         project_name: str,
         stack: str,
+        agent: str = "generic",
+        commands_dir: str = "commands",
     ) -> Result[Path, str]:
         """Write .specforge/config.json."""
         config_path = self._root / SPECFORGE_CONFIG_FILE
@@ -227,6 +229,8 @@ class PromptFileManager:
         config = {
             "project_name": project_name,
             "stack": stack,
+            "agent": agent,
+            "commands_dir": commands_dir,
             "version": "1.0",
             "created_at": date.today().isoformat(),
         }
@@ -243,7 +247,11 @@ class PromptFileManager:
 
 
 def _write_config_json(
-    project_root: Path, project_name: str, stack: str
+    project_root: Path,
+    project_name: str,
+    stack: str,
+    agent: str = "generic",
+    commands_dir: str = "commands",
 ) -> Result[Path, str]:
     """Write .specforge/config.json as a standalone function."""
     config_path = project_root / SPECFORGE_CONFIG_FILE
@@ -251,6 +259,8 @@ def _write_config_json(
     config = {
         "project_name": project_name,
         "stack": stack,
+        "agent": agent,
+        "commands_dir": commands_dir,
         "version": "1.0",
         "created_at": date.today().isoformat(),
     }

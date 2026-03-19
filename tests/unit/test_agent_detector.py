@@ -16,11 +16,11 @@ class TestDetectAgent:
         assert result.source == "auto-detected"
         assert result.executable == "claude"
 
-    def test_no_agents_returns_agnostic(self) -> None:
+    def test_no_agents_returns_generic(self) -> None:
         with patch("specforge.core.agent_detector.shutil.which", return_value=None):
             result = detect_agent()
-        assert result.agent == "agnostic"
-        assert result.source == "agnostic"
+        assert result.agent == "generic"
+        assert result.source == "generic"
         assert result.executable is None
 
     def test_multiple_agents_returns_first_in_priority(self) -> None:

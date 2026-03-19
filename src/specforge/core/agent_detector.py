@@ -28,4 +28,4 @@ def detect_agent(explicit: str | None = None) -> DetectionResult:
                     source="auto-detected",
                     executable=exe,
                 )
-    return DetectionResult(agent="agnostic", source="agnostic")
+    return DetectionResult(agent="generic", source="generic")

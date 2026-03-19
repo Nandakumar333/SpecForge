@@ -28,7 +28,7 @@ def _make_plan(
                 template_name="constitution.md.j2",
                 context={
                     "project_name": "testproj",
-                    "agent": "agnostic",
+                    "agent": "generic",
                     "stack": "agnostic",
                     "date": "2026-03-14",
                     "stack_hint": "Language-agnostic",

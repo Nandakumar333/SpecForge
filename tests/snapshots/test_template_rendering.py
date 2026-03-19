@@ -17,7 +17,7 @@ _CTX = {
 
 _AGNOSTIC_CTX = {
     "project_name": "testproj",
-    "agent": "agnostic",
+    "agent": "generic",
     "stack": "agnostic",
     "date": "2026-03-14",
     "stack_hint": "Language-agnostic",
