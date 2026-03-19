@@ -42,6 +42,7 @@
 - [🔄 Implementation Orchestrator](#-implementation-orchestrator)
 - [📊 Project Status Dashboard](#-project-status-dashboard)
 - [🔌 Plugin System](#-plugin-system)
+- [⚡ Parallel Execution Engine](#-parallel-execution-engine)
 - [🔧 Prerequisites](#-prerequisites)
 - [📋 Detailed Process](#-detailed-process)
 - [🔍 Troubleshooting](#-troubleshooting)
@@ -326,6 +327,8 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 | `specforge implement <service>` | Execute all tasks for a service via isolated sub-agent | ✅ Implemented |
 | `specforge implement --shared-infra` | Build cross-service infrastructure before any service | ✅ Implemented |
 | `specforge implement --all` | Execute all services respecting the dependency graph with phased orchestration | ✅ Implemented |
+| `specforge implement --all --parallel` | Execute services concurrently in topological dependency waves | ✅ Implemented |
+| `specforge decompose --auto --parallel` | Fully automated decomposition + concurrent spec generation for all services | ✅ Implemented |
 | `specforge implement --resume` | Resume from last completed task | ✅ Implemented |
 | `specforge status` | Show project-wide status dashboard with service progress, quality reports, and phase tracking | ✅ Implemented |
 | `specforge plugins` | List installed agent and stack plugins with configuration status | ✅ Implemented |
@@ -355,6 +358,10 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 | `--arch` | Option | (interactive) | Skip architecture prompt: `monolithic`, `microservice`, `modular-monolith` |
 | `--remap` | Option | — | Re-map existing features to a new architecture without losing content |
 | `--no-warn` | Flag | `False` | Suppress over-engineering warnings (for scripted/CI usage) |
+| `--auto` | Flag | `False` | Skip all interactive prompts — use LLM for architecture selection and feature confirmation |
+| `--parallel` | Flag | `False` | Run spec pipelines concurrently across all discovered services after decomposition |
+| `--max-parallel` | Option | `4` | Override max concurrent workers (from `config.json` `parallel.max_workers`) |
+| `--fail-fast` | Flag | `False` | Cancel all workers on first service failure |
 
 ---
 
@@ -388,6 +395,9 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 | `--mode` | Option | `prompt-display` | Execution mode: `prompt-display` (show prompt for manual agent use) or `agent-call` (invoke agent directly) |
 | `--max-fix-attempts` | Option | `3` | Max auto-fix retry attempts per task |
 | `--to-phase` | Option | — | Stop after completing a specific phase (used with `--all`) |
+| `--parallel` | Flag | `False` | Run services concurrently within dependency waves (requires `--all`) |
+| `--max-parallel` | Option | `4` | Override max concurrent workers (requires `--parallel`) |
+| `--fail-fast` | Flag | `False` | Cancel all workers on first service failure (requires `--parallel`) |
 
 ---
 
@@ -486,6 +496,18 @@ specforge implement ledger-service --resume
 # Use agent-call mode (invoke agent directly)
 specforge implement ledger-service --mode agent-call
 
+# Parallel: fully automated decompose + concurrent spec generation
+specforge decompose "Create a webapp for PersonalFinance" --auto --parallel
+
+# Parallel: limit to 2 concurrent workers (rate-limited API)
+specforge decompose "Create a webapp for PersonalFinance" --auto --parallel --max-parallel 2
+
+# Parallel: implement all services in dependency waves
+specforge implement --all --parallel
+
+# Parallel: fail-fast mode — stop on first failure
+specforge implement --all --parallel --fail-fast
+
 # View project-wide status dashboard
 specforge status
 
@@ -561,7 +583,12 @@ SpecForge is built as 14 incrementally developed features, each fully specified,
 │  ┌──────▼──────┐  ┌─────────────┐                                      │
 │  │ 011 Impl    │  │ 012 Project │    ORCHESTRATION                      │
 │  │ Orchestrator│  │ Dashboard   │    & MONITORING                       │
-│  └─────────────┘  └─────────────┘                                      │
+│  └──────┬──────┘  └─────────────┘                                      │
+│         │                                                              │
+│  ┌──────▼──────┐                                                        │
+│  │ 016 Parallel│    PARALLEL EXECUTION                                  │
+│  │ Exec Engine │    (concurrent waves)                                  │
+│  └─────────────┘                                                        │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -583,12 +610,13 @@ SpecForge is built as 14 incrementally developed features, each fully specified,
 | 012 | **Project Status Dashboard** | Real-time project status view with `specforge status` — service progress, phase completion, quality reports, implementation metrics, Rich terminal rendering with color-coded indicators |
 | 013 | **Plugin System** | Extensible architecture with 25+ agent plugins (Claude, Copilot, Gemini, Cursor, Windsurf, Codex, and more) and 3 stack plugins (dotnet, nodejs, python) with unified `AgentPlugin` and `StackPlugin` interfaces |
 | 014 | **Interactive Model Selection** | Interactive agent selection prompt during `specforge init`, automatic commands directory creation with 8 pipeline-stage command files per agent, agent-native formats (Markdown/TOML), config.json persistence |
+| 016 | **Parallel Execution Engine** | Concurrent spec generation via `decompose --auto --parallel`, parallel implementation via `implement --all --parallel` with topological dependency waves, configurable worker pool, fail-fast mode, SIGINT handling, architecture-aware parallelism (microservice waves / monolith single wave) |
 
 ---
 
 ## 🌟 Development Phases (Roadmap)
 
-SpecForge is built incrementally across 6 phases.
+SpecForge is built incrementally across 7 phases.
 
 ### Phase 1 — Foundation ✅
 **Feature 001** — CLI Scaffold: `specforge init` with agent detection, stack selection, dry-run preview, git integration, `specforge check` for prerequisites.
@@ -624,7 +652,10 @@ SpecForge is built incrementally across 6 phases.
 
 **Feature 014** — Interactive Model Selection & Commands Directory: Interactive `Rich.Prompt.ask()` agent selection during `specforge init` (25+ agents listed alphabetically, "generic" last), automatic `CommandRegistrar` that renders 8 Jinja2 command templates per pipeline stage into agent-native directories (`.claude/commands/`, `.github/prompts/`, `.gemini/commands/`, etc.), Markdown and TOML format support, `$ARGUMENTS` placeholder injection, `config.json` extended with `agent` and `commands_dir` fields, `--force` preserves existing command files, generic agent supports custom commands directory path, "agnostic" unified to "generic" across agent context.
 
-### Phase 7 — Polish & Ecosystem 🔜
+### Phase 7 — Performance ✅
+**Feature 016** — Parallel Execution Engine: `decompose --auto --parallel` runs the full 7-phase spec pipeline concurrently across all discovered services using `ThreadPoolExecutor` with configurable `max_workers` (default 4). `implement --all --parallel` executes services in topologically sorted dependency waves — independent services run concurrently within each wave, waves execute sequentially. Architecture-aware: microservice uses dependency graph waves, monolith uses single wave, modular-monolith uses boundary-aware waves. Resilient error handling (failed services don't block unrelated services), `--fail-fast` mode for CI, SIGINT graceful shutdown, resume support. Inline Rich progress output per service. State persisted to `.specforge/parallel-state.json`.
+
+### Phase 8 — Polish & Ecosystem 🔜
 Brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.
 
 ---
@@ -1013,6 +1044,72 @@ class StackPlugin(ABC):
     @abstractmethod
     def get_test_command(self) -> str: ...
 ```
+
+---
+
+## ⚡ Parallel Execution Engine
+
+Feature 016 adds concurrent execution across services, dramatically reducing wall-clock time for multi-service projects.
+
+### Parallel Decompose
+
+Run `decompose --auto --parallel` to discover services via AI and generate all 7-phase spec artifacts concurrently:
+
+```bash
+specforge decompose "Personal Finance App" --auto --parallel
+```
+
+- `--auto` skips all interactive prompts (architecture selection, feature confirmation)
+- `--parallel` runs spec pipelines concurrently after decomposition
+- `--max-parallel N` limits concurrent workers (default: 4, configurable in `config.json`)
+- `--fail-fast` cancels all workers on first failure
+
+For a project with 6 services and 4 workers, parallel execution cuts spec generation time by ~4x.
+
+### Parallel Implement
+
+Run `implement --all --parallel` to execute services in topologically sorted dependency waves:
+
+```bash
+specforge implement --all --parallel
+```
+
+Services are grouped into waves based on their dependency graph. Wave 1 (no dependencies) runs first, then wave 2 (depends on wave 1), etc. Within each wave, independent services run concurrently.
+
+```
+Wave 0: identity-service, admin-service     (parallel — no deps)
+Wave 1: ledger-service, portfolio-service   (parallel — depend on identity)
+Wave 2: analytics-service                   (depends on ledger)
+```
+
+### Architecture-Aware Parallelism
+
+| Architecture | Behavior |
+|---|---|
+| **Microservice** | Topological dependency waves from `communication[]` graph |
+| **Monolithic** | Single wave — all modules run in parallel |
+| **Modular Monolith** | Dependency waves if `communication[]` entries exist, otherwise single wave |
+
+### Error Handling
+
+- **Resilient mode** (default): Failed services don't stop others. Only direct dependents in subsequent waves are marked as "blocked"
+- **Fail-fast mode** (`--fail-fast`): First failure cancels all running workers and skips remaining waves
+- **Resume**: Re-running the command skips already-completed services
+- **SIGINT**: Graceful shutdown — in-progress services are marked as cancelled, completed work is preserved
+
+### Configuration
+
+Add to `.specforge/config.json`:
+
+```json
+{
+  "parallel": {
+    "max_workers": 4
+  }
+}
+```
+
+The `--max-parallel N` CLI flag overrides this value for the current invocation.
 
 ---
 
