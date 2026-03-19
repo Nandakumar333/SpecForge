@@ -40,6 +40,10 @@ from specforge.core.result import Err, Ok, Result
 from specforge.core.service_context import load_service_context, resolve_target
 
 if TYPE_CHECKING:
+    from specforge.core.llm_provider import LLMProvider
+    from specforge.core.output_postprocessor import OutputPostprocessor
+    from specforge.core.output_validator import OutputValidator
+    from specforge.core.prompt_assembler import PromptAssembler
     from specforge.core.template_registry import TemplateRegistry
     from specforge.core.template_renderer import TemplateRenderer
 
@@ -52,10 +56,20 @@ class PipelineOrchestrator:
         renderer: TemplateRenderer,
         registry: TemplateRegistry,
         prompt_context: str = "",
+        provider: LLMProvider | None = None,
+        assembler: PromptAssembler | None = None,
+        validator: OutputValidator | None = None,
+        postprocessor: OutputPostprocessor | None = None,
+        dry_run_prompt: bool = False,
     ) -> None:
         self._renderer = renderer
         self._registry = registry
         self._prompt_context = prompt_context
+        self._provider = provider
+        self._assembler = assembler
+        self._validator = validator
+        self._postprocessor = postprocessor
+        self._dry_run_prompt = dry_run_prompt
 
     def run(
         self,
@@ -124,6 +138,11 @@ class PipelineOrchestrator:
             result = phase.run(
                 service_ctx, _get_adapter(service_ctx),
                 self._renderer, self._registry, artifacts,
+                provider=self._provider,
+                assembler=self._assembler,
+                validator=self._validator,
+                postprocessor=self._postprocessor,
+                dry_run_prompt=self._dry_run_prompt,
             )
             if not result.ok:
                 state = mark_failed(state, phase.name, result.error)
@@ -157,10 +176,20 @@ class PipelineOrchestrator:
             fut_dm = pool.submit(
                 dm.run, service_ctx, adapter,
                 self._renderer, self._registry, artifacts,
+                provider=self._provider,
+                assembler=self._assembler,
+                validator=self._validator,
+                postprocessor=self._postprocessor,
+                dry_run_prompt=self._dry_run_prompt,
             )
             fut_ec = pool.submit(
                 ec.run, service_ctx, adapter,
                 self._renderer, self._registry, artifacts,
+                provider=self._provider,
+                assembler=self._assembler,
+                validator=self._validator,
+                postprocessor=self._postprocessor,
+                dry_run_prompt=self._dry_run_prompt,
             )
             res_dm = fut_dm.result()
             res_ec = fut_ec.result()

@@ -111,14 +111,28 @@ uv tool install specforge --from git+https://github.com/Nandakumar333/SpecForge.
 Then use the tool directly:
 
 ```bash
-# Scaffold a new project
+# Scaffold a new project (interactive agent selection)
 specforge init <PROJECT_NAME>
 
-# Or initialize in an existing project
+# Or initialize in an existing project with a specific agent
 specforge init --here --agent claude
 
 # Verify your environment
 specforge check
+```
+
+When `--agent` is not provided in an interactive terminal, SpecForge prompts you to choose from all 25+ supported AI agents:
+
+```
+$ specforge init MyApp
+Which AI agent do you want to use? [amp/antigravity/auggie/bob/claude/codebuddy/
+  codex/copilot/cursor/gemini/jules/kilocode/kimi/kiro/mistral/opencode/pi/qoder/
+  qwen/roocode/shai/tabnine/trae/windsurf/generic] (generic): claude
+
+✓ Created .specforge/ scaffold
+✓ Created .claude/commands/ with 8 command files
+✓ Agent: claude (interactive)
+✓ Commands directory: .claude/commands
 ```
 
 To upgrade:
@@ -183,8 +197,17 @@ SpecForge generates the following structure when you run `specforge init`:
 
 ```text
 project-root/
+├── .claude/commands/                      # Agent-native commands (agent-specific location)
+│   ├── specforge.decompose.md             #   /specforge.decompose slash command
+│   ├── specforge.specify.md               #   /specforge.specify slash command
+│   ├── specforge.research.md              #   /specforge.research slash command
+│   ├── specforge.plan.md                  #   /specforge.plan slash command
+│   ├── specforge.tasks.md                 #   /specforge.tasks slash command
+│   ├── specforge.implement.md             #   /specforge.implement slash command
+│   ├── specforge.status.md                #   /specforge.status slash command
+│   └── specforge.check.md                 #   /specforge.check slash command
 ├── .specforge/
-│   ├── config.json                        # Agent, stack, and project config
+│   ├── config.json                        # Agent, stack, commands dir, and project config
 │   ├── constitution.md                    # Project-wide governance principles
 │   ├── manifest.json                      # Architecture + feature→service mapping
 │   ├── communication-map.md               # Mermaid service dependency diagram
@@ -230,6 +253,8 @@ project-root/
 
 > **Governance file naming**: Stack-specific domains use `{domain}.{stack}.prompts.md` format (e.g., `backend.dotnet.prompts.md`, `testing.nodejs.prompts.md`). Stack-agnostic domains use flat naming (e.g., `architecture.prompts.md`, `security.prompts.md`).
 
+> **Commands directory location**: The commands directory varies by agent — `.claude/commands/` for Claude, `.github/prompts/` for Copilot, `.gemini/commands/` for Gemini (TOML format), `commands/` for generic. Each contains 8 pipeline-stage command files. The `config.json` records the selected `agent` and `commands_dir` for downstream tools.
+
 ---
 
 ## 📋 Per-Feature Pipeline
@@ -260,19 +285,26 @@ The pipeline tracks phase completion in `.pipeline-state.json`, supporting:
 
 ## 🤖 Supported AI Agents
 
-| Agent | Support | CLI Binary | Notes |
-|-------|---------|-----------|-------|
-| [Claude Code](https://www.anthropic.com/claude-code) | ✅ | `claude` | Auto-detected first in priority order |
-| [GitHub Copilot](https://github.com/features/copilot) | ✅ | `copilot` | Standalone Copilot CLI |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | ✅ | `gemini` | |
-| [Cursor](https://cursor.com) | ✅ | `cursor` | Install `cursor` command via Command Palette |
-| [Windsurf](https://windsurf.com) | ✅ | `windsurf` | Requires manual PATH setup |
-| [Codex CLI](https://github.com/openai/codex) | ✅ | `codex` | Requires manual PATH setup |
-| Agnostic | ✅ | — | Generated when no agent is detected; use `--agent` to override |
+SpecForge supports **25+ AI agents** with automatic command directory generation. Each agent gets commands placed in its native discovery location.
 
-**Auto-detection priority order**: `claude → copilot → gemini → cursor → windsurf → codex`
+| Agent | Commands Directory | Format | Auto-Detect |
+|-------|-------------------|--------|-------------|
+| [Claude Code](https://www.anthropic.com/claude-code) | `.claude/commands/` | Markdown | ✅ Priority 1 |
+| [GitHub Copilot](https://github.com/features/copilot) | `.github/prompts/` | `.prompt.md` | ✅ Priority 2 |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `.gemini/commands/` | TOML | ✅ Priority 3 |
+| [Cursor](https://cursor.com) | `.cursor/commands/` | Markdown | ✅ Priority 4 |
+| [Windsurf](https://windsurf.com) | `.windsurf/commands/` | Markdown | ✅ Priority 5 |
+| [Codex CLI](https://github.com/openai/codex) | `.codex/commands/` | Markdown | ✅ Priority 6 |
+| [Kiro](https://kiro.dev) | `.kiro/commands/` | Markdown | — |
+| [Roo Code](https://roo.dev) | `.roo/commands/` | Markdown | — |
+| [Amp](https://amp.dev) | `.amp/commands/` | Markdown | — |
+| [Trae](https://trae.ai) | `.trae/commands/` | Markdown | — |
+| 15+ others | `.specforge/commands/` | Markdown | — |
+| Generic | `commands/` (customizable) | Markdown | — (fallback) |
 
-When `--agent` is not specified, SpecForge scans PATH in the order above and configures the first agent found.
+**Agent selection**: When `--agent` is not specified in an interactive terminal, SpecForge presents a selection prompt listing all registered agents. In non-interactive environments (CI/pipes), auto-detection scans PATH using the priority order: `claude → copilot → gemini → cursor → windsurf → codex`.
+
+**Commands directory**: After agent selection, 8 pipeline-stage command files are automatically generated in the agent's native location, enabling slash commands like `/specforge.decompose` in your AI tool.
 
 ---
 
@@ -305,12 +337,13 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 | Argument/Option | Type | Default | Description |
 |----------------|------|---------|-------------|
 | `<project-name>` | Argument | — | Project directory name. Required unless `--here`. Allowed: `[a-zA-Z0-9_-]` |
-| `--agent` | Option | (auto-detect) | AI agent: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex` |
+| `--agent` | Option | (interactive/auto-detect) | AI agent: `claude`, `copilot`, `gemini`, `cursor`, `windsurf`, `codex`, or any registered plugin. When omitted in an interactive terminal, presents a selection prompt |
 | `--stack` | Option | (auto-detect) | Tech stack for governance prompt variants: `dotnet`, `nodejs`, `python`, `go`, `java` |
+| `--arch` | Option | `monolithic` | Architecture pattern: `monolithic`, `microservice`, `modular-monolith` |
 | `--here` | Flag | `False` | Scaffold `.specforge/` into current directory. Mutually exclusive with `<project-name>` |
-| `--force` | Flag | `False` | Allow existing directory — preserves customized files (SHA-256 comparison), only adds missing ones |
+| `--force` | Flag | `False` | Allow existing directory — preserves customized files (SHA-256 comparison), only adds missing ones. Preserves existing command files |
 | `--no-git` | Flag | `False` | Skip `git init`, `.gitignore`, and initial commit |
-| `--dry-run` | Flag | `False` | Preview the full file tree without writing anything |
+| `--dry-run` | Flag | `False` | Preview the full file tree (including command files) without writing anything |
 
 ---
 
@@ -378,23 +411,28 @@ When `--agent` is not specified, SpecForge scans PATH in the order above and con
 ### Examples
 
 ```bash
-# Scaffold a new project (auto-detects agent)
+# Scaffold a new project (interactive agent selection in terminal)
 specforge init PersonalFinance
 
-# Scaffold with specific agent and stack
+# Scaffold with specific agent — creates .claude/commands/ with 8 command files
 specforge init PersonalFinance --agent claude --stack dotnet
 
-# Initialize in an existing project
+# Initialize in an existing project — creates .github/prompts/ for Copilot
 specforge init --here --agent copilot
 
 # Add missing .specforge/ files without overwriting customized ones
+# Preserves existing command files with --force
 specforge init --here --force --agent gemini
 
-# Preview what would be created
+# Preview what would be created (includes command files in tree)
 specforge init PersonalFinance --dry-run
 
 # Skip git initialization
 specforge init PersonalFinance --agent claude --no-git
+
+# Generic agent with custom commands directory
+# (prompted interactively when "generic" is selected)
+specforge init --here --agent generic
 
 # Check all prerequisites
 specforge check
@@ -459,19 +497,20 @@ specforge plugins
 
 ## 📖 Slash Commands
 
-After running `specforge init`, your AI agent has access to these slash commands:
+After running `specforge init`, your AI agent has access to these slash commands via auto-generated command files placed in the agent's native commands directory (e.g., `.claude/commands/`, `.github/prompts/`, `.gemini/commands/`).
 
 ### Core Commands
 
 | Command | Description |
 |---------|-------------|
-| `/specforge.constitution` | Create or update project governing principles — the foundational governance for all sub-agents |
+| `/specforge.decompose` | Decompose an application into features — auto-generated command file |
 | `/specforge.specify` | Generate `spec.md` — user stories, functional requirements, NFRs, edge case stubs, service-scoped context |
-| `/specforge.clarify` | Identify and resolve underspecified areas — pattern-based ambiguity detection with boundary analysis |
 | `/specforge.research` | Generate `research.md` — structured findings with RESOLVED/UNVERIFIED/BLOCKED/CONFLICTING statuses |
 | `/specforge.plan` | Generate `plan.md` — technical blueprint with architecture decisions, governance compliance gate, and architecture-specific sections |
 | `/specforge.tasks` | Generate `tasks.md` — dependency-ordered, TDD-structured, parallelizable task list with effort estimates and governance rule references |
 | `/specforge.implement` | Execute all tasks for a feature via isolated sub-agent with auto-fix loop and quality gates |
+| `/specforge.status` | Show project-wide status dashboard with service progress and quality metrics |
+| `/specforge.check` | Run quality checks against governance rules, spec compliance, and constitution requirements |
 
 ### Quality & Validation Commands
 
@@ -485,7 +524,7 @@ After running `specforge init`, your AI agent has access to these slash commands
 
 ## 🏗️ Architecture & Feature Overview
 
-SpecForge is built as 13 incrementally developed features, each fully specified, planned, and implemented following its own spec-first methodology.
+SpecForge is built as 14 incrementally developed features, each fully specified, planned, and implemented following its own spec-first methodology.
 
 ### Feature Map
 
@@ -543,6 +582,7 @@ SpecForge is built as 13 incrementally developed features, each fully specified,
 | 011 | **Implementation Orchestrator** | Multi-service phased execution from dependency graph, inter-phase contract verification, docker-compose integration validation, monolith single-app integration test, project-level state persistence |
 | 012 | **Project Status Dashboard** | Real-time project status view with `specforge status` — service progress, phase completion, quality reports, implementation metrics, Rich terminal rendering with color-coded indicators |
 | 013 | **Plugin System** | Extensible architecture with 25+ agent plugins (Claude, Copilot, Gemini, Cursor, Windsurf, Codex, and more) and 3 stack plugins (dotnet, nodejs, python) with unified `AgentPlugin` and `StackPlugin` interfaces |
+| 014 | **Interactive Model Selection** | Interactive agent selection prompt during `specforge init`, automatic commands directory creation with 8 pipeline-stage command files per agent, agent-native formats (Markdown/TOML), config.json persistence |
 
 ---
 
@@ -581,6 +621,8 @@ SpecForge is built incrementally across 6 phases.
 **Feature 012** — Project Status Dashboard: `specforge status` command with Rich terminal rendering (Table, Panel, Progress, Tree). Real-time project overview showing architecture, domain, feature/service counts. Per-service status table with color-coded indicators (🟢 complete, 🟡 in-progress, 🔴 failed, ⚪ queued), task progress (N/M), quality pass/fail, and 7-phase completion tracking. Phase breakdown, quality summary, implementation progress, and integration test results. Drill-down into individual services. CI/CD-friendly summary reports.
 
 **Feature 013** — Plugin System: Extensible architecture for custom AI agents and technology stacks. 25+ agent plugins with unified `AgentPlugin` interface (Claude, Copilot, Gemini, Cursor, Windsurf, Codex, plus 19 additional agents and a generic fallback). 3 stack plugins (`dotnet`, `nodejs`, `python`) with `StackPlugin` interface providing `get_build_command()`, `get_lint_command()`, `get_test_command()`, `get_docker_base_image()`, and `get_rules()`. Runtime plugin discovery via `PluginManager`. Rule formatter for converting stack rules to governance prompt format. `specforge plugins` command for listing and configuration.
+
+**Feature 014** — Interactive Model Selection & Commands Directory: Interactive `Rich.Prompt.ask()` agent selection during `specforge init` (25+ agents listed alphabetically, "generic" last), automatic `CommandRegistrar` that renders 8 Jinja2 command templates per pipeline stage into agent-native directories (`.claude/commands/`, `.github/prompts/`, `.gemini/commands/`, etc.), Markdown and TOML format support, `$ARGUMENTS` placeholder injection, `config.json` extended with `agent` and `commands_dir` fields, `--force` preserves existing command files, generic agent supports custom commands directory path, "agnostic" unified to "generic" across agent context.
 
 ### Phase 7 — Polish & Ecosystem 🔜
 Brownfield mode (generate specs from existing code), auto-PR creation per feature, custom prompt authoring UI, VS Code extension.

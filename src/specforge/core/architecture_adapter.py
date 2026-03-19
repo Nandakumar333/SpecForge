@@ -19,6 +19,7 @@ class ArchitectureAdapter(Protocol):
     def get_task_extras(self) -> list[dict[str, str]]: ...
     def get_edge_case_extras(self) -> list[dict[str, str]]: ...
     def get_checklist_extras(self) -> list[dict[str, str]]: ...
+    def serialize_for_prompt(self) -> str: ...
 
 
 class MicroserviceAdapter:
@@ -37,9 +38,7 @@ class MicroserviceAdapter:
                 }
                 for d in ctx.dependencies
             ],
-            "communication_patterns": list(
-                {d.pattern for d in ctx.dependencies}
-            ),
+            "communication_patterns": list({d.pattern for d in ctx.dependencies}),
             "events": [
                 {
                     "name": e.name,
@@ -50,9 +49,7 @@ class MicroserviceAdapter:
             ],
         }
 
-    def get_datamodel_context(
-        self, ctx: ServiceContext
-    ) -> dict[str, Any]:
+    def get_datamodel_context(self, ctx: ServiceContext) -> dict[str, Any]:
         """Isolated entity scope with API contract references."""
         return {
             "entity_scope": "isolated",
@@ -65,18 +62,15 @@ class MicroserviceAdapter:
         return [
             {
                 "topic": "Service mesh and API gateway evaluation",
-                "description": "Evaluate service mesh options "
-                "and API gateway routing",
+                "description": "Evaluate service mesh options and API gateway routing",
             },
             {
                 "topic": "API versioning strategy",
-                "description": "Define versioning for "
-                "inter-service contracts",
+                "description": "Define versioning for inter-service contracts",
             },
             {
                 "topic": "Distributed tracing setup",
-                "description": "Evaluate tracing infrastructure "
-                "for request tracking",
+                "description": "Evaluate tracing infrastructure for request tracking",
             },
         ]
 
@@ -85,28 +79,23 @@ class MicroserviceAdapter:
         return [
             {
                 "title": "Containerization",
-                "description": "Docker image build, registry, "
-                "and deployment config",
+                "description": "Docker image build, registry, and deployment config",
             },
             {
                 "title": "Health Checks",
-                "description": "Liveness and readiness probe "
-                "endpoints",
+                "description": "Liveness and readiness probe endpoints",
             },
             {
                 "title": "Service Registration",
-                "description": "Service discovery registration "
-                "and DNS config",
+                "description": "Service discovery registration and DNS config",
             },
             {
                 "title": "Circuit Breakers",
-                "description": "Resilience patterns for "
-                "inter-service calls",
+                "description": "Resilience patterns for inter-service calls",
             },
             {
                 "title": "API Gateway",
-                "description": "Route configuration and "
-                "rate limiting",
+                "description": "Route configuration and rate limiting",
             },
         ]
 
@@ -152,14 +141,27 @@ class MicroserviceAdapter:
         """API contract and deployment readiness."""
         return [
             {
-                "description": "API contract matches "
-                "consumer expectations",
+                "description": "API contract matches consumer expectations",
             },
             {
-                "description": "Deployment pipeline includes "
-                "health check verification",
+                "description": "Deployment pipeline includes health check verification",
             },
         ]
+
+    def serialize_for_prompt(self) -> str:
+        """Serialize microservice context for LLM prompt injection."""
+        return (
+            "## Architecture: Microservice\n\n"
+            "This service is part of a microservice architecture:\n"
+            "- Each service runs in its own Docker container\n"
+            "- Inter-service communication via REST, gRPC, or async events\n"
+            "- Required: health check endpoint at /health, readiness probe\n"
+            "- Service isolation: no shared database; use API contracts\n"
+            "- Include: circuit breaker patterns, service discovery, "
+            "container orchestration config\n"
+            "- Consider: API gateway routing, distributed tracing, "
+            "service mesh evaluation"
+        )
 
 
 class MonolithAdapter:
@@ -178,9 +180,7 @@ class MonolithAdapter:
             },
         }
 
-    def get_datamodel_context(
-        self, ctx: ServiceContext
-    ) -> dict[str, Any]:
+    def get_datamodel_context(self, ctx: ServiceContext) -> dict[str, Any]:
         """Module-scoped with shared table references."""
         return {
             "entity_scope": "module",
@@ -193,13 +193,11 @@ class MonolithAdapter:
         return [
             {
                 "topic": "Shared resource contention analysis",
-                "description": "Identify shared resources "
-                "and contention risks",
+                "description": "Identify shared resources and contention risks",
             },
             {
                 "topic": "Module dependency analysis",
-                "description": "Map inter-module dependencies "
-                "and coupling risks",
+                "description": "Map inter-module dependencies and coupling risks",
             },
         ]
 
@@ -208,13 +206,11 @@ class MonolithAdapter:
         return [
             {
                 "title": "Shared Database",
-                "description": "Database schema shared "
-                "across modules",
+                "description": "Database schema shared across modules",
             },
             {
                 "title": "Shared Auth Middleware",
-                "description": "Authentication middleware "
-                "shared by all modules",
+                "description": "Authentication middleware shared by all modules",
             },
         ]
 
@@ -223,8 +219,7 @@ class MonolithAdapter:
         return [
             {
                 "name": "Module integration",
-                "description": "Wire module into "
-                "shared infrastructure",
+                "description": "Wire module into shared infrastructure",
             },
         ]
 
@@ -250,6 +245,20 @@ class MonolithAdapter:
             },
         ]
 
+    def serialize_for_prompt(self) -> str:
+        """Serialize monolith context for LLM prompt injection."""
+        return (
+            "## Architecture: Monolithic\n\n"
+            "This module is part of a monolithic application:\n"
+            "- Shared database with other modules; define clear schema "
+            "boundaries\n"
+            "- Module boundaries enforced via interface contracts, not "
+            "network calls\n"
+            "- No Docker, no service mesh, no container orchestration\n"
+            "- Shared middleware, authentication, and configuration\n"
+            "- Use internal module imports for cross-module communication"
+        )
+
 
 class ModularMonolithAdapter:
     """Adapter for modular-monolith architecture.
@@ -266,9 +275,7 @@ class ModularMonolithAdapter:
         base["strict_boundaries"] = True
         return base
 
-    def get_datamodel_context(
-        self, ctx: ServiceContext
-    ) -> dict[str, Any]:
+    def get_datamodel_context(self, ctx: ServiceContext) -> dict[str, Any]:
         """Strict module scope with no cross-module DB access."""
         return {
             "entity_scope": "strict_module",
@@ -283,13 +290,11 @@ class ModularMonolithAdapter:
             *self._base.get_research_extras(),
             {
                 "topic": "Module boundary enforcement strategy",
-                "description": "Define enforcement for "
-                "strict module boundaries",
+                "description": "Define enforcement for strict module boundaries",
             },
             {
                 "topic": "Interface versioning approach",
-                "description": "Version module public interfaces "
-                "for compatibility",
+                "description": "Version module public interfaces for compatibility",
             },
         ]
 
@@ -299,8 +304,7 @@ class ModularMonolithAdapter:
             *self._base.get_plan_sections(),
             {
                 "title": "Module Boundary Enforcement",
-                "description": "Strict module boundary rules "
-                "and validation",
+                "description": "Strict module boundary rules and validation",
             },
         ]
 
@@ -320,8 +324,7 @@ class ModularMonolithAdapter:
             *self._base.get_edge_case_extras(),
             {
                 "name": "Interface Contract Violation",
-                "description": "Module breaks its published "
-                "interface contract",
+                "description": "Module breaks its published interface contract",
             },
         ]
 
@@ -334,6 +337,20 @@ class ModularMonolithAdapter:
                 "— all access via interfaces",
             },
         ]
+
+    def serialize_for_prompt(self) -> str:
+        """Serialize modular-monolith context for LLM prompt injection."""
+        return (
+            "## Architecture: Modular Monolith\n\n"
+            "This module is part of a modular-monolith application:\n"
+            "- Strict module boundaries enforced via interface contracts\n"
+            "- No cross-module direct database access\n"
+            "- Module public interfaces must be versioned\n"
+            "- Shared database with schema boundaries per module\n"
+            "- No Docker, no service mesh, no container orchestration\n"
+            "- Shared middleware, authentication, and configuration\n"
+            "- All cross-module communication via defined interfaces"
+        )
 
 
 def create_adapter(architecture: str) -> ArchitectureAdapter:

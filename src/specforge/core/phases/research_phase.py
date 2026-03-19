@@ -45,3 +45,36 @@ class ResearchPhase(BasePhase):
             "adapter_research_extras": adapter.get_research_extras(),
             "input_artifacts": input_artifacts,
         }
+
+    def _build_prompt(
+        self,
+        service_ctx: ServiceContext,
+        adapter: ArchitectureAdapter,
+        input_artifacts: dict[str, str],
+    ) -> dict[str, str]:
+        """Build extra LLM prompt context for research generation."""
+        extras = adapter.get_research_extras()
+        topic_lines = "\n".join(
+            f"- {e.get('topic', e.get('title', ''))}: "
+            f"{e.get('description', e.get('detail', ''))}"
+            for e in extras
+        ) if extras else "No architecture-specific research topics."
+
+        dep_lines = "\n".join(
+            f"- {d.target_name} ({d.pattern}): {d.description}"
+            for d in service_ctx.dependencies
+        ) if service_ctx.dependencies else "No external dependencies."
+
+        return {
+            "tech_stack_questions": (
+                f"Architecture: {service_ctx.architecture}\n"
+                f"Investigate technology choices and trade-offs for "
+                f"'{service_ctx.service_name}' in this architecture style."
+            ),
+            "integration_concerns": (
+                f"Service dependencies to research:\n{dep_lines}"
+            ),
+            "adapter_research_topics": (
+                f"Architecture-specific research areas:\n{topic_lines}"
+            ),
+        }
