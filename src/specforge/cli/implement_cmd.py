@@ -9,7 +9,12 @@ from typing import TYPE_CHECKING
 import click
 from rich.console import Console
 
-from specforge.core.config import IMPLEMENTATION_MODES, MAX_FIX_ATTEMPTS
+from specforge.core.config import (
+    IMPLEMENTATION_MODES,
+    MAX_FIX_ATTEMPTS,
+    PARALLEL_DEFAULT_MAX_WORKERS,
+    PARALLEL_STATE_FILENAME,
+)
 
 if TYPE_CHECKING:
     from specforge.core.integration_orchestrator import IntegrationOrchestrator
@@ -46,6 +51,24 @@ console = Console()
     type=int, default=MAX_FIX_ATTEMPTS,
     help="Max auto-fix retry attempts per task",
 )
+@click.option(
+    "--parallel",
+    is_flag=True,
+    default=False,
+    help="Run services concurrently within dependency waves (requires --all)",
+)
+@click.option(
+    "--max-parallel",
+    type=int,
+    default=None,
+    help="Override max concurrent workers (requires --parallel)",
+)
+@click.option(
+    "--fail-fast",
+    is_flag=True,
+    default=False,
+    help="Cancel all workers on first failure (requires --parallel)",
+)
 @click.pass_context
 def implement(
     ctx: click.Context,
@@ -56,6 +79,9 @@ def implement(
     resume: bool,
     mode: str,
     max_fix_attempts: int,
+    parallel: bool,
+    max_parallel: int | None,
+    fail_fast: bool,
 ) -> None:
     """Implement a service or module by executing its tasks.md."""
     project_root = Path.cwd()
@@ -70,8 +96,19 @@ def implement(
     if to_phase is not None and not run_all:
         console.print("[red]Error: --to-phase requires --all[/]")
         sys.exit(2)
+    if parallel and not run_all:
+        console.print("[red]Error: --parallel requires --all[/]")
+        sys.exit(2)
+    if max_parallel is not None and max_parallel < 1:
+        console.print("[red]Error: --max-parallel must be >= 1[/]")
+        sys.exit(2)
     if run_all:
-        _implement_all(project_root, mode, resume, to_phase)
+        if parallel:
+            _implement_all_parallel(
+                project_root, mode, resume, max_parallel, fail_fast,
+            )
+        else:
+            _implement_all(project_root, mode, resume, to_phase)
         return
 
     if shared_infra and target:
@@ -196,6 +233,128 @@ def _implement_all(
     else:
         console.print(f"\n[bold red]Orchestration failed: {result.error}[/]")
         sys.exit(1)
+
+
+def _implement_all_parallel(
+    project_root: Path,
+    mode: str,
+    resume: bool,
+    max_parallel: int | None,
+    fail_fast: bool,
+) -> None:
+    """Implement all services in parallel with dependency wave ordering."""
+    import json
+
+    from specforge.core.parallel_progress_tracker import ProgressTracker
+    from specforge.core.topological_parallel_executor import (
+        TopologicalParallelExecutor,
+    )
+
+    manifest_path = project_root / ".specforge" / "manifest.json"
+    if not manifest_path.exists():
+        console.print("[red]Error: manifest not found[/]")
+        sys.exit(1)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    services = manifest.get("services", [])
+    if not services:
+        console.print("[red]Error: no services in manifest[/]")
+        sys.exit(1)
+
+    max_workers = _resolve_parallel_workers(project_root, max_parallel)
+    state_path = project_root / PARALLEL_STATE_FILENAME
+    tracker = ProgressTracker(
+        console=console,
+        total_services=len(services),
+        state_path=state_path,
+    )
+
+    def _make_orchestrator_for_impl():
+        """Build a SubAgentExecutor-based pipeline for implementation."""
+        from specforge.core.auto_fix_loop import AutoFixLoop
+        from specforge.core.context_builder import ContextBuilder
+        from specforge.core.contract_resolver import ContractResolver
+        from specforge.core.quality_checker import QualityChecker
+        from specforge.core.sub_agent_executor import SubAgentExecutor
+        from specforge.core.task_runner import TaskRunner
+
+        contract_resolver = ContractResolver(project_root)
+        context_builder = ContextBuilder(
+            project_root=project_root,
+            prompt_loader=None,
+            contract_resolver=contract_resolver,
+        )
+        task_runner = TaskRunner(project_root)
+
+        def _make_checker(root: Path, slug: str) -> QualityChecker:
+            return QualityChecker(root, slug)
+
+        return SubAgentExecutor(
+            context_builder=context_builder,
+            task_runner=task_runner,
+            quality_checker_factory=_make_checker,
+            auto_fix_loop=AutoFixLoop(task_runner, None, max_attempts=3),
+            docker_manager=None,
+            project_root=project_root,
+        )
+
+    # For implementation, we wrap SubAgentExecutor in a spec-pipeline-like adapter
+    from specforge.core.parallel_impl_adapter import ParallelImplRunner
+
+    runner = ParallelImplRunner(
+        executor_factory=_make_orchestrator_for_impl,
+        tracker=tracker,
+        max_workers=max_workers,
+        fail_fast=fail_fast,
+        mode=mode,
+    )
+
+    executor = TopologicalParallelExecutor(runner=runner, tracker=tracker)
+
+    console.print(
+        f"\n[bold]Running parallel implementation[/bold] "
+        f"({len(services)} services, {max_workers} workers)"
+    )
+
+    result = executor.execute(
+        manifest, project_root,
+        max_workers=max_workers,
+        fail_fast=fail_fast,
+    )
+
+    if result.ok:
+        state = result.value
+        completed = sum(1 for s in state.services if s.status == "completed")
+        failed = sum(1 for s in state.services if s.status == "failed")
+        blocked = sum(1 for s in state.services if s.status == "blocked")
+        console.print("\n[bold green]Parallel Implementation Complete[/]")
+        console.print(
+            f"  Succeeded: {completed}  "
+            f"Failed: {failed}  Blocked: {blocked}"
+        )
+        sys.exit(0 if failed == 0 else 1)
+    else:
+        console.print(f"\n[bold red]Parallel implementation failed: {result.error}[/]")
+        sys.exit(1)
+
+
+def _resolve_parallel_workers(
+    project_root: Path, cli_override: int | None,
+) -> int:
+    """Resolve max parallel workers from CLI or config."""
+    if cli_override is not None:
+        return cli_override
+    try:
+        import json
+
+        config_path = project_root / ".specforge" / "config.json"
+        if config_path.exists():
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            return data.get("parallel", {}).get(
+                "max_workers", PARALLEL_DEFAULT_MAX_WORKERS
+            )
+    except (ValueError, OSError):
+        pass
+    return PARALLEL_DEFAULT_MAX_WORKERS
 
 
 def _build_orchestrator(project_root: Path) -> IntegrationOrchestrator:

@@ -13,6 +13,8 @@ from rich.table import Table
 from specforge.core.config import (
     MANIFEST_PATH,
     OVER_ENGINEERING_THRESHOLD,
+    PARALLEL_DEFAULT_MAX_WORKERS,
+    PARALLEL_STATE_FILENAME,
     STATE_PATH,
     VALID_ARCHITECTURES,
 )
@@ -59,6 +61,30 @@ console = Console()
     default=False,
     help="Write assembled prompt without calling LLM",
 )
+@click.option(
+    "--auto",
+    is_flag=True,
+    default=False,
+    help="Skip all interactive prompts (use LLM for all decisions)",
+)
+@click.option(
+    "--parallel",
+    is_flag=True,
+    default=False,
+    help="Run spec pipelines concurrently across all services",
+)
+@click.option(
+    "--max-parallel",
+    type=int,
+    default=None,
+    help="Override max concurrent workers (requires --parallel)",
+)
+@click.option(
+    "--fail-fast",
+    is_flag=True,
+    default=False,
+    help="Cancel all workers on first failure (requires --parallel)",
+)
 def decompose(
     description: str,
     arch: str | None,
@@ -66,6 +92,10 @@ def decompose(
     no_warn: bool,
     template_mode: bool,
     dry_run_prompt: bool,
+    auto: bool,
+    parallel: bool,
+    max_parallel: int | None,
+    fail_fast: bool,
 ) -> None:
     """Decompose an application description into features."""
     if template_mode and dry_run_prompt:
@@ -76,6 +106,8 @@ def decompose(
             "Use --arch for new projects or --remap to change "
             "existing architecture."
         )
+    if max_parallel is not None and max_parallel < 1:
+        _exit_error("--max-parallel must be >= 1")
     project_root = Path.cwd()
     if remap:
         _handle_remap(project_root, description, remap, no_warn)
@@ -84,9 +116,13 @@ def decompose(
         project_root,
         description,
         arch,
-        no_warn,
+        no_warn if not auto else True,
         template_mode=template_mode,
         dry_run_prompt=dry_run_prompt,
+        auto=auto,
+        parallel=parallel,
+        max_parallel=max_parallel,
+        fail_fast=fail_fast,
     )
 
 
@@ -98,6 +134,10 @@ def _handle_decompose(
     *,
     template_mode: bool = False,
     dry_run_prompt: bool = False,
+    auto: bool = False,
+    parallel: bool = False,
+    max_parallel: int | None = None,
+    fail_fast: bool = False,
 ) -> None:
     """Main decompose flow: gate -> analyze -> map -> review -> write."""
     state_path = root / STATE_PATH
@@ -105,19 +145,30 @@ def _handle_decompose(
     if state_result.ok and state_result.value is not None:
         state = state_result.value
         if state.step != "complete":
-            _handle_resume(root, state, description, arch, no_warn)
-            return
+            if auto:
+                (root / STATE_PATH).unlink(missing_ok=True)
+            else:
+                _handle_resume(root, state, description, arch, no_warn)
+                return
 
     manifest_path = root / MANIFEST_PATH
     if manifest_path.exists():
-        _handle_existing_manifest(root, description, arch, no_warn)
-        return
+        if auto:
+            pass  # auto mode: overwrite existing
+        else:
+            _handle_existing_manifest(root, description, arch, no_warn)
+            return
 
     if not template_mode:
         llm_result = _try_llm_decompose(
-            root, description, arch, dry_run_prompt=dry_run_prompt
+            root, description, arch, dry_run_prompt=dry_run_prompt,
+            auto=auto,
         )
         if llm_result:
+            if parallel and not dry_run_prompt:
+                _run_parallel_pipelines(
+                    root, max_parallel=max_parallel, fail_fast=fail_fast,
+                )
             return
 
     _run_fresh_decompose(root, description, arch, no_warn)
@@ -822,6 +873,7 @@ def _try_llm_decompose(
     arch: str | None,
     *,
     dry_run_prompt: bool = False,
+    auto: bool = False,
 ) -> bool:
     """Attempt LLM-based decomposition. Returns True if successful."""
 
@@ -947,3 +999,164 @@ def _write_llm_manifest(
         slug = svc.get("slug", "")
         if slug:
             (features_dir / slug).mkdir(parents=True, exist_ok=True)
+
+
+# ── Parallel Execution (Feature 016) ─────────────────────────────────
+
+
+def _run_parallel_pipelines(
+    root: Path,
+    *,
+    max_parallel: int | None = None,
+    fail_fast: bool = False,
+) -> None:
+    """Run spec pipelines in parallel for all services in the manifest."""
+    import json as _json
+
+    manifest_path = root / MANIFEST_PATH
+    if not manifest_path.exists():
+        return
+    manifest = _json.loads(manifest_path.read_text(encoding="utf-8"))
+    services = manifest.get("services", [])
+    if not services:
+        return
+
+    slugs = tuple(s["slug"] for s in services if s.get("slug"))
+    if not slugs:
+        return
+
+    max_workers = _resolve_max_workers(root, max_parallel)
+
+    console.print(
+        f"\n[bold]Running parallel spec pipelines[/bold] "
+        f"({len(slugs)} services, {max_workers} workers)"
+    )
+
+    from specforge.core.parallel_pipeline_runner import ParallelPipelineRunner
+    from specforge.core.parallel_progress_tracker import ProgressTracker
+
+    state_path = root / PARALLEL_STATE_FILENAME
+    tracker = ProgressTracker(
+        console=console,
+        total_services=len(slugs),
+        state_path=state_path,
+    )
+
+    def _make_orchestrator():
+        from specforge.core.spec_pipeline import PipelineOrchestrator
+        from specforge.core.template_registry import TemplateRegistry
+        from specforge.core.template_renderer import TemplateRenderer
+
+        registry = TemplateRegistry(root)
+        registry.discover()
+        renderer = TemplateRenderer(registry)
+        provider, assembler, validator, postprocessor = _resolve_llm_for_parallel(root)
+        return PipelineOrchestrator(
+            renderer=renderer,
+            registry=registry,
+            provider=provider,
+            assembler=assembler,
+            validator=validator,
+            postprocessor=postprocessor,
+        )
+
+    runner = ParallelPipelineRunner(
+        orchestrator_factory=_make_orchestrator,
+        tracker=tracker,
+        max_workers=max_workers,
+        fail_fast=fail_fast,
+    )
+
+    result = runner.run(slugs, root)
+    _print_parallel_summary(result)
+
+
+def _resolve_llm_for_parallel(root: Path) -> tuple:
+    """Resolve LLM provider for parallel pipeline (each thread gets its own)."""
+    try:
+        from specforge.core.llm_provider import ProviderFactory
+        from specforge.core.output_postprocessor import OutputPostprocessor
+        from specforge.core.output_validator import OutputValidator
+        from specforge.core.prompt_assembler import PromptAssembler
+        from specforge.core.prompt_loader import PromptLoader
+
+        config_path = root / ".specforge" / "config.json"
+        factory_result = ProviderFactory.create(config_path)
+        if not factory_result.ok:
+            return None, None, None, None
+
+        provider = factory_result.value
+        constitution = root / ".specforge" / "memory" / "constitution.md"
+        if not constitution.exists():
+            constitution = root / "constitution.md"
+
+        import contextlib
+
+        loader = None
+        with contextlib.suppress(Exception):
+            loader = PromptLoader(root)
+
+        assembler = PromptAssembler(
+            constitution_path=constitution,
+            prompt_loader=loader,
+        )
+        validator = OutputValidator()
+        postprocessor = OutputPostprocessor()
+        return provider, assembler, validator, postprocessor
+    except Exception:
+        return None, None, None, None
+
+
+def _resolve_max_workers(root: Path, cli_override: int | None) -> int:
+    """Resolve max workers from CLI flag or config.json."""
+    if cli_override is not None:
+        return cli_override
+    try:
+        import json as _json
+
+        config_path = root / ".specforge" / "config.json"
+        if config_path.exists():
+            data = _json.loads(config_path.read_text(encoding="utf-8"))
+            parallel_config = data.get("parallel", {})
+            return parallel_config.get("max_workers", PARALLEL_DEFAULT_MAX_WORKERS)
+    except (ValueError, OSError):
+        pass
+    return PARALLEL_DEFAULT_MAX_WORKERS
+
+
+def _print_parallel_summary(result) -> None:
+    """Print summary table after parallel execution."""
+    from rich.table import Table
+
+    if not result.ok:
+        console.print(f"\n[red]Parallel execution failed: {result.error}[/red]")
+        return
+
+    state = result.value
+    table = Table(title="\nParallel Execution Summary")
+    table.add_column("Service", style="cyan")
+    table.add_column("Status")
+    table.add_column("Phases")
+    table.add_column("Error")
+
+    for svc in state.services:
+        status_style = {
+            "completed": "green",
+            "failed": "red",
+            "cancelled": "yellow",
+            "blocked": "yellow",
+        }.get(svc.status, "dim")
+        table.add_row(
+            svc.slug,
+            f"[{status_style}]{svc.status}[/{status_style}]",
+            f"{svc.phases_completed}/{svc.phases_total}",
+            svc.error or "",
+        )
+    console.print(table)
+
+    completed = sum(1 for s in state.services if s.status == "completed")
+    failed = sum(1 for s in state.services if s.status == "failed")
+    console.print(
+        f"\n[bold]{completed}/{state.total_services} services completed"
+        f"{'  (' + str(failed) + ' failed)' if failed else ''}[/bold]"
+    )
