@@ -25,87 +25,86 @@ console = Console()
 @click.command()
 @click.argument("target", required=False, default=None)
 @click.option(
-    "--shared-infra", is_flag=True,
-    help="Build cross-service infrastructure first",
-)
-@click.option(
-    "--all", "run_all", is_flag=True,
-    help="Implement all services in dependency order",
-)
-@click.option(
-    "--to-phase", "to_phase", type=int, default=None,
-    help="Stop after completing this phase (0-indexed, requires --all)",
-)
-@click.option(
     "--resume", is_flag=True,
-    help="Resume from last completed task",
+    help="Resume from last completed task.",
 )
 @click.option(
-    "--mode",
-    type=click.Choice(list(IMPLEMENTATION_MODES)),
-    default="prompt-display",
-    help="Execution mode",
-)
-@click.option(
-    "--max-fix-attempts",
-    type=int, default=MAX_FIX_ATTEMPTS,
-    help="Max auto-fix retry attempts per task",
-)
-@click.option(
-    "--parallel",
+    "--sequential",
     is_flag=True,
     default=False,
-    help="Run services concurrently within dependency waves (requires --all)",
+    help="Run services one at a time instead of in parallel.",
 )
 @click.option(
-    "--max-parallel",
-    type=int,
-    default=None,
-    help="Override max concurrent workers (requires --parallel)",
-)
-@click.option(
-    "--fail-fast",
+    "--strict",
     is_flag=True,
     default=False,
-    help="Cancel all workers on first failure (requires --parallel)",
+    help="Stop everything on first failure.",
 )
+# ── Hidden power-user flags (still functional, not in --help) ─────
+@click.option("--shared-infra", is_flag=True, hidden=True)
+@click.option("--all", "run_all", is_flag=True, hidden=True)
+@click.option("--to-phase", "to_phase", type=int, default=None, hidden=True)
+@click.option(
+    "--mode", type=click.Choice(list(IMPLEMENTATION_MODES)),
+    default="prompt-display", hidden=True,
+)
+@click.option("--max-fix-attempts", type=int, default=MAX_FIX_ATTEMPTS, hidden=True)
+@click.option("--parallel", is_flag=True, default=False, hidden=True)
+@click.option("--max-parallel", type=int, default=None, hidden=True)
+@click.option("--fail-fast", is_flag=True, default=False, hidden=True)
 @click.pass_context
 def implement(
     ctx: click.Context,
     target: str | None,
+    resume: bool,
+    sequential: bool,
+    strict: bool,
     shared_infra: bool,
     run_all: bool,
     to_phase: int | None,
-    resume: bool,
     mode: str,
     max_fix_attempts: int,
     parallel: bool,
     max_parallel: int | None,
     fail_fast: bool,
 ) -> None:
-    """Implement a service or module by executing its tasks.md."""
+    """Implement services by executing their tasks.md.
+
+    With no arguments: implements ALL services in parallel dependency waves.
+    With a target: implements that single service.
+
+    \b
+    Examples:
+      specforge implement                     # all services, parallel
+      specforge implement ledger-service      # single service
+      specforge implement --sequential        # all services, one at a time
+      specforge implement --resume            # resume interrupted run
+      specforge implement --strict            # stop on first failure
+    """
     project_root = Path.cwd()
 
-    # --all is mutually exclusive with target and --shared-infra
-    if run_all and target:
+    # Resolve semantic flags
+    is_fail_fast = fail_fast or strict
+    is_parallel = parallel or not sequential
+    # No target and no --shared-infra → implement all (default behavior)
+    is_all = run_all or (target is None and not shared_infra)
+
+    if is_all and target:
         console.print("[red]Error: --all and target are mutually exclusive[/]")
         sys.exit(2)
-    if run_all and shared_infra:
+    if is_all and shared_infra:
         console.print("[red]Error: --all and --shared-infra are mutually exclusive[/]")
         sys.exit(2)
-    if to_phase is not None and not run_all:
+    if to_phase is not None and not is_all:
         console.print("[red]Error: --to-phase requires --all[/]")
-        sys.exit(2)
-    if parallel and not run_all:
-        console.print("[red]Error: --parallel requires --all[/]")
         sys.exit(2)
     if max_parallel is not None and max_parallel < 1:
         console.print("[red]Error: --max-parallel must be >= 1[/]")
         sys.exit(2)
-    if run_all:
-        if parallel:
+    if is_all:
+        if is_parallel:
             _implement_all_parallel(
-                project_root, mode, resume, max_parallel, fail_fast,
+                project_root, mode, resume, max_parallel, is_fail_fast,
             )
         else:
             _implement_all(project_root, mode, resume, to_phase)

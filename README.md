@@ -318,18 +318,16 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 | `specforge init <project>` | Scaffold project with `.specforge/` directory, governance prompts, templates, and agent config | ✅ Implemented |
 | `specforge check` | Verify all required tools (`git`, `python`, `uv`, agent CLI) are installed | ✅ Implemented |
 | `specforge validate-prompts` | Validate governance prompt files for threshold conflicts across domains | ✅ Implemented |
-| `specforge decompose <description>` | Architecture decision gate → feature decomposition → service mapping → manifest | ✅ Implemented |
+| `specforge decompose <description>` | Auto decompose + parallel spec generation (default). Use `-i` for interactive | ✅ Implemented |
 | `specforge specify <target>` | Run the 7-phase spec generation pipeline for a service/module | ✅ Implemented |
 | `specforge clarify <target>` | Pattern-based ambiguity detection with interactive Q&A resolution | ✅ Implemented |
 | `specforge research <target>` | Enhanced research with structured finding statuses | ✅ Implemented |
 | `specforge edge-cases <target>` | Architecture-aware edge case analysis with YAML frontmatter | ✅ Implemented |
 | `specforge pipeline-status [target]` | Show pipeline phase status per service/module | ✅ Implemented |
-| `specforge implement <service>` | Execute all tasks for a service via isolated sub-agent | ✅ Implemented |
-| `specforge implement --shared-infra` | Build cross-service infrastructure before any service | ✅ Implemented |
-| `specforge implement --all` | Execute all services respecting the dependency graph with phased orchestration | ✅ Implemented |
-| `specforge implement --all --parallel` | Execute services concurrently in topological dependency waves | ✅ Implemented |
-| `specforge decompose --auto --parallel` | Fully automated decomposition + concurrent spec generation for all services | ✅ Implemented |
+| `specforge implement` | Implement all services in parallel dependency waves (default) | ✅ Implemented |
+| `specforge implement <service>` | Implement a single service | ✅ Implemented |
 | `specforge implement --resume` | Resume from last completed task | ✅ Implemented |
+| `specforge implement --sequential` | Run services one at a time | ✅ Implemented |
 | `specforge status` | Show project-wide status dashboard with service progress, quality reports, and phase tracking | ✅ Implemented |
 | `specforge plugins` | List installed agent and stack plugins with configuration status | ✅ Implemented |
 
@@ -355,13 +353,11 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 | Argument/Option | Type | Default | Description |
 |----------------|------|---------|-------------|
 | `<description>` | Argument | — | One-line application description (e.g., `"Create a personal finance webapp"`) |
-| `--arch` | Option | (interactive) | Skip architecture prompt: `monolithic`, `microservice`, `modular-monolith` |
-| `--remap` | Option | — | Re-map existing features to a new architecture without losing content |
-| `--no-warn` | Flag | `False` | Suppress over-engineering warnings (for scripted/CI usage) |
-| `--auto` | Flag | `False` | Skip all interactive prompts — use LLM for architecture selection and feature confirmation |
-| `--parallel` | Flag | `False` | Run spec pipelines concurrently across all discovered services after decomposition |
-| `--max-parallel` | Option | `4` | Override max concurrent workers (from `config.json` `parallel.max_workers`) |
-| `--fail-fast` | Flag | `False` | Cancel all workers on first service failure |
+| `--arch` | Option | (auto) | Architecture: `monolithic`, `microservice`, `modular-monolith` |
+| `-i`, `--interactive` | Flag | `False` | Enable interactive prompts (default: auto mode with parallel) |
+| `--sequential` | Flag | `False` | Run spec pipelines one at a time instead of in parallel |
+| `--strict` | Flag | `False` | Stop everything on first failure |
+| `--remap` | Option | — | Re-map existing features to a new architecture |
 
 ---
 
@@ -388,16 +384,10 @@ SpecForge supports **25+ AI agents** with automatic command directory generation
 
 | Argument/Option | Type | Default | Description |
 |----------------|------|---------|-------------|
-| `<target>` | Argument | — | Service slug to implement. Required unless `--shared-infra` or `--all` |
-| `--shared-infra` | Flag | `False` | Build cross-service infrastructure first (microservice/modular-monolith only) |
-| `--all` | Flag | `False` | Implement all services via phased orchestration |
+| `[target]` | Argument | (all) | Service slug. Omit to implement all services in parallel waves |
 | `--resume` | Flag | `False` | Resume from last completed task |
-| `--mode` | Option | `prompt-display` | Execution mode: `prompt-display` (show prompt for manual agent use) or `agent-call` (invoke agent directly) |
-| `--max-fix-attempts` | Option | `3` | Max auto-fix retry attempts per task |
-| `--to-phase` | Option | — | Stop after completing a specific phase (used with `--all`) |
-| `--parallel` | Flag | `False` | Run services concurrently within dependency waves (requires `--all`) |
-| `--max-parallel` | Option | `4` | Override max concurrent workers (requires `--parallel`) |
-| `--fail-fast` | Flag | `False` | Cancel all workers on first service failure (requires `--parallel`) |
+| `--sequential` | Flag | `False` | Run services one at a time instead of in parallel |
+| `--strict` | Flag | `False` | Stop everything on first failure |
 
 ---
 
@@ -450,14 +440,14 @@ specforge check
 # Validate governance prompt files for conflicts
 specforge validate-prompts
 
-# Decompose app description into features (interactive architecture prompt)
+# Decompose app — auto mode with parallel spec generation (default)
 specforge decompose "Create a webapp for PersonalFinance"
 
-# Decompose with architecture pre-selected (skip interactive prompt)
-specforge decompose --arch microservice "Create a webapp for PersonalFinance"
+# Decompose with architecture pre-selected
+specforge decompose "Create a webapp for PersonalFinance" --arch microservice
 
-# Re-map existing features to a different architecture
-specforge decompose --remap modular-monolith
+# Interactive mode (manual architecture selection, confirm features)
+specforge decompose "Create a webapp for PersonalFinance" -i
 
 # Run spec pipeline for a specific service
 specforge specify ledger-service
@@ -481,32 +471,17 @@ specforge edge-cases ledger-service
 specforge pipeline-status
 specforge pipeline-status ledger-service
 
+# Implement all services in parallel dependency waves (default)
+specforge implement
+
 # Implement a single service
 specforge implement ledger-service
 
-# Build shared infrastructure first (microservice)
-specforge implement --shared-infra
-
-# Implement all services with phased orchestration
-specforge implement --all
-
 # Resume interrupted implementation
-specforge implement ledger-service --resume
+specforge implement --resume
 
-# Use agent-call mode (invoke agent directly)
-specforge implement ledger-service --mode agent-call
-
-# Parallel: fully automated decompose + concurrent spec generation
-specforge decompose "Create a webapp for PersonalFinance" --auto --parallel
-
-# Parallel: limit to 2 concurrent workers (rate-limited API)
-specforge decompose "Create a webapp for PersonalFinance" --auto --parallel --max-parallel 2
-
-# Parallel: implement all services in dependency waves
-specforge implement --all --parallel
-
-# Parallel: fail-fast mode — stop on first failure
-specforge implement --all --parallel --fail-fast
+# Strict mode — stop on first failure
+specforge implement --strict
 
 # View project-wide status dashboard
 specforge status
