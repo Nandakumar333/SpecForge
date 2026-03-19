@@ -811,3 +811,27 @@ PREAMBLE_PATTERNS: tuple[str, ...] = (
     "Of course!",
 )
 """Known LLM preamble prefixes (for logging, not matching)."""
+
+
+# ── Parallel Execution Engine Constants (Feature 016) ──────────────────
+
+PARALLEL_DEFAULT_MAX_WORKERS: int = 4
+"""Default maximum concurrent service pipelines."""
+
+PARALLEL_STATE_FILENAME: str = ".specforge/parallel-state.json"
+"""Path to parallel execution state file."""
+
+PARALLEL_LOCK_STALE_THRESHOLD: int = 60
+"""Minutes before a parallel execution lock is considered stale."""
+
+PARALLEL_SERVICE_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "blocked", "cancelled",
+)
+
+PARALLEL_RUN_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "failed", "cancelled",
+)
+
+PARALLEL_WAVE_STATUSES: tuple[str, ...] = (
+    "pending", "in-progress", "completed", "partial", "skipped",
+)

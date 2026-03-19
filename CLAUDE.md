@@ -1,6 +1,6 @@
-# SpecForge Development Guidelines
+﻿# SpecForge Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-18
+Auto-generated from all feature plans. Last updated: 2026-03-19
 
 ## Active Technologies
 - Python 3.11+ + Jinja2 3.x (rendering engine), Click 8.x (existing CLI), Rich 13.x (existing output) (002-template-rendering-engine)
@@ -22,6 +22,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-18
 - File system — `.specforge/orchestration-state.json` (project-level), `.specforge/manifest.json` (read), `.specforge/features/<slug>/` (per-service state, read/write) (011-implementation-orchestrator)
 - Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal rendering — Table, Panel, Progress, Tree), Jinja2 3.x (markdown report template) (012-project-status-dashboard)
 - File system — `.specforge/manifest.json`, `.specforge/features/<slug>/` state files, `.specforge/.orchestration-state.json` (012-project-status-dashboard)
+- Python 3.11+ + `concurrent.futures` (stdlib), Click 8.x (CLI), Rich 13.x (progress output), existing `specforge.core` modules (016-parallel-execution-engine)
+- File system — `.specforge/features/<slug>/` per-service state files, `.specforge/config.json`, `.specforge/parallel-state.json` (016-parallel-execution-engine)
 
 - **Language**: Python 3.11+
 - **CLI Framework**: Click 8.x — command groups, `@click.pass_context`, `CliRunner` for tests
@@ -106,8 +108,8 @@ uv run pytest --snapshot-update
 - Dependency flow: `cli` → `core` → stdlib only; `plugins` → `core`; never reverse
 
 ## Recent Changes
+- 016-parallel-execution-engine: Added Python 3.11+ + `concurrent.futures` (stdlib), Click 8.x (CLI), Rich 13.x (progress output), existing `specforge.core` modules
 - 012-project-status-dashboard: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal rendering — Table, Panel, Progress, Tree), Jinja2 3.x (markdown report template)
-- 011-implementation-orchestrator: Added Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing
 - 011-implementation-orchestrator: Added Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing
 
 
