@@ -68,7 +68,18 @@ uv tool install specforge --from git+https://github.com/Nandakumar333/SpecForge.
 uvx --from git+https://github.com/Nandakumar333/SpecForge.git specforge init <PROJECT_NAME>
 ```
 
-### Create Your First Project in 4 Steps
+### Create Your First Project — One Command
+
+```bash
+specforge forge "Create a webapp for PersonalFinance"
+```
+
+That's it. One command handles **everything**: project init, feature decomposition, 7-phase spec generation for every service (in parallel), validation, and a completion report.
+
+> **💡 Already have a project?** Run `forge` from an existing `.specforge/` directory and it picks up where you left off with `--resume`.
+
+<details>
+<summary><strong>Step-by-step alternative (full control)</strong></summary>
 
 ```bash
 # 1️⃣ Scaffold a new project
@@ -77,14 +88,14 @@ specforge init MyApp --agent claude
 # 2️⃣ Verify your environment
 specforge check
 
-# 3️⃣ Decompose your app into features  
+# 3️⃣ Decompose your app into features
 specforge decompose "Create a webapp for PersonalFinance"
 
 # 4️⃣ Implement everything
 specforge implement
 ```
 
-That's it! SpecForge handles feature identification, specification writing, task planning, code generation, quality checks, and git commits — all automatically.
+</details>
 
 > **💡 Tip:** Run `specforge init` without `--agent` to get an interactive agent selection menu with 25+ options.
 
@@ -104,25 +115,23 @@ uv tool install specforge --force --from git+https://github.com/Nandakumar333/Sp
 Traditional development treats specifications as throwaway scaffolding — you write them, then discard them once coding begins. **Spec-Driven Development flips this entirely**: specifications become the executable source of truth, directly generating working implementations.
 
 ```
-"Create a webapp for PersonalFinance"
+specforge forge "Create a webapp for PersonalFinance"
+         │
+         ▼
+  🔧 Auto-Init — scaffold project, detect agent & stack
          │
          ▼
   🧠 App Analyzer — identifies 12 bounded features
          │
          ▼
-  📋 Per-Feature Pipeline (×12)
+  📋 Per-Feature Pipeline (×12, in parallel)
   spec → research → data-model → edge-cases → plan → checklist → tasks
          │
          ▼
-  🤖 Sub-Agent Executor (isolated per feature)
-  context-isolated prompts · auto-fix loop · quality gates · git commits
+  ✅ Validation — verify all artifacts exist per service
          │
          ▼
-  🔄 Implementation Orchestrator
-  phased execution · contract verification · integration validation
-         │
-         ▼
-  ✅ Production-Ready Application
+  📊 Completion Report — summary with per-service status
 ```
 
 > **No feature begins implementation until all 7 specification artifacts exist and the quality gate passes.** This isn't a suggestion — it's enforced by the engine.
@@ -252,6 +261,7 @@ SpecForge automatically generates command files in each agent's native discovery
 
 | Command | What It Does |
 |---------|-------------|
+| `specforge forge <description>` | **One-command full pipeline** — init → decompose → spec gen → validate → report |
 | `specforge init <project>` | Scaffold a new project with `.specforge/`, governance prompts, templates, and agent config |
 | `specforge check` | Verify all required tools are installed (`git`, `python`, `uv`, agent CLI) |
 | `specforge validate-prompts` | Detect threshold conflicts across governance prompt files |
@@ -264,6 +274,40 @@ SpecForge automatically generates command files in each agent's native discovery
 | `specforge implement [target]` | Execute implementation with quality gates and auto-fix |
 | `specforge status [target]` | View project-wide status dashboard with progress metrics |
 | `specforge plugins` | List installed agent and stack plugins |
+
+### `specforge forge` — One-Command Full Pipeline
+
+```bash
+specforge forge "<description>" [OPTIONS]
+```
+
+Runs the entire SpecForge pipeline end-to-end with zero human interaction: auto-init → decompose → parallel 7-phase spec generation → validation → completion report.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--arch <pattern>` | `monolithic` | Architecture (`monolithic`, `microservice`, `modular-monolith`) |
+| `--stack <name>` | `auto` | Tech stack (`python`, `dotnet`, `nodejs`, `go`, `java`, `auto`) |
+| `--max-parallel <n>` | `4` | Max concurrent workers for spec generation |
+| `--dry-run` | — | Generate `.prompt.md` files only — no LLM calls |
+| `--resume` | — | Resume from last saved state (mutually exclusive with `--force`) |
+| `--force` | — | Overwrite existing forge state |
+| `--skip-init` | — | Skip auto-init — fail if `.specforge/` doesn't exist |
+
+**Exit codes:** `0` = all services succeeded, `1` = partial failure, `2` = total failure
+
+```bash
+# Basic usage
+specforge forge "Create a personal finance app"
+
+# Microservice with 8 parallel workers
+specforge forge "Build an e-commerce platform" --arch microservice --max-parallel 8
+
+# Preview prompts without calling the LLM
+specforge forge "Todo app" --dry-run
+
+# Resume after interruption
+specforge forge --resume
+```
 
 ### `specforge init` — Scaffold a Project
 
@@ -345,6 +389,12 @@ specforge plugins [--agents] [--stacks]
 ### Usage Examples
 
 ```bash
+# ── One-Command Pipeline (recommended) ──
+specforge forge "Create a webapp for PersonalFinance"                    # Full auto pipeline
+specforge forge "Build an e-commerce platform" --arch microservice       # Microservice arch
+specforge forge "Todo app" --dry-run                                     # Preview prompts only
+specforge forge --resume                                                 # Resume interrupted run
+
 # ── Project Setup ──
 specforge init PersonalFinance                          # Interactive agent selection
 specforge init PersonalFinance --agent claude --stack dotnet  # Specific agent + stack
@@ -646,7 +696,7 @@ specforge plugins --stacks   # Stack plugins only
 
 ## 🏗️ Architecture & Roadmap
 
-SpecForge is built as **14 incrementally developed features**, each fully specified and implemented following its own spec-first methodology.
+SpecForge is built as **15 incrementally developed features**, each fully specified and implemented following its own spec-first methodology.
 
 ### Feature Architecture
 
@@ -685,7 +735,13 @@ SpecForge is built as **14 incrementally developed features**, each fully specif
 │  ┌─────▼─────┐ ┌───────────┐ ┌───────────┐                           │
 │  │ 011 Impl  │ │ 012 Status│ │ 016 Paral.│                           │
 │  │ Orchestr. │ │ Dashboard │ │ Execution │                           │
-│  └───────────┘ └───────────┘ └───────────┘                           │
+│  └───────────┘ └───────────┘ └─────┬─────┘                           │
+│                                                                      │
+│  ONE-COMMAND                                                         │
+│  ┌─────────────────────────────────▼─────┐                           │
+│  │ 017 Forge — Full Pipeline Orchestrator│                           │
+│  │ init → decompose → spec → validate    │                           │
+│  └───────────────────────────────────────┘                           │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -701,7 +757,8 @@ SpecForge is built as **14 incrementally developed features**, each fully specif
 | 5 | ✅ | 011 Implementation Orchestrator | Phased execution, contract verification, integration testing |
 | 6 | ✅ | 012 Dashboard, 013 Plugins, 014 Agent Selection | Rich status dashboard, 25+ agent plugins, interactive selection |
 | 7 | ✅ | 016 Parallel Execution Engine | Concurrent spec generation, dependency-wave implementation |
-| 8 | 🔜 | Brownfield mode, auto-PR, custom prompt UI, VS Code extension | Coming soon |
+| 8 | ✅ | 017 Forge Command | One-command full pipeline with resume, dry-run, enriched prompts |
+| 9 | 🔜 | Brownfield mode, auto-PR, custom prompt UI, VS Code extension | Coming soon |
 
 ---
 
@@ -854,9 +911,21 @@ specforge init my-project --force
 All operations are resumable — state is saved after each phase/task:
 
 ```bash
+specforge forge --resume                # Resumes forge from last completed stage
 specforge specify ledger-service        # Auto-resumes from last phase
 specforge implement --resume            # Resumes from last task
-specforge implement --resume            # Resumes multi-service orchestration
+```
+
+</details>
+
+<details>
+<summary><strong>Forge state already exists</strong></summary>
+
+If a previous forge run left state behind:
+
+```bash
+specforge forge "My app" --force        # Overwrite existing state and start fresh
+specforge forge --resume                # Or resume from where it stopped
 ```
 
 </details>
