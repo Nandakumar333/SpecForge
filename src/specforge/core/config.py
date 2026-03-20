@@ -835,3 +835,55 @@ PARALLEL_RUN_STATUSES: tuple[str, ...] = (
 PARALLEL_WAVE_STATUSES: tuple[str, ...] = (
     "pending", "in-progress", "completed", "partial", "skipped",
 )
+
+
+# ── Forge Command Constants (Feature 017) ──────────────────────────────
+
+FORGE_STAGES: tuple[str, ...] = (
+    "init", "decompose", "spec_generation", "validation", "report",
+)
+"""Ordered stages of a forge run."""
+
+FORGE_STATE_FILE: str = "forge-state.json"
+"""Filename for forge state persistence."""
+
+FORGE_STATE_SCHEMA_VERSION: str = "1.0"
+"""Schema version for forge-state.json."""
+
+FORGE_MAX_RETRIES: int = 3
+"""Maximum retry count per service before marking permanently failed."""
+
+FORGE_DEFAULT_WORKERS: int = 4
+"""Default number of concurrent service pipelines."""
+
+FORGE_LOCK_TIMEOUT_HOURS: int = 1
+"""Hours before a forge lock is considered stale."""
+
+FORGE_REPORT_DIR: str = "reports"
+"""Subdirectory under .specforge/ for forge reports."""
+
+FORGE_REPORT_FILE: str = "forge-report.md"
+"""Filename for the forge completion report."""
+
+FORGE_DRAFT_SUFFIX: str = ".draft.md"
+"""Suffix for interrupted in-progress artifacts."""
+
+FORGE_PROMPT_SUFFIX: str = ".prompt.md"
+"""Suffix for dry-run prompt preview files."""
+
+FORGE_ARTIFACTS: tuple[str, ...] = (
+    "spec.md", "research.md", "data-model.md", "edge-cases.md",
+    "plan.md", "checklist.md", "tasks.md",
+)
+"""The 7 artifact files expected per service after forge."""
+
+FORGE_PHASE_TO_FILENAME: dict[str, str] = {
+    "spec": "spec.md",
+    "research": "research.md",
+    "datamodel": "data-model.md",
+    "edgecase": "edge-cases.md",
+    "plan": "plan.md",
+    "checklist": "checklist.md",
+    "tasks": "tasks.md",
+}
+"""Maps pipeline phase names to their output filenames."""

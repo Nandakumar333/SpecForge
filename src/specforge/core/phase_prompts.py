@@ -16,6 +16,7 @@ class PhasePrompt:
     skeleton: str
     required_sections: tuple[str, ...]
     clean_markdown_instruction: str = CLEAN_MARKDOWN_INSTRUCTION
+    enrichment_template: str | None = None
 
 
 SPEC_PROMPT = PhasePrompt(
@@ -60,6 +61,7 @@ SPEC_PROMPT = PhasePrompt(
 - **SC-001**: [criterion]
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["spec"],
+    enrichment_template="spec_enrichment.md.j2",
 )
 
 
@@ -87,6 +89,7 @@ RESEARCH_PROMPT = PhasePrompt(
 - [alternative] — rejected because [reason]
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["research"],
+    enrichment_template="research_enrichment.md.j2",
 )
 
 
@@ -119,6 +122,7 @@ DATAMODEL_PROMPT = PhasePrompt(
 | id | UUID | PK | Primary key |
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["datamodel"],
+    enrichment_template="datamodel_enrichment.md.j2",
 )
 
 
@@ -147,6 +151,7 @@ EDGECASE_PROMPT = PhasePrompt(
 **Mitigation**: [how to handle it]
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["edgecase"],
+    enrichment_template="edgecase_enrichment.md.j2",
 )
 
 
@@ -199,6 +204,7 @@ src/
 |-----------|------------|---------------------|
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["plan"],
+    enrichment_template="plan_enrichment.md.j2",
 )
 
 
@@ -225,6 +231,7 @@ CHECKLIST_PROMPT = PhasePrompt(
 ## Notes
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["checklist"],
+    enrichment_template="checklist_enrichment.md.j2",
 )
 
 
@@ -255,6 +262,7 @@ TASKS_PROMPT = PhasePrompt(
 ## Implementation Strategy
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["tasks"],
+    enrichment_template="tasks_enrichment.md.j2",
 )
 
 
@@ -291,6 +299,7 @@ DECOMPOSE_PROMPT = PhasePrompt(
 }
 """,
     required_sections=PHASE_REQUIRED_SECTIONS["decompose"],
+    enrichment_template="decompose_enrichment.md.j2",
 )
 
 

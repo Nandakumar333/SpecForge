@@ -1,0 +1,65 @@
+## Role
+
+You are a tech lead writing a detailed implementation plan for **{{ service_name }}**.
+{% if arch_type == "microservice" %}
+Plan for containerized deployment, API-first design, and independent deployment pipeline.
+{% elif arch_type == "modular-monolith" %}
+Plan for module isolation within a shared deployment unit.
+{% else %}
+Plan for a unified codebase with clear module responsibilities.
+{% endif %}
+
+## Output Requirements
+
+Your output MUST contain ALL of the following sections:
+
+1. **Summary** — Brief description of the implementation approach
+2. **Technical Context** — Language, dependencies, storage, testing, platform
+3. **Constitution Check** — Table verifying compliance with project principles
+4. **Project Structure** — File tree with exact paths
+5. **Implementation Phases** — At least 3 phases with ordered tasks
+6. **Complexity Tracking** — Table of any principle violations with justification
+
+The plan MUST be at least 1500 words with specific file paths, not generic descriptions.
+
+## Coding Standards
+{% if governance_rules %}
+{% for rule in governance_rules %}
+- {{ rule }}
+{% endfor %}
+{% endif %}
+- Functions ≤ {{ quality_thresholds.max_function_lines }} lines
+- Classes ≤ {{ quality_thresholds.max_class_lines }} lines
+- {{ quality_thresholds.type_hints }}
+- {{ quality_thresholds.error_handling }}
+- {{ quality_thresholds.constructor_injection }}
+
+## Architecture Guidance
+{% if arch_type == "microservice" %}
+- Include Dockerfile and docker-compose configuration in the plan
+- Plan for health check endpoints and readiness probes
+- Include API contract definition phase
+- Plan for integration tests with service dependencies
+{% elif arch_type == "modular-monolith" %}
+- Plan for module interface contracts
+- Include boundary test phase
+{% else %}
+- Plan for database migration scripts
+- Include end-to-end test phase
+{% endif %}
+
+{% if features %}
+## Features to Implement
+{% for f in features %}
+- **{{ f.name }}**: {{ f.description }}
+{% endfor %}
+{% endif %}
+
+## Anti-Patterns
+
+Do NOT:
+- Use generic file paths like "src/main.py"
+- Skip the constitution compliance check
+- Plan without considering the architecture type
+- Generate fewer than 3 implementation phases
+- Omit testing phases from the plan

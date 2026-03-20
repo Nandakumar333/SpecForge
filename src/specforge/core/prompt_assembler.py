@@ -10,6 +10,8 @@ from specforge.core.result import Ok, Result
 
 if TYPE_CHECKING:
     from specforge.core.architecture_adapter import ArchitectureAdapter
+    from specforge.core.artifact_extractor import ArtifactExtractor
+    from specforge.core.enriched_prompts import EnrichedPromptBuilder
     from specforge.core.phase_prompts import PhasePrompt
     from specforge.core.prompt_loader import PromptLoader
     from specforge.core.service_context import ServiceContext
@@ -28,11 +30,15 @@ class PromptAssembler:
         prompt_loader: PromptLoader | None = None,
         token_budget: int = DEFAULT_TOKEN_BUDGET,
         governance_phase_map: dict[str, list[str]] | None = None,
+        artifact_extractor: ArtifactExtractor | None = None,
+        enriched_prompt_builder: EnrichedPromptBuilder | None = None,
     ) -> None:
         self._constitution_path = constitution_path
         self._prompt_loader = prompt_loader
         self._token_budget = token_budget
         self._governance_map = governance_phase_map or GOVERNANCE_PHASE_MAP
+        self._artifact_extractor = artifact_extractor
+        self._enriched_builder = enriched_prompt_builder
 
     def assemble(
         self,
@@ -46,11 +52,17 @@ class PromptAssembler:
         constitution = self._load_constitution()
         governance = self._load_governance(phase_prompt.phase_name)
         arch_context = self._serialize_architecture(adapter, service_ctx)
-        artifacts_text = self._serialize_artifacts(prior_artifacts)
+        artifacts_text = self._build_artifacts_text(
+            phase_prompt, service_ctx, prior_artifacts,
+        )
+        enrichment = self._build_enrichment(
+            phase_prompt, service_ctx,
+        )
 
         system_parts = [
             ("instructions", phase_prompt.clean_markdown_instruction),
             ("instructions", phase_prompt.system_instructions),
+            ("enrichment", enrichment),
             ("skeleton", f"## Target Format\n\n{phase_prompt.skeleton}"),
             ("architecture", arch_context),
             ("governance", governance),
@@ -118,6 +130,41 @@ class PromptAssembler:
         if hasattr(adapter, "serialize_for_prompt"):
             return adapter.serialize_for_prompt()
         return ""
+
+    def _build_artifacts_text(
+        self,
+        phase_prompt: PhasePrompt,
+        service_ctx: ServiceContext,
+        prior_artifacts: dict[str, str],
+    ) -> str:
+        """Use extractor if available, else fall back to raw concatenation."""
+        if self._artifact_extractor and prior_artifacts:
+            extractions = {}
+            for name, content in prior_artifacts.items():
+                method = getattr(
+                    self._artifact_extractor,
+                    f"extract_from_{name.replace('-', '_').replace('.md', '')}",
+                    None,
+                )
+                if method:
+                    extractions[name] = method(content)
+            return self._artifact_extractor.format_for_prompt(
+                phase_prompt.phase_name, extractions,
+            )
+        return self._serialize_artifacts(prior_artifacts)
+
+    def _build_enrichment(
+        self,
+        phase_prompt: PhasePrompt,
+        service_ctx: ServiceContext,
+    ) -> str:
+        """Render enrichment template if builder is set."""
+        if not self._enriched_builder:
+            return ""
+        result = self._enriched_builder.build_enrichment(
+            phase_prompt, service_ctx, service_ctx.architecture,
+        )
+        return result.value if result.ok else ""
 
     @staticmethod
     def _serialize_artifacts(artifacts: dict[str, str]) -> str:

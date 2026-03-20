@@ -43,6 +43,7 @@ class TestPhasePromptDataclass:
             "skeleton",
             "required_sections",
             "clean_markdown_instruction",
+            "enrichment_template",
         }
         assert field_names == expected
 
