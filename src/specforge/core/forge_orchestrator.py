@@ -363,10 +363,12 @@ class ForgeOrchestrator:
         """Use DomainAnalyzer as fallback."""
         try:
             from specforge.core.domain_analyzer import DomainAnalyzer
-            from specforge.core.pattern_loader import load_domain_patterns
+            from specforge.core.domain_patterns import (
+                DOMAIN_PATTERNS,
+                GENERIC_PATTERN,
+            )
 
-            patterns, generic = load_domain_patterns()
-            analyzer = DomainAnalyzer(patterns, generic)
+            analyzer = DomainAnalyzer(DOMAIN_PATTERNS, GENERIC_PATTERN)
             domain_result = analyzer.analyze(description)
             if not domain_result.ok:
                 return Err("Decompose failed: no services identified")
