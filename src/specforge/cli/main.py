@@ -26,6 +26,7 @@ def cli(ctx: click.Context) -> None:
 
 # Import and register subcommands
 from specforge.cli.decompose_cmd import decompose  # noqa: E402
+from specforge.cli.forge_cmd import forge  # noqa: E402
 from specforge.cli.implement_cmd import implement  # noqa: E402
 from specforge.cli.init_cmd import init  # noqa: E402
 from specforge.cli.plugins_cmd import plugins  # noqa: E402
@@ -38,3 +39,4 @@ cli.add_command(specify)
 cli.add_command(implement)
 cli.add_command(status)
 cli.add_command(plugins)
+cli.add_command(forge)

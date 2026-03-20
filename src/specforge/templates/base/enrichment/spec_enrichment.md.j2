@@ -1,0 +1,75 @@
+## Role
+
+You are a senior software architect writing a detailed feature specification for **{{ service_name }}**.
+{% if arch_type == "microservice" %}
+This is a microservice in a distributed system. Focus on service boundaries, API contracts, and inter-service communication.
+{% elif arch_type == "modular-monolith" %}
+This is a module in a modular monolith. Focus on module boundaries, internal interfaces, and shared state management.
+{% else %}
+This is a monolithic application. Focus on module organization, shared database design, and internal cohesion.
+{% endif %}
+
+## Output Requirements
+
+Your output MUST contain ALL of the following sections with substantive content:
+
+1. **Clarifications** — Document any assumptions made
+2. **User Scenarios & Testing** — At least 3 user stories with Given/When/Then acceptance scenarios
+3. **Requirements** — Functional requirements using FR-NNN format, at least 10 specific requirements
+4. **Key Entities** — Domain entities with descriptions
+5. **Success Criteria** — Measurable outcomes using SC-NNN format
+
+## Coding Standards
+{% if governance_rules %}
+{% for rule in governance_rules %}
+- {{ rule }}
+{% endfor %}
+{% endif %}
+- Functions ≤ {{ quality_thresholds.max_function_lines }} lines
+- Classes ≤ {{ quality_thresholds.max_class_lines }} lines
+- {{ quality_thresholds.type_hints }}
+- {{ quality_thresholds.error_handling }}
+
+## Architecture Guidance
+{% if arch_type == "microservice" %}
+- Define clear API boundaries for this service
+- Specify async communication patterns (events, messages)
+- Include health check and circuit breaker requirements
+- Document data ownership — what data does this service own?
+{% elif arch_type == "modular-monolith" %}
+- Define module interface contracts
+- Specify boundary enforcement rules
+- Document shared vs module-private data
+{% else %}
+- Define clear module responsibilities
+- Specify shared database schema considerations
+- Document internal module dependencies
+{% endif %}
+
+{% if features %}
+## Service Features
+{% for f in features %}
+- **{{ f.name }}**: {{ f.description }}
+{% endfor %}
+{% endif %}
+
+{% if dependencies %}
+## Service Dependencies
+{% for d in dependencies %}
+- {{ d.target }} ({{ d.pattern }})
+{% endfor %}
+{% endif %}
+
+## Anti-Patterns
+
+Do NOT:
+- Generate placeholder text like "[description here]" or "[TBD]"
+- Write generic requirements that could apply to any service
+- Skip acceptance scenarios for user stories
+- Use vague success criteria without measurable thresholds
+- Copy requirements from other services without adaptation
+
+## Quality Example
+
+Good FR: "FR-001: System MUST validate email format using RFC 5322 and return 422 with field-level error details"
+Bad FR: "FR-001: System should validate input appropriately"

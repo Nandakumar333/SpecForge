@@ -24,6 +24,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-19
 - File system — `.specforge/manifest.json`, `.specforge/features/<slug>/` state files, `.specforge/.orchestration-state.json` (012-project-status-dashboard)
 - Python 3.11+ + `concurrent.futures` (stdlib), Click 8.x (CLI), Rich 13.x (progress output), existing `specforge.core` modules (016-parallel-execution-engine)
 - File system — `.specforge/features/<slug>/` per-service state files, `.specforge/config.json`, `.specforge/parallel-state.json` (016-parallel-execution-engine)
+- Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output + Live dashboard), Jinja2 3.x (template rendering), httpx 0.27+ (HTTP API provider with SSE streaming), GitPython 3.x, PyYAML 6.x — all existing except httpx (017-forge-command)
+- File system — `.specforge/forge-state.json` (forge progress), `.specforge/features/<slug>/` (per-service artifacts), `.specforge/reports/forge-report.md` (completion report) (017-forge-command)
 
 - **Language**: Python 3.11+
 - **CLI Framework**: Click 8.x — command groups, `@click.pass_context`, `CliRunner` for tests
@@ -108,9 +110,9 @@ uv run pytest --snapshot-update
 - Dependency flow: `cli` → `core` → stdlib only; `plugins` → `core`; never reverse
 
 ## Recent Changes
+- 017-forge-command: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal output + Live dashboard), Jinja2 3.x (template rendering), httpx 0.27+ (HTTP API provider with SSE streaming), GitPython 3.x, PyYAML 6.x — all existing except httpx
 - 016-parallel-execution-engine: Added Python 3.11+ + `concurrent.futures` (stdlib), Click 8.x (CLI), Rich 13.x (progress output), existing `specforge.core` modules
 - 012-project-status-dashboard: Added Python 3.11+ + Click 8.x (CLI), Rich 13.x (terminal rendering — Table, Panel, Progress, Tree), Jinja2 3.x (markdown report template)
-- 011-implementation-orchestrator: Added Python 3.11+ (existing) + Click 8.x (CLI), Rich 13.x (terminal output + progress), Jinja2 3.x (report rendering), GitPython 3.x (commit ops) — all existing
 
 
 
